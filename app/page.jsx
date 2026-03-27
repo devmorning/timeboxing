@@ -527,7 +527,7 @@ export default function Page() {
             </section>
             <section>
               <div className="space-y-4">
-                <div className="flex items-end gap-3">
+                <div className="flex items-center gap-3">
                   <div className="h-10 w-[120px] rounded-md bg-slate-200/70" />
                   <div className="h-10 flex-1 rounded-md bg-slate-200/70" />
                   <div className="h-10 w-[56px] rounded-md bg-slate-200/70" />
@@ -588,7 +588,7 @@ export default function Page() {
             {/* 3) 시간, 내용 입력 */}
             <section>
               <div className="space-y-4">
-                <div className="flex items-end gap-3">
+                <div className="flex items-center gap-3">
                   <div className="w-[120px] flex-none">
                     <TextInput
                       type="time"
@@ -700,26 +700,13 @@ export default function Page() {
                               : "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
                         }}
                       >
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2">
                           <div className="min-w-0">
                             <div className="text-[13px] font-semibold text-orange-700">{it.time}</div>
                             <div className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-900">
                               {it.content}
                             </div>
                           </div>
-                          {editingId === it.id ? (
-                            <button
-                              type="button"
-                              aria-label="항목 삭제"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deleteItemById(it.id);
-                              }}
-                              className="h-8 min-w-[32px] select-none bg-transparent text-[18px] font-semibold leading-none text-orange-700 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md"
-                            >
-                              −
-                            </button>
-                          ) : null}
                         </div>
                       </div>
                     ))}
