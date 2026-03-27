@@ -471,6 +471,7 @@ export default function Page() {
                   key={idx}
                   value={v}
                   placeholder={`가장 중요한 일 ${idx + 1}`}
+                  disabled={isDatePickerOpen}
                   inputClassName="text-[15px]"
                   onChange={(next) =>
                     setImportant3((prev) => {
@@ -491,6 +492,7 @@ export default function Page() {
                 id="brain_dump"
                 aria-label="브레인 덤프"
                 value={brainDump}
+                disabled={isDatePickerOpen}
                 onChange={(e) => setBrainDump(e.target.value)}
                 placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
                 className={[
@@ -513,6 +515,7 @@ export default function Page() {
                   <TextInput
                     type="time"
                     value={newTime}
+                    disabled={isDatePickerOpen}
                     onChange={setNewTime}
                     inputClassName="text-[15px]"
                   />
@@ -521,6 +524,7 @@ export default function Page() {
                   <TextInput
                     value={newContent}
                     placeholder="예: 09:00 - 고객 피드백 정리"
+                    disabled={isDatePickerOpen}
                     inputClassName="text-[15px]"
                     onChange={setNewContent}
                   />
