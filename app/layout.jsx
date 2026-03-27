@@ -7,6 +7,10 @@ export const metadata = {
     template: "%s | Timeboxing",
   },
   description: "하루 일정을 시간 단위로 정리하는 타임박싱 앱",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon",
+  },
 };
 
 // Next.js에서 head의 <meta name="viewport" ...>를 자동 생성합니다.
