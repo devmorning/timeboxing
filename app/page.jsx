@@ -154,6 +154,11 @@ export default function Page() {
     }
   };
 
+  const closeInlineCalendar = () => {
+    setIsDatePickerOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   useEffect(() => {
     let cancelled = false;
     setReadyDate("");
@@ -306,7 +311,7 @@ export default function Page() {
                   const today = toLocalYmd(new Date());
                   setSelectedDate(today);
                   setVisibleMonthYmd(today.slice(0, 7));
-                  setIsDatePickerOpen(false);
+                  closeInlineCalendar();
                 }}
                 className="h-8 min-w-[44px] rounded-md bg-transparent text-orange-700 active:opacity-60"
               >
@@ -349,7 +354,7 @@ export default function Page() {
                 <button
                   type="button"
                   aria-label="캘린더 접기"
-                  onClick={() => setIsDatePickerOpen(false)}
+                  onClick={closeInlineCalendar}
                   className="rounded-md px-2 py-1 text-sm font-semibold text-slate-700 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
                 >
                   {visibleMonthLabel}
@@ -393,7 +398,7 @@ export default function Page() {
                       type="button"
                       onClick={() => {
                         setSelectedDate(cell.dateYmd);
-                        setIsDatePickerOpen(false);
+                        closeInlineCalendar();
                       }}
                       className={[
                         "relative mx-auto flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium transition-colors",
