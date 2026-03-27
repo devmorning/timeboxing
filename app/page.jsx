@@ -1,10 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import TextInput from "../components/textinput/TextInput.jsx";
 import { addDaysToYmd } from "../components/timeboxing/utils/dateYmd.js";
+import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
 
 export default function Page() {
+  const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
+  const saveTimerRef = useRef(null);
+
   const toLocalYmd = (d) => {
     const yy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -33,6 +37,7 @@ export default function Page() {
   const [items, setItems] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [readyDate, setReadyDate] = useState("");
 
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
@@ -113,6 +118,63 @@ export default function Page() {
       resetEditState();
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    setReadyDate("");
+
+    const loadDayPlan = async () => {
+      try {
+        const plan = await dayPlanRepository.getByDate(selectedDate);
+        if (cancelled) return;
+        setImportant3(plan.important3);
+        setBrainDump(plan.brainDump);
+        setItems(plan.items);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load day plan", error);
+          setImportant3(["", "", ""]);
+          setBrainDump("");
+          setItems([]);
+        }
+      } finally {
+        if (!cancelled) {
+          resetEditState();
+          setReadyDate(selectedDate);
+        }
+      }
+    };
+
+    loadDayPlan();
+    return () => {
+      cancelled = true;
+    };
+  }, [dayPlanRepository, selectedDate]);
+
+  useEffect(() => {
+    if (readyDate !== selectedDate) return;
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        await dayPlanRepository.saveByDate(selectedDate, {
+          important3,
+          brainDump,
+          items,
+        });
+      } catch (error) {
+        console.error("Failed to save day plan", error);
+      }
+    }, 250);
+
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, [readyDate, selectedDate, important3, brainDump, items, dayPlanRepository]);
 
   return (
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
