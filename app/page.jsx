@@ -698,9 +698,13 @@ export default function Page() {
 
                 <div>
                   <h3 className="text-[13px] font-semibold text-slate-500">브레인 덤프</h3>
-                  <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">
-                    {brainDump.trim() || "작성된 내용이 없습니다."}
-                  </p>
+                  {brainDump.trim() ? (
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">
+                      {brainDump.trim()}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-400">작성된 내용이 없습니다.</p>
+                  )}
                 </div>
 
                 <div className="h-px w-full bg-black/[0.06]" />
