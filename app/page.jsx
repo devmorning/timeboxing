@@ -154,6 +154,13 @@ export default function Page() {
     }
   };
 
+  const closeCalendarOnInputFocus = (event) => {
+    const tagName = event.target?.tagName;
+    if (tagName === "INPUT" || tagName === "TEXTAREA") {
+      setIsDatePickerOpen(false);
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
     setReadyDate("");
@@ -426,6 +433,7 @@ export default function Page() {
           "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
           isDatePickerOpen ? "pt-[380px]" : "pt-20",
         ].join(" ")}
+        onFocusCapture={closeCalendarOnInputFocus}
       >
         <div className="space-y-8">
           {/* 1) 가장 중요한 3가지 */}
