@@ -50,9 +50,19 @@ export default function Page() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [readyDate, setReadyDate] = useState("");
   const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(false);
+  const [swipingItemId, setSwipingItemId] = useState(null);
+  const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
   const [markedDates, setMarkedDates] = useState(new Set());
+  const swipeGestureRef = useRef({
+    itemId: null,
+    startX: 0,
+    startY: 0,
+    dragging: false,
+    horizontalLocked: false,
+    didMove: false,
+  });
 
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
@@ -132,6 +142,69 @@ export default function Page() {
     if (editingId === id) {
       resetEditState();
     }
+  };
+
+  const handleItemTouchStart = (id, event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    swipeGestureRef.current = {
+      itemId: id,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      dragging: true,
+      horizontalLocked: false,
+      didMove: false,
+    };
+    setSwipingItemId(id);
+    setSwipeOffsetX(0);
+  };
+
+  const handleItemTouchMove = (id, event) => {
+    const touch = event.touches?.[0];
+    const gesture = swipeGestureRef.current;
+    if (!touch || !gesture.dragging || gesture.itemId !== id) return;
+
+    const dx = touch.clientX - gesture.startX;
+    const dy = touch.clientY - gesture.startY;
+
+    if (!gesture.horizontalLocked) {
+      if (Math.abs(dx) < 6) return;
+      if (Math.abs(dx) <= Math.abs(dy)) {
+        gesture.dragging = false;
+        setSwipingItemId(null);
+        setSwipeOffsetX(0);
+        return;
+      }
+      gesture.horizontalLocked = true;
+    }
+
+    const nextOffset = Math.max(-120, Math.min(0, dx));
+    gesture.didMove = Math.abs(nextOffset) > 10;
+    setSwipeOffsetX(nextOffset);
+  };
+
+  const handleItemTouchEnd = (id) => {
+    const gesture = swipeGestureRef.current;
+    const isSameItem = gesture.itemId === id;
+    const shouldDelete = isSameItem && swipeOffsetX <= -72;
+    const didMove = isSameItem && gesture.didMove;
+
+    swipeGestureRef.current = {
+      itemId: null,
+      startX: 0,
+      startY: 0,
+      dragging: false,
+      horizontalLocked: false,
+      didMove: false,
+    };
+    setSwipingItemId(null);
+    setSwipeOffsetX(0);
+
+    if (shouldDelete) {
+      deleteItemById(id);
+      return true;
+    }
+    return didMove;
   };
 
   const closeInlineCalendar = useCallback(() => {
@@ -592,14 +665,40 @@ export default function Page() {
                         key={it.id}
                         role="button"
                         tabIndex={0}
-                        onClick={() => startEditItem(it)}
+                        onClick={() => {
+                          if (swipingItemId === it.id && swipeOffsetX !== 0) return;
+                          startEditItem(it);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             startEditItem(it);
                           }
                         }}
+                        onTouchStart={(e) => handleItemTouchStart(it.id, e)}
+                        onTouchMove={(e) => handleItemTouchMove(it.id, e)}
+                        onTouchEnd={(e) => {
+                          const moved = handleItemTouchEnd(it.id);
+                          if (moved) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }
+                        }}
+                        onTouchCancel={() => {
+                          handleItemTouchEnd(it.id);
+                        }}
                         className="cursor-pointer rounded-md px-1 py-1 outline-none transition-colors hover:bg-black/[0.02] focus:bg-black/[0.04]"
+                        style={{
+                          touchAction: "pan-y",
+                          transform:
+                            swipingItemId === it.id && swipeOffsetX !== 0
+                              ? `translateX(${swipeOffsetX}px)`
+                              : "translateX(0)",
+                          transition:
+                            swipingItemId === it.id
+                              ? "none"
+                              : "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+                        }}
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
