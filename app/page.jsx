@@ -660,17 +660,18 @@ export default function Page() {
               className="flex max-h-[min(88vh,calc(100dvh-2.5rem))] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex shrink-0 items-start justify-between border-b border-black/[0.06] px-5 py-4">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700" suppressHydrationWarning>
-                    {selectedDateLabel}
-                  </p>
-                </div>
+              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-3">
+                <p
+                  className="min-w-0 flex-1 text-sm font-semibold leading-snug text-slate-700"
+                  suppressHydrationWarning
+                >
+                  {selectedDateLabel}
+                </p>
                 <button
                   type="button"
                   aria-label="리포트 닫기"
                   onClick={() => setIsReportOpen(false)}
-                  className="h-9 min-w-[44px] rounded-md bg-transparent text-[18px] font-semibold text-slate-500 active:opacity-60"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
                 >
                   ✕
                 </button>
