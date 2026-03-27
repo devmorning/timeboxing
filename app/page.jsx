@@ -639,8 +639,8 @@ export default function Page() {
                 setIsReportOpen(true);
               }}
               className={[
-                "h-12 min-w-[48px] rounded-full bg-orange-600 px-4",
-                "inline-flex items-center justify-center text-white shadow-md",
+                "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-600 p-0",
+                "text-white shadow-md",
                 "active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30",
               ].join(" ")}
             >
