@@ -392,7 +392,7 @@ export default function Page() {
           <div
             data-testid="inline-calendar-panel"
             className={[
-              "overflow-hidden transition-all duration-300 ease-out",
+              "overflow-hidden transition-[max-height,opacity,padding-top] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
               isDatePickerOpen
                 ? "flex max-h-[calc(100dvh-4rem)] flex-col opacity-100 pt-3"
                 : "max-h-0 opacity-0 pt-0",
@@ -401,7 +401,7 @@ export default function Page() {
             <section
               className={[
                 "flex min-h-0 flex-1 flex-col rounded-2xl bg-transparent px-1 py-2",
-                "transition-all duration-300 ease-out",
+                "transition-[transform,opacity] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
                 isDatePickerOpen ? "translate-y-0 scale-100" : "-translate-y-1 scale-[0.98]",
               ].join(" ")}
             >
