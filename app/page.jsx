@@ -378,10 +378,10 @@ export default function Page() {
                 ))}
               </div>
 
-              <div className="mt-1 grid grid-cols-7 gap-1.5">
+              <div className="mt-1 grid grid-cols-7 gap-y-1.5">
                 {calendarCells.map((cell, idx) => {
                   if (!cell) {
-                    return <div key={`empty_${idx}`} className="h-9" />;
+                    return <div key={`empty_${idx}`} className="h-10" />;
                   }
 
                   const isSelected = cell.dateYmd === selectedDate;
@@ -396,7 +396,7 @@ export default function Page() {
                         setIsDatePickerOpen(false);
                       }}
                       className={[
-                        "relative h-9 rounded-full text-sm font-medium transition-colors",
+                        "relative mx-auto flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium transition-colors",
                         isSelected
                           ? "bg-orange-600 text-white"
                           : "bg-transparent text-slate-700 hover:bg-black/[0.04]",
@@ -407,7 +407,7 @@ export default function Page() {
                       {isMarked ? (
                         <span
                           className={[
-                            "absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full",
+                            "absolute bottom-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full",
                             isSelected ? "bg-white" : "bg-orange-500",
                           ].join(" ")}
                         />
