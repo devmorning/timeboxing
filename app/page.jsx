@@ -172,7 +172,6 @@ export default function Page() {
 
   useEffect(() => {
     let cancelled = false;
-    setReadyDate("");
 
     const loadDayPlan = async () => {
       try {
@@ -293,7 +292,7 @@ export default function Page() {
     });
   }, [isDatePickerOpen, calendarMonthRange, selectedDate]);
 
-  const isDayPlanLoading = readyDate !== selectedDate;
+  const isDayPlanLoading = readyDate === "";
 
   return (
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
