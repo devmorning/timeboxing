@@ -407,7 +407,12 @@ export default function Page() {
 
   return (
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
-      <header className="fixed inset-x-0 top-0 z-50 bg-[#F2F2F7]/95 backdrop-blur-sm">
+      <header
+        className={[
+          "fixed inset-x-0 top-0 z-50 bg-[#F2F2F7]/95 backdrop-blur-sm transition-opacity duration-200",
+          isReportOpen ? "pointer-events-none opacity-0" : "opacity-100",
+        ].join(" ")}
+      >
         <div className="mx-auto w-full max-w-md px-4 py-3">
           <div
             className={[
@@ -792,9 +797,9 @@ export default function Page() {
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
           onClick={() => setIsReportOpen(false)}
         >
-          <div className="mx-auto flex h-full min-h-0 w-full max-w-md items-end justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-[calc(5.25rem+env(safe-area-inset-top,0px))]">
+          <div className="mx-auto flex h-full min-h-0 w-full max-w-md items-stretch justify-center px-0 pb-0 pt-0">
             <section
-              className="flex h-[calc(100dvh-6rem-env(safe-area-inset-top,0px))] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5"
+              className="flex h-full w-full flex-col overflow-hidden bg-white"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-3">
