@@ -255,7 +255,7 @@ export default function Page() {
 
   return (
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
-      <header className="fixed inset-x-0 top-0 z-30 bg-[#F2F2F7]/95 backdrop-blur-sm">
+      <header className="fixed inset-x-0 top-0 z-50 bg-[#F2F2F7]/95 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-md px-4 py-3">
           {!isDatePickerOpen ? (
             <div className="flex items-center justify-between">
@@ -276,7 +276,14 @@ export default function Page() {
               <button
                 type="button"
                 className="rounded-md px-2 py-1 text-[13px] font-semibold text-slate-600 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
-                onClick={() => {
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                   setVisibleMonthYmd(selectedDate.slice(0, 7));
                   setIsDatePickerOpen(true);
                 }}
