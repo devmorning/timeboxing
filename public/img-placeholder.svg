@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#E5E7EB"/>
+  <rect x="80" y="90" width="640" height="420" rx="24" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="3"/>
+  <text x="400" y="320" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial" font-size="28" fill="#64748B" text-anchor="middle">
+    tøÀ ¬
+  </text>
+</svg>
+
