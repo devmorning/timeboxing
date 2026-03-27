@@ -633,18 +633,18 @@ export default function Page() {
           <div className="flex justify-end">
             <button
               type="button"
-              aria-label="TIME 버튼"
+              aria-label="일정 리포트 열기"
               onClick={() => {
                 setIsDatePickerOpen(false);
                 setIsReportOpen(true);
               }}
               className={[
-                "h-11 min-w-[44px] rounded-full bg-orange-600 px-3",
-                "inline-flex items-center justify-center text-[18px] font-semibold text-white shadow-md",
+                "h-12 min-w-[48px] rounded-full bg-orange-600 px-4",
+                "inline-flex items-center justify-center text-white shadow-md",
                 "active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30",
               ].join(" ")}
             >
-              <span aria-hidden>◷</span>
+              <i className="fas fa-clipboard-list text-[22px] leading-none" aria-hidden />
             </button>
           </div>
         </div>
