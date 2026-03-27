@@ -2,8 +2,11 @@ import "./globals.css";
 import "@fortawesome/fontawesome-free/css/all.css";
 
 export const metadata = {
-  title: "Next.js + Tailwind",
-  description: "Minimal template",
+  title: {
+    default: "Timeboxing",
+    template: "%s | Timeboxing",
+  },
+  description: "하루 일정을 시간 단위로 정리하는 타임박싱 앱",
 };
 
 // Next.js에서 head의 <meta name="viewport" ...>를 자동 생성합니다.
