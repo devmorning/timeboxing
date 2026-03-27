@@ -293,6 +293,8 @@ export default function Page() {
     });
   }, [isDatePickerOpen, calendarMonthRange, selectedDate]);
 
+  const isDayPlanLoading = readyDate !== selectedDate;
+
   return (
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
       <header className="fixed inset-x-0 top-0 z-50 bg-[#F2F2F7]/95 backdrop-blur-sm">
@@ -431,81 +433,137 @@ export default function Page() {
           isDatePickerOpen ? "pt-[calc(100dvh-4rem)]" : "pt-20",
         ].join(" ")}
       >
-        <div className="space-y-8">
-          {/* 1) 가장 중요한 3가지 */}
-          <section>
-            <div className="space-y-3">
-              {important3.map((v, idx) => (
-                <TextInput
-                  key={idx}
-                  value={v}
-                  placeholder={`가장 중요한 일 ${idx + 1}`}
+        {isDayPlanLoading ? (
+          <div className="space-y-8 animate-pulse" aria-label="일정 불러오는 중">
+            <section>
+              <div className="space-y-3">
+                <div className="h-10 rounded-md bg-slate-200/70" />
+                <div className="h-10 rounded-md bg-slate-200/70" />
+                <div className="h-10 rounded-md bg-slate-200/70" />
+              </div>
+            </section>
+            <section>
+              <div className="h-[120px] rounded-md bg-slate-200/70" />
+            </section>
+            <section>
+              <div className="space-y-4">
+                <div className="flex items-end gap-3">
+                  <div className="h-10 w-[120px] rounded-md bg-slate-200/70" />
+                  <div className="h-10 flex-1 rounded-md bg-slate-200/70" />
+                  <div className="h-10 w-[56px] rounded-md bg-slate-200/70" />
+                </div>
+                <div className="space-y-3">
+                  <div className="h-14 rounded-md bg-slate-200/60" />
+                  <div className="h-14 rounded-md bg-slate-200/60" />
+                </div>
+              </div>
+            </section>
+          </div>
+        ) : (
+          <div className="space-y-8 opacity-100 transition-opacity duration-200">
+            {/* 1) 가장 중요한 3가지 */}
+            <section>
+              <div className="space-y-3">
+                {important3.map((v, idx) => (
+                  <TextInput
+                    key={idx}
+                    value={v}
+                    placeholder={`가장 중요한 일 ${idx + 1}`}
+                    disabled={isDatePickerOpen}
+                    inputClassName="text-[15px]"
+                    onChange={(next) =>
+                      setImportant3((prev) => {
+                        const copy = [...prev];
+                        copy[idx] = next;
+                        return copy;
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </section>
+
+            {/* 2) 브레인 덤프 */}
+            <section>
+              <div>
+                <textarea
+                  id="brain_dump"
+                  aria-label="브레인 덤프"
+                  value={brainDump}
                   disabled={isDatePickerOpen}
-                  inputClassName="text-[15px]"
-                  onChange={(next) =>
-                    setImportant3((prev) => {
-                      const copy = [...prev];
-                      copy[idx] = next;
-                      return copy;
-                    })
-                  }
+                  onChange={(e) => setBrainDump(e.target.value)}
+                  placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
+                  className={[
+                    "block w-full border-0 border-b border-slate-200 bg-transparent px-0 py-2.5 text-[16px] text-slate-900 placeholder:text-slate-400",
+                    "focus:border-orange-500 focus:outline-none focus:ring-0",
+                    "disabled:cursor-not-allowed disabled:text-slate-400",
+                    "resize-none min-h-[120px]",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 />
-              ))}
-            </div>
-          </section>
+              </div>
+            </section>
 
-          {/* 2) 브레인 덤프 */}
-          <section>
-            <div>
-              <textarea
-                id="brain_dump"
-                aria-label="브레인 덤프"
-                value={brainDump}
-                disabled={isDatePickerOpen}
-                onChange={(e) => setBrainDump(e.target.value)}
-                placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
-                className={[
-                  "block w-full border-0 border-b border-slate-200 bg-transparent px-0 py-2.5 text-[16px] text-slate-900 placeholder:text-slate-400",
-                  "focus:border-orange-500 focus:outline-none focus:ring-0",
-                  "disabled:cursor-not-allowed disabled:text-slate-400",
-                  "resize-none min-h-[120px]",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              />
-            </div>
-          </section>
-
-          {/* 3) 시간, 내용 입력 */}
-          <section>
-            <div className="space-y-4">
-              <div className="flex items-end gap-3">
-                <div className="w-[120px] flex-none">
-                  <TextInput
-                    type="time"
-                    value={newTime}
-                    disabled={isDatePickerOpen}
-                    onChange={setNewTime}
-                    inputClassName="text-[15px]"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <TextInput
-                    value={newContent}
-                    placeholder="예: 09:00 - 고객 피드백 정리"
-                    disabled={isDatePickerOpen}
-                    inputClassName="text-[15px]"
-                    onChange={setNewContent}
-                  />
-                </div>
-                <div className="w-[56px]">
-                  {editingId ? (
-                    isEditingChanged ? (
+            {/* 3) 시간, 내용 입력 */}
+            <section>
+              <div className="space-y-4">
+                <div className="flex items-end gap-3">
+                  <div className="w-[120px] flex-none">
+                    <TextInput
+                      type="time"
+                      value={newTime}
+                      disabled={isDatePickerOpen}
+                      onChange={setNewTime}
+                      inputClassName="text-[15px]"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <TextInput
+                      value={newContent}
+                      placeholder="예: 09:00 - 고객 피드백 정리"
+                      disabled={isDatePickerOpen}
+                      inputClassName="text-[15px]"
+                      onChange={setNewContent}
+                    />
+                  </div>
+                  <div className="w-[56px]">
+                    {editingId ? (
+                      isEditingChanged ? (
+                        <button
+                          type="button"
+                          aria-label="저장"
+                          disabled={!canAdd}
+                          onClick={saveEditItem}
+                          className={[
+                            "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
+                            "text-orange-700 active:opacity-60",
+                            "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                            "disabled:cursor-not-allowed disabled:opacity-40",
+                          ].join(" ")}
+                        >
+                          ✓
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          aria-label="취소"
+                          onClick={resetEditState}
+                          className={[
+                            "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
+                            "text-orange-700 active:opacity-60",
+                            "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                          ].join(" ")}
+                        >
+                          ✕
+                        </button>
+                      )
+                    ) : (
                       <button
                         type="button"
-                        aria-label="저장"
+                        aria-label="추가"
                         disabled={!canAdd}
-                        onClick={saveEditItem}
+                        onClick={addItem}
                         className={[
                           "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
                           "text-orange-700 active:opacity-60",
@@ -513,88 +571,60 @@ export default function Page() {
                           "disabled:cursor-not-allowed disabled:opacity-40",
                         ].join(" ")}
                       >
-                        ✓
+                        +
                       </button>
-                    ) : (
-                      <button
-                        type="button"
-                        aria-label="취소"
-                        onClick={resetEditState}
-                        className={[
-                          "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
-                          "text-orange-700 active:opacity-60",
-                          "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                        ].join(" ")}
-                      >
-                        ✕
-                      </button>
-                    )
-                  ) : (
-                    <button
-                      type="button"
-                      aria-label="추가"
-                      disabled={!canAdd}
-                      onClick={addItem}
-                      className={[
-                        "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
-                        "text-orange-700 active:opacity-60",
-                        "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                        "disabled:cursor-not-allowed disabled:opacity-40",
-                      ].join(" ")}
-                    >
-                      +
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              {/* 추가된 항목 목록 */}
-              {items.length > 0 ? (
-                <div className="space-y-3">
-                  {items.map((it) => (
-                    <div
-                      key={it.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => startEditItem(it)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          startEditItem(it);
-                        }
-                      }}
-                      className="cursor-pointer rounded-md px-1 py-1 outline-none transition-colors hover:bg-black/[0.02] focus:bg-black/[0.04]"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="text-[13px] font-semibold text-orange-700">{it.time}</div>
-                          <div className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-900">
-                            {it.content}
+                {/* 추가된 항목 목록 */}
+                {items.length > 0 ? (
+                  <div className="space-y-3">
+                    {items.map((it) => (
+                      <div
+                        key={it.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => startEditItem(it)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            startEditItem(it);
+                          }
+                        }}
+                        className="cursor-pointer rounded-md px-1 py-1 outline-none transition-colors hover:bg-black/[0.02] focus:bg-black/[0.04]"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-[13px] font-semibold text-orange-700">{it.time}</div>
+                            <div className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-900">
+                              {it.content}
+                            </div>
                           </div>
+                          {editingId === it.id ? (
+                            <button
+                              type="button"
+                              aria-label="항목 삭제"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                deleteItemById(it.id);
+                              }}
+                              className="h-8 min-w-[32px] select-none bg-transparent text-[18px] font-semibold leading-none text-orange-700 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md"
+                            >
+                              −
+                            </button>
+                          ) : null}
                         </div>
-                        {editingId === it.id ? (
-                          <button
-                            type="button"
-                            aria-label="항목 삭제"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteItemById(it.id);
-                            }}
-                            className="h-8 min-w-[32px] select-none bg-transparent text-[18px] font-semibold leading-none text-orange-700 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md"
-                          >
-                            −
-                          </button>
-                        ) : null}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-xs text-slate-500">아직 추가된 시간이 없어요.</p>
-              )}
-            </div>
-          </section>
-        </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-xs text-slate-500">아직 추가된 시간이 없어요.</p>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
       </div>
 
       {!isDatePickerOpen ? (
