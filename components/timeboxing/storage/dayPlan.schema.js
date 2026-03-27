@@ -26,6 +26,7 @@ export function normalizeDayPlan(input) {
           id: typeof it.id === "string" ? it.id : `${Date.now()}_${Math.random().toString(16).slice(2)}`,
           time: typeof it.time === "string" ? it.time : "09:00",
           content: typeof it.content === "string" ? it.content : "",
+          done: typeof it.done === "boolean" ? it.done : false,
         }))
         .filter((it) => it.content.trim().length > 0)
     : base.items;

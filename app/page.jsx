@@ -103,6 +103,7 @@ export default function Page() {
           id,
           time: newTime,
           content: newContent.trim(),
+          done: false,
         },
       ])
     );
@@ -155,6 +156,19 @@ export default function Page() {
     }
   };
 
+  const toggleItemDoneById = (id) => {
+    setItems((prev) =>
+      prev.map((it) =>
+        it.id === id
+          ? {
+              ...it,
+              done: !it.done,
+            }
+          : it
+      )
+    );
+  };
+
   const handleItemTouchStart = (id, event) => {
     const touch = event.touches?.[0];
     if (!touch) return;
@@ -189,7 +203,7 @@ export default function Page() {
       gesture.horizontalLocked = true;
     }
 
-    const nextOffset = Math.max(-120, Math.min(0, dx));
+    const nextOffset = Math.max(-120, Math.min(96, dx));
     gesture.didMove = Math.abs(nextOffset) > 10;
     setSwipeOffsetX(nextOffset);
   };
@@ -198,6 +212,7 @@ export default function Page() {
     const gesture = swipeGestureRef.current;
     const isSameItem = gesture.itemId === id;
     const shouldDelete = isSameItem && swipeOffsetX <= -72;
+    const shouldToggleDone = isSameItem && swipeOffsetX >= 56;
     const didMove = isSameItem && gesture.didMove;
 
     swipeGestureRef.current = {
@@ -213,6 +228,10 @@ export default function Page() {
 
     if (shouldDelete) {
       deleteItemById(id);
+      return true;
+    }
+    if (shouldToggleDone) {
+      toggleItemDoneById(id);
       return true;
     }
     return didMove;
@@ -698,7 +717,10 @@ export default function Page() {
                         onTouchCancel={() => {
                           handleItemTouchEnd(it.id);
                         }}
-                        className="cursor-pointer rounded-md px-1 py-1 outline-none transition-colors hover:bg-black/[0.02] focus:bg-black/[0.04]"
+                        className={[
+                          "cursor-pointer rounded-md px-1 py-1 outline-none transition-colors",
+                          it.done ? "bg-emerald-50/70" : "hover:bg-black/[0.02] focus:bg-black/[0.04]",
+                        ].join(" ")}
                         style={{
                           touchAction: "pan-y",
                           transform:
@@ -714,10 +736,20 @@ export default function Page() {
                         <div className="flex items-start gap-2">
                           <div className="min-w-0">
                             <div className="text-[13px] font-semibold text-orange-700">{it.time}</div>
-                            <div className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-900">
+                            <div
+                              className={[
+                                "mt-1 whitespace-pre-wrap break-words text-sm",
+                                it.done ? "text-slate-500 line-through" : "text-slate-900",
+                              ].join(" ")}
+                            >
                               {it.content}
                             </div>
                           </div>
+                          {it.done ? (
+                            <span className="mt-0.5 inline-flex h-5 min-w-[38px] items-center justify-center rounded-full bg-emerald-100 px-2 text-[11px] font-semibold text-emerald-700">
+                              실행
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     ))}
@@ -819,11 +851,29 @@ export default function Page() {
                   {items.length > 0 ? (
                     <div className="mt-2 space-y-2.5">
                       {items.map((it) => (
-                        <div key={it.id} className="flex items-start gap-3">
+                        <div
+                          key={it.id}
+                          className={[
+                            "flex items-start gap-3 rounded-md px-2 py-1",
+                            it.done ? "bg-emerald-50/70" : "",
+                          ].join(" ")}
+                        >
                           <div className="min-w-[58px] text-[12px] font-semibold text-orange-700">
                             {it.time}
                           </div>
-                          <div className="flex-1 break-words text-sm text-slate-900">{it.content}</div>
+                          <div
+                            className={[
+                              "flex-1 break-words text-sm",
+                              it.done ? "text-slate-500 line-through" : "text-slate-900",
+                            ].join(" ")}
+                          >
+                            {it.content}
+                          </div>
+                          {it.done ? (
+                            <span className="inline-flex h-5 min-w-[38px] items-center justify-center rounded-full bg-emerald-100 px-2 text-[11px] font-semibold text-emerald-700">
+                              실행
+                            </span>
+                          ) : null}
                         </div>
                       ))}
                     </div>
