@@ -49,6 +49,7 @@ export default function Page() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [readyDate, setReadyDate] = useState("");
+  const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(false);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
   const [markedDates, setMarkedDates] = useState(new Set());
@@ -169,6 +170,13 @@ export default function Page() {
       setIsDatePickerOpen(true);
     });
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialSkeletonDelayDone(true);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -292,7 +300,7 @@ export default function Page() {
     });
   }, [isDatePickerOpen, calendarMonthRange, selectedDate]);
 
-  const isDayPlanLoading = readyDate === "";
+  const isDayPlanLoading = readyDate === "" || !isInitialSkeletonDelayDone;
 
   return (
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
