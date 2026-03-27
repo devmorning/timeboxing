@@ -297,85 +297,97 @@ export default function Page() {
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
       <header className="fixed inset-x-0 top-0 z-50 bg-[#F2F2F7]/95 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-md px-4 py-3">
-          {!isDatePickerOpen ? (
-            <div className="flex items-center justify-between">
-              <button
-                type="button"
-                aria-label="전날"
-                className={[
-                  // iOS 캘린더 느낌: 배경/테두리 없이 심플한 아이콘 버튼
-                  "h-10 min-w-[44px] select-none bg-transparent text-[22px] font-semibold leading-none",
-                  "text-orange-700 active:opacity-60",
-                  "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                ].join(" ")}
-                onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
-              >
-                ‹
-              </button>
+          <div
+            className={[
+              "grid h-10 w-full grid-cols-[minmax(44px,auto)_1fr_minmax(44px,auto)] items-center",
+              "gap-0",
+            ].join(" ")}
+          >
+            {!isDatePickerOpen ? (
+              <>
+                <button
+                  type="button"
+                  aria-label="전날"
+                  className={[
+                    "flex h-10 w-full min-w-[44px] select-none items-center justify-center bg-transparent text-[22px] font-semibold leading-none",
+                    "text-orange-700 active:opacity-60",
+                    "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                  ].join(" ")}
+                  onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
+                >
+                  ‹
+                </button>
 
-              <button
-                type="button"
-                aria-label="날짜 선택 열기"
-                className="rounded-md px-2 py-1 text-[13px] font-semibold text-slate-600 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  const activeEl = document.activeElement;
-                  if (
-                    activeEl instanceof HTMLElement &&
-                    (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
-                  ) {
-                    activeEl.blur();
-                  }
-                }}
-                onClick={openInlineCalendar}
-                suppressHydrationWarning
-              >
-                <span className="inline-flex items-center">{selectedDateLabel}</span>
-              </button>
+                <button
+                  type="button"
+                  aria-label="날짜 선택 열기"
+                  className={[
+                    "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-[13px] font-semibold text-slate-600",
+                    "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                  ].join(" ")}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const activeEl = document.activeElement;
+                    if (
+                      activeEl instanceof HTMLElement &&
+                      (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+                    ) {
+                      activeEl.blur();
+                    }
+                  }}
+                  onClick={openInlineCalendar}
+                  suppressHydrationWarning
+                >
+                  <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
+                </button>
 
-              <button
-                type="button"
-                aria-label="다음날"
-                className={[
-                  // iOS 캘린더 느낌: 배경/테두리 없이 심플한 아이콘 버튼
-                  "h-10 min-w-[44px] select-none bg-transparent text-[22px] font-semibold leading-none",
-                  "text-orange-700 active:opacity-60",
-                  "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                ].join(" ")}
-                onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
-              >
-                ›
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between px-1">
-              <button
-                type="button"
-                aria-label="캘린더 닫기"
-                onClick={closeInlineCalendar}
-                className="min-w-0 flex-1 rounded-md px-1 py-1 text-left text-[13px] font-semibold text-slate-600 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
-                suppressHydrationWarning
-              >
-                {selectedDateLabel}
-              </button>
-              <button
-                type="button"
-                aria-label="오늘 날짜로 이동"
-                onClick={() => {
-                  const today = toLocalYmd(new Date());
-                  setSelectedDate(today);
-                  closeInlineCalendar();
-                }}
-                className="h-8 min-w-[44px] shrink-0 rounded-md bg-transparent text-orange-700 active:opacity-60"
-              >
-                <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
-                  ◎
-                </span>
-                <span className="sr-only">오늘</span>
-              </button>
-            </div>
-          )}
+                <button
+                  type="button"
+                  aria-label="다음날"
+                  className={[
+                    "flex h-10 w-full min-w-[44px] select-none items-center justify-center bg-transparent text-[22px] font-semibold leading-none",
+                    "text-orange-700 active:opacity-60",
+                    "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                  ].join(" ")}
+                  onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
+                >
+                  ›
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="h-10 min-w-[44px]" aria-hidden />
+                <button
+                  type="button"
+                  aria-label="캘린더 닫기"
+                  onClick={closeInlineCalendar}
+                  className={[
+                    "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-[13px] font-semibold text-slate-600",
+                    "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                  ].join(" ")}
+                  suppressHydrationWarning
+                >
+                  <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
+                </button>
+                <button
+                  type="button"
+                  aria-label="오늘 날짜로 이동"
+                  onClick={() => {
+                    const today = toLocalYmd(new Date());
+                    setSelectedDate(today);
+                    closeInlineCalendar();
+                  }}
+                  className="flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60"
+                >
+                  <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
+                    ◎
+                  </span>
+                  <span className="sr-only">오늘</span>
+                </button>
+              </>
+            )}
+          </div>
 
           <div
             data-testid="inline-calendar-panel"
