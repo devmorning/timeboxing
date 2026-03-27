@@ -15,7 +15,7 @@ export function getCellsForMonth(ym) {
   const firstDay = new Date(year, month - 1, 1);
   const startWeekday = firstDay.getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
-  const total = 42;
+  const total = Math.ceil((startWeekday + daysInMonth) / 7) * 7;
   const cells = [];
   for (let idx = 0; idx < total; idx += 1) {
     const day = idx - startWeekday + 1;
