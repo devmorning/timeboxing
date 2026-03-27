@@ -626,9 +626,9 @@ export default function Page() {
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
           onClick={() => setIsReportOpen(false)}
         >
-          <div className="mx-auto flex h-full min-h-0 w-full max-w-md items-end justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-10">
+          <div className="mx-auto flex h-full min-h-0 w-full max-w-md items-end justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-[calc(4.5rem+env(safe-area-inset-top,0px))]">
             <section
-              className="flex max-h-[min(88vh,calc(100dvh-2.5rem))] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5"
+              className="flex max-h-[calc(100dvh-6rem-env(safe-area-inset-top,0px))] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-3">
