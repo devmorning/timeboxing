@@ -63,6 +63,13 @@ export default function Page() {
     horizontalLocked: false,
     didMove: false,
   });
+  const reportSwipeRef = useRef({
+    startX: 0,
+    startY: 0,
+    tracking: false,
+    horizontalLocked: false,
+    moved: false,
+  });
 
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
@@ -235,6 +242,70 @@ export default function Page() {
       return true;
     }
     return didMove;
+  };
+
+  const handleReportTouchStart = (event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    reportSwipeRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      tracking: true,
+      horizontalLocked: false,
+      moved: false,
+    };
+  };
+
+  const handleReportTouchMove = (event) => {
+    const touch = event.touches?.[0];
+    const gesture = reportSwipeRef.current;
+    if (!touch || !gesture.tracking) return;
+
+    const dx = touch.clientX - gesture.startX;
+    const dy = touch.clientY - gesture.startY;
+
+    if (!gesture.horizontalLocked) {
+      if (Math.abs(dx) < 8) return;
+      if (Math.abs(dx) <= Math.abs(dy)) {
+        gesture.tracking = false;
+        return;
+      }
+      gesture.horizontalLocked = true;
+    }
+    if (Math.abs(dx) > 12) {
+      gesture.moved = true;
+    }
+  };
+
+  const handleReportTouchEnd = (event) => {
+    const touch = event.changedTouches?.[0];
+    const gesture = reportSwipeRef.current;
+    if (!touch || !gesture.tracking) return;
+
+    const dx = touch.clientX - gesture.startX;
+    const isHorizontal = gesture.horizontalLocked || Math.abs(dx) > 24;
+
+    reportSwipeRef.current = {
+      startX: 0,
+      startY: 0,
+      tracking: false,
+      horizontalLocked: false,
+      moved: false,
+    };
+
+    if (!isHorizontal) return;
+
+    if (dx <= -72) {
+      setSelectedDate((d) => addDaysToYmd(d, 1));
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (dx >= 72) {
+      setSelectedDate((d) => addDaysToYmd(d, -1));
+      event.preventDefault();
+      event.stopPropagation();
+    }
   };
 
   const closeInlineCalendar = useCallback(() => {
@@ -801,6 +872,19 @@ export default function Page() {
             <section
               className="flex h-full w-full flex-col overflow-hidden bg-white"
               onClick={(e) => e.stopPropagation()}
+              onTouchStart={handleReportTouchStart}
+              onTouchMove={handleReportTouchMove}
+              onTouchEnd={handleReportTouchEnd}
+              onTouchCancel={() => {
+                reportSwipeRef.current = {
+                  startX: 0,
+                  startY: 0,
+                  tracking: false,
+                  horizontalLocked: false,
+                  moved: false,
+                };
+              }}
+              style={{ touchAction: "pan-y" }}
             >
               <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-3">
                 <p
