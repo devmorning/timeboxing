@@ -634,7 +634,10 @@ export default function Page() {
             <button
               type="button"
               aria-label="TIME 버튼"
-              onClick={() => setIsReportOpen(true)}
+              onClick={() => {
+                setIsDatePickerOpen(false);
+                setIsReportOpen(true);
+              }}
               className={[
                 "h-11 min-w-[44px] rounded-full bg-orange-600 px-3",
                 "inline-flex items-center justify-center text-[18px] font-semibold text-white shadow-md",
