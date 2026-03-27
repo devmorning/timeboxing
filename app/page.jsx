@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import TextInput from "../components/textinput/TextInput.jsx";
 import { addDaysToYmd } from "../components/timeboxing/utils/dateYmd.js";
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
+import { hasDayPlanContent } from "../components/timeboxing/storage/dayPlan.schema.js";
 
 export default function Page() {
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
@@ -37,11 +38,45 @@ export default function Page() {
   const [items, setItems] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [readyDate, setReadyDate] = useState("");
+  const [visibleMonthYmd, setVisibleMonthYmd] = useState(() => toLocalYmd(new Date()).slice(0, 7));
+  const [markedDates, setMarkedDates] = useState(new Set());
 
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
   }, [newContent]);
+
+  const visibleMonthLabel = useMemo(() => {
+    const [year, month] = visibleMonthYmd.split("-").map(Number);
+    return `${year}년 ${month}월`;
+  }, [visibleMonthYmd]);
+
+  const calendarCells = useMemo(() => {
+    const [year, month] = visibleMonthYmd.split("-").map(Number);
+    const firstDay = new Date(year, month - 1, 1);
+    const startWeekday = firstDay.getDay();
+    const daysInMonth = new Date(year, month, 0).getDate();
+    // 모달 높이 고정을 위해 항상 6주(42칸) 렌더링
+    const total = 42;
+    const cells = [];
+
+    for (let idx = 0; idx < total; idx += 1) {
+      const day = idx - startWeekday + 1;
+      if (day < 1 || day > daysInMonth) {
+        cells.push(null);
+        continue;
+      }
+
+      const dateYmd = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      cells.push({
+        day,
+        dateYmd,
+      });
+    }
+
+    return cells;
+  }, [visibleMonthYmd]);
 
   const filledImportant3 = useMemo(
     () => important3.map((v) => v.trim()).filter(Boolean),
@@ -176,50 +211,223 @@ export default function Page() {
     };
   }, [readyDate, selectedDate, important3, brainDump, items, dayPlanRepository]);
 
+  useEffect(() => {
+    if (!isDatePickerOpen) return;
+    const [year, month] = visibleMonthYmd.split("-").map(Number);
+    let cancelled = false;
+
+    const loadMarkedDates = async () => {
+      try {
+        const list = await dayPlanRepository.listMarkedDatesInMonth(year, month);
+        if (cancelled) return;
+        setMarkedDates(new Set(list));
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load marked dates", error);
+          setMarkedDates(new Set());
+        }
+      }
+    };
+
+    loadMarkedDates();
+    return () => {
+      cancelled = true;
+    };
+  }, [isDatePickerOpen, visibleMonthYmd, dayPlanRepository]);
+
+  useEffect(() => {
+    if (!isDatePickerOpen) return;
+    if (!selectedDate.startsWith(`${visibleMonthYmd}-`)) return;
+
+    const hasContent = hasDayPlanContent({ important3, brainDump, items });
+    setMarkedDates((prev) => {
+      const next = new Set(prev);
+      if (hasContent) next.add(selectedDate);
+      else next.delete(selectedDate);
+      return next;
+    });
+  }, [isDatePickerOpen, selectedDate, visibleMonthYmd, important3, brainDump, items]);
+
   return (
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
       <header className="fixed inset-x-0 top-0 z-30 bg-[#F2F2F7]/95 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-md px-4 py-3">
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              aria-label="전날"
-              className={[
-                // iOS 캘린더 느낌: 배경/테두리 없이 심플한 아이콘 버튼
-                "h-10 min-w-[44px] select-none bg-transparent text-[22px] font-semibold leading-none",
-                "text-orange-700 active:opacity-60",
-                "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-              ].join(" ")}
-              onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
-            >
-              ‹
-            </button>
+          {!isDatePickerOpen ? (
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                aria-label="전날"
+                className={[
+                  // iOS 캘린더 느낌: 배경/테두리 없이 심플한 아이콘 버튼
+                  "h-10 min-w-[44px] select-none bg-transparent text-[22px] font-semibold leading-none",
+                  "text-orange-700 active:opacity-60",
+                  "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                ].join(" ")}
+                onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
+              >
+                ‹
+              </button>
 
-            <div
-              className="text-[13px] font-semibold text-slate-600"
-              suppressHydrationWarning
-            >
-              {selectedDateLabel}
+              <button
+                type="button"
+                className="rounded-md px-2 py-1 text-[13px] font-semibold text-slate-600 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
+                onClick={() => {
+                  setVisibleMonthYmd(selectedDate.slice(0, 7));
+                  setIsDatePickerOpen(true);
+                }}
+                suppressHydrationWarning
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  {selectedDateLabel}
+                  <span
+                    aria-hidden
+                    className="inline-block text-[11px] text-slate-500 transition-transform duration-300"
+                  >
+                    ▾
+                  </span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                aria-label="다음날"
+                className={[
+                  // iOS 캘린더 느낌: 배경/테두리 없이 심플한 아이콘 버튼
+                  "h-10 min-w-[44px] select-none bg-transparent text-[22px] font-semibold leading-none",
+                  "text-orange-700 active:opacity-60",
+                  "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                ].join(" ")}
+                onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
+              >
+                ›
+              </button>
             </div>
+          ) : (
+            <div className="flex items-center justify-between px-1">
+              <p className="text-[13px] font-semibold text-slate-600" suppressHydrationWarning>
+                {selectedDateLabel}
+              </p>
+              <button
+                type="button"
+                aria-label="오늘 날짜로 이동"
+                onClick={() => {
+                  const today = toLocalYmd(new Date());
+                  setSelectedDate(today);
+                  setVisibleMonthYmd(today.slice(0, 7));
+                  setIsDatePickerOpen(false);
+                }}
+                className="h-8 min-w-[44px] rounded-md bg-transparent text-orange-700 active:opacity-60"
+              >
+                <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
+                  ◎
+                </span>
+                <span className="sr-only">오늘</span>
+              </button>
+            </div>
+          )}
 
-            <button
-              type="button"
-              aria-label="다음날"
+          <div
+            className={[
+              "overflow-hidden transition-all duration-300 ease-out",
+              isDatePickerOpen ? "max-h-[320px] opacity-100 pt-3" : "max-h-0 opacity-0 pt-0",
+            ].join(" ")}
+          >
+            <section
               className={[
-                // iOS 캘린더 느낌: 배경/테두리 없이 심플한 아이콘 버튼
-                "h-10 min-w-[44px] select-none bg-transparent text-[22px] font-semibold leading-none",
-                "text-orange-700 active:opacity-60",
-                "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                "rounded-2xl bg-transparent px-1 py-2",
+                "transition-all duration-300 ease-out",
+                isDatePickerOpen ? "translate-y-0 scale-100" : "-translate-y-1 scale-[0.98]",
               ].join(" ")}
-              onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
             >
-              ›
-            </button>
+              <div className="mb-3 flex items-center justify-between">
+                <button
+                  type="button"
+                  aria-label="이전 달"
+                  onClick={() => {
+                    const [year, month] = visibleMonthYmd.split("-").map(Number);
+                    const prev = new Date(year, month - 2, 1);
+                    setVisibleMonthYmd(
+                      `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`
+                    );
+                  }}
+                  className="h-9 min-w-[44px] rounded-md bg-transparent text-[20px] font-semibold text-orange-700 active:opacity-60"
+                >
+                  ‹
+                </button>
+                <h2 className="text-sm font-semibold text-slate-700">{visibleMonthLabel}</h2>
+                <button
+                  type="button"
+                  aria-label="다음 달"
+                  onClick={() => {
+                    const [year, month] = visibleMonthYmd.split("-").map(Number);
+                    const next = new Date(year, month, 1);
+                    setVisibleMonthYmd(
+                      `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`
+                    );
+                  }}
+                  className="h-9 min-w-[44px] rounded-md bg-transparent text-[20px] font-semibold text-orange-700 active:opacity-60"
+                >
+                  ›
+                </button>
+              </div>
+
+              <div className="grid grid-cols-7 gap-1.5 text-center text-[12px] font-semibold text-slate-400">
+                {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
+                  <div key={d} className="py-1">
+                    {d}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-1 grid grid-cols-7 gap-1.5">
+                {calendarCells.map((cell, idx) => {
+                  if (!cell) {
+                    return <div key={`empty_${idx}`} className="h-9" />;
+                  }
+
+                  const isSelected = cell.dateYmd === selectedDate;
+                  const isMarked = markedDates.has(cell.dateYmd);
+
+                  return (
+                    <button
+                      key={cell.dateYmd}
+                      type="button"
+                      onClick={() => {
+                        setSelectedDate(cell.dateYmd);
+                        setIsDatePickerOpen(false);
+                      }}
+                      className={[
+                        "relative h-9 rounded-full text-sm font-medium transition-colors",
+                        isSelected
+                          ? "bg-orange-600 text-white"
+                          : "bg-transparent text-slate-700 hover:bg-black/[0.04]",
+                        "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                      ].join(" ")}
+                    >
+                      {cell.day}
+                      {isMarked ? (
+                        <span
+                          className={[
+                            "absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full",
+                            isSelected ? "bg-white" : "bg-orange-500",
+                          ].join(" ")}
+                        />
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-md px-4 pb-24 pt-20">
+      <div
+        className={[
+          "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
+          isDatePickerOpen ? "pt-[332px]" : "pt-20",
+        ].join(" ")}
+      >
         <div className="space-y-8">
           {/* 1) 가장 중요한 3가지 */}
           <section>
@@ -478,6 +686,7 @@ export default function Page() {
           </div>
         </div>
       ) : null}
+
     </main>
   );
 }

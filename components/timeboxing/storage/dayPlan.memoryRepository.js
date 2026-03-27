@@ -1,4 +1,4 @@
-import { createEmptyDayPlan, normalizeDayPlan } from "./dayPlan.schema.js";
+import { createEmptyDayPlan, hasDayPlanContent, normalizeDayPlan } from "./dayPlan.schema.js";
 
 export function createMemoryDayPlanRepository() {
   const store = new Map();
@@ -10,6 +10,18 @@ export function createMemoryDayPlanRepository() {
     },
     async saveByDate(dateYmd, plan) {
       store.set(dateYmd, normalizeDayPlan(plan));
+    },
+    async listMarkedDatesInMonth(year, month) {
+      const mm = String(month).padStart(2, "0");
+      const prefix = `${year}-${mm}-`;
+      const result = [];
+
+      store.forEach((value, key) => {
+        if (!key.startsWith(prefix)) return;
+        if (hasDayPlanContent(value)) result.push(key);
+      });
+
+      return result;
     },
   };
 }

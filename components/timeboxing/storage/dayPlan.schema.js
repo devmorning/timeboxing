@@ -32,3 +32,10 @@ export function normalizeDayPlan(input) {
 
   return { important3, brainDump, items };
 }
+
+export function hasDayPlanContent(input) {
+  const plan = normalizeDayPlan(input);
+  if (plan.items.length > 0) return true;
+  if (plan.brainDump.trim().length > 0) return true;
+  return plan.important3.some((v) => v.trim().length > 0);
+}

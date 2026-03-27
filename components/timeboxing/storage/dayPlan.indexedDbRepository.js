@@ -1,4 +1,4 @@
-import { DAY_PLAN_STORE_NAME, createEmptyDayPlan, normalizeDayPlan } from "./dayPlan.schema.js";
+import { DAY_PLAN_STORE_NAME, createEmptyDayPlan, hasDayPlanContent, normalizeDayPlan } from "./dayPlan.schema.js";
 
 const DB_NAME = "timeboxing_app";
 const DB_VERSION = 1;
@@ -85,6 +85,40 @@ export function createIndexedDbDayPlanRepository() {
           const req = store.put(payload);
           req.onsuccess = () => done(undefined);
           req.onerror = () => fail(req.error || new Error("IndexedDB write failed"));
+        }
+      );
+    },
+    async listMarkedDatesInMonth(year, month) {
+      const db = await getDb();
+      const mm = String(month).padStart(2, "0");
+      const prefix = `${year}-${mm}-`;
+      const nextPrefix = month === 12
+        ? `${year + 1}-01-`
+        : `${year}-${String(month + 1).padStart(2, "0")}-`;
+
+      return withStore(
+        db,
+        "readonly",
+        (store, done, fail) => {
+          const keyRange = window.IDBKeyRange.bound(prefix, `${nextPrefix}~`, false, false);
+          const request = store.openCursor(keyRange);
+          const markedDates = [];
+
+          request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (!cursor) {
+              done(markedDates);
+              return;
+            }
+
+            const row = cursor.value;
+            if (row?.date && hasDayPlanContent(row)) {
+              markedDates.push(row.date);
+            }
+            cursor.continue();
+          };
+
+          request.onerror = () => fail(request.error || new Error("IndexedDB cursor failed"));
         }
       );
     },
