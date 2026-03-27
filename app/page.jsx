@@ -394,7 +394,7 @@ export default function Page() {
             className={[
               "overflow-hidden transition-all duration-300 ease-out",
               isDatePickerOpen
-                ? "flex max-h-[calc(100dvh-5.5rem)] flex-col opacity-100 pt-3"
+                ? "flex max-h-[calc(100dvh-4rem)] flex-col opacity-100 pt-3"
                 : "max-h-0 opacity-0 pt-0",
             ].join(" ")}
           >
@@ -428,7 +428,7 @@ export default function Page() {
       <div
         className={[
           "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
-          isDatePickerOpen ? "pt-[calc(100dvh-5.5rem)]" : "pt-20",
+          isDatePickerOpen ? "pt-[calc(100dvh-4rem)]" : "pt-20",
         ].join(" ")}
       >
         <div className="space-y-8">
@@ -597,33 +597,28 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30">
-        <div className="mx-auto w-full max-w-md px-4 pb-4 pt-2">
-          <div className="flex justify-end">
-            <button
-              type="button"
-              aria-label="일정 리포트 열기"
-              onClick={() => {
-                setIsDatePickerOpen(false);
-                setIsReportOpen(true);
-              }}
-              className={[
-                "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-600 p-0",
-                "text-white shadow-md",
-                "active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30",
-              ].join(" ")}
-            >
-              <i className="fas fa-clipboard-list text-[22px] leading-none" aria-hidden />
-            </button>
+      {!isDatePickerOpen ? (
+        <div className="fixed inset-x-0 bottom-0 z-30">
+          <div className="mx-auto w-full max-w-md px-4 pb-4 pt-2">
+            <div className="flex justify-end">
+              <button
+                type="button"
+                aria-label="일정 리포트 열기"
+                onClick={() => {
+                  setIsDatePickerOpen(false);
+                  setIsReportOpen(true);
+                }}
+                className={[
+                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-600 p-0",
+                  "text-white shadow-md",
+                  "active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30",
+                ].join(" ")}
+              >
+                <i className="fas fa-clipboard-list text-[22px] leading-none" aria-hidden />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-
-      {isDatePickerOpen ? (
-        <div
-          aria-hidden
-          className="fixed inset-x-0 bottom-0 z-40 h-[5.5rem] bg-[#F2F2F7]"
-        />
       ) : null}
 
       {isReportOpen ? (
