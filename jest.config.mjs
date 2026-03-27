@@ -4,7 +4,22 @@ const config = {
   moduleFileExtensions: ["js", "jsx", "json"],
   testMatch: ["**/__tests__/**/*.(test|spec).jsx"],
   transform: {
-    "^.+\\.(js|jsx)$": "babel-jest",
+    "^.+\\.(js|jsx)$": [
+      "@swc/jest",
+      {
+        jsc: {
+          parser: {
+            syntax: "ecmascript",
+            jsx: true,
+          },
+          transform: {
+            react: {
+              runtime: "automatic",
+            },
+          },
+        },
+      },
+    ],
   },
   moduleNameMapper: {
     "\\.(css|less|sass|scss)$": "identity-obj-proxy",
