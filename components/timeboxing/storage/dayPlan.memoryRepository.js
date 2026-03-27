@@ -23,5 +23,13 @@ export function createMemoryDayPlanRepository() {
 
       return result;
     },
+    async listMarkedDatesInRange(startYmd, endYmd) {
+      const result = [];
+      store.forEach((value, key) => {
+        if (key < startYmd || key > endYmd) return;
+        if (hasDayPlanContent(value)) result.push(key);
+      });
+      return result;
+    },
   };
 }

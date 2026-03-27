@@ -1,7 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  startTransition,
+} from "react";
 import TextInput from "../components/textinput/TextInput.jsx";
+import { InlineCalendarMonth } from "../components/timeboxing/InlineCalendarMonth.jsx";
+import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/utils/calendarMonth.js";
 import { addDaysToYmd } from "../components/timeboxing/utils/dateYmd.js";
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
 import { hasDayPlanContent } from "../components/timeboxing/storage/dayPlan.schema.js";
@@ -40,43 +49,13 @@ export default function Page() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [readyDate, setReadyDate] = useState("");
-  const [visibleMonthYmd, setVisibleMonthYmd] = useState(() => toLocalYmd(new Date()).slice(0, 7));
+  /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
+  const [calendarMonthRange, setCalendarMonthRange] = useState(null);
   const [markedDates, setMarkedDates] = useState(new Set());
 
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
   }, [newContent]);
-
-  const visibleMonthLabel = useMemo(() => {
-    const [year, month] = visibleMonthYmd.split("-").map(Number);
-    return `${year}년 ${month}월`;
-  }, [visibleMonthYmd]);
-
-  const calendarCells = useMemo(() => {
-    const [year, month] = visibleMonthYmd.split("-").map(Number);
-    const firstDay = new Date(year, month - 1, 1);
-    const startWeekday = firstDay.getDay();
-    const daysInMonth = new Date(year, month, 0).getDate();
-    // 모달 높이 고정을 위해 항상 6주(42칸) 렌더링
-    const total = 42;
-    const cells = [];
-
-    for (let idx = 0; idx < total; idx += 1) {
-      const day = idx - startWeekday + 1;
-      if (day < 1 || day > daysInMonth) {
-        cells.push(null);
-        continue;
-      }
-
-      const dateYmd = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-      cells.push({
-        day,
-        dateYmd,
-      });
-    }
-
-    return cells;
-  }, [visibleMonthYmd]);
 
   const filledImportant3 = useMemo(
     () => important3.map((v) => v.trim()).filter(Boolean),
@@ -154,10 +133,19 @@ export default function Page() {
     }
   };
 
-  const closeInlineCalendar = () => {
+  const closeInlineCalendar = useCallback(() => {
     setIsDatePickerOpen(false);
+    setCalendarMonthRange(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
+
+  const handlePickCalendarDate = useCallback(
+    (dateYmd) => {
+      setSelectedDate(dateYmd);
+      closeInlineCalendar();
+    },
+    [closeInlineCalendar]
+  );
 
   const openInlineCalendar = (event) => {
     event?.preventDefault();
@@ -173,7 +161,10 @@ export default function Page() {
 
     // 입력 포커스/키보드 닫힘 중 레이아웃 흔들림을 피하려고 즉시 상단 이동 후 캘린더를 연다.
     window.scrollTo({ top: 0, behavior: "auto" });
-    setVisibleMonthYmd(selectedDate.slice(0, 7));
+    // 무거운 월 목록 렌더는 transition으로 분리해 메인 스레드 블로킹 완화
+    startTransition(() => {
+      setCalendarMonthRange(buildMonthKeys(selectedDate.slice(0, 7), 12, 12));
+    });
     requestAnimationFrame(() => {
       setIsDatePickerOpen(true);
     });
@@ -237,13 +228,30 @@ export default function Page() {
   }, [readyDate, selectedDate, important3, brainDump, items, dayPlanRepository]);
 
   useEffect(() => {
-    if (!isDatePickerOpen) return;
-    const [year, month] = visibleMonthYmd.split("-").map(Number);
+    if (!isDatePickerOpen || !calendarMonthRange?.length) return;
     let cancelled = false;
 
     const loadMarkedDates = async () => {
       try {
-        const list = await dayPlanRepository.listMarkedDatesInMonth(year, month);
+        const bounds = getRangeYmdBounds(calendarMonthRange);
+        if (!bounds) return;
+
+        let list;
+        if (typeof dayPlanRepository.listMarkedDatesInRange === "function") {
+          list = await dayPlanRepository.listMarkedDatesInRange(
+            bounds.startYmd,
+            bounds.endYmd
+          );
+        } else {
+          const lists = await Promise.all(
+            calendarMonthRange.map((ym) => {
+              const [year, month] = ym.split("-").map(Number);
+              return dayPlanRepository.listMarkedDatesInMonth(year, month);
+            })
+          );
+          list = lists.flat();
+        }
+
         if (cancelled) return;
         setMarkedDates(new Set(list));
       } catch (error) {
@@ -258,11 +266,10 @@ export default function Page() {
     return () => {
       cancelled = true;
     };
-  }, [isDatePickerOpen, visibleMonthYmd, dayPlanRepository]);
+  }, [isDatePickerOpen, calendarMonthRange, dayPlanRepository]);
 
   useEffect(() => {
     if (!isDatePickerOpen) return;
-    if (!selectedDate.startsWith(`${visibleMonthYmd}-`)) return;
 
     const hasContent = hasDayPlanContent({ important3, brainDump, items });
     setMarkedDates((prev) => {
@@ -271,7 +278,20 @@ export default function Page() {
       else next.delete(selectedDate);
       return next;
     });
-  }, [isDatePickerOpen, selectedDate, visibleMonthYmd, important3, brainDump, items]);
+  }, [isDatePickerOpen, selectedDate, important3, brainDump, items]);
+
+  useEffect(() => {
+    if (!isDatePickerOpen || !calendarMonthRange?.length) return;
+    const ym = selectedDate.slice(0, 7);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = document.getElementById(`cal-month-${ym}`);
+        if (el && typeof el.scrollIntoView === "function") {
+          el.scrollIntoView({ block: "center", behavior: "auto" });
+        }
+      });
+    });
+  }, [isDatePickerOpen, calendarMonthRange, selectedDate]);
 
   return (
     <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
@@ -330,19 +350,24 @@ export default function Page() {
             </div>
           ) : (
             <div className="flex items-center justify-between px-1">
-              <p className="text-[13px] font-semibold text-slate-600" suppressHydrationWarning>
+              <button
+                type="button"
+                aria-label="캘린더 닫기"
+                onClick={closeInlineCalendar}
+                className="min-w-0 flex-1 rounded-md px-1 py-1 text-left text-[13px] font-semibold text-slate-600 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
+                suppressHydrationWarning
+              >
                 {selectedDateLabel}
-              </p>
+              </button>
               <button
                 type="button"
                 aria-label="오늘 날짜로 이동"
                 onClick={() => {
                   const today = toLocalYmd(new Date());
                   setSelectedDate(today);
-                  setVisibleMonthYmd(today.slice(0, 7));
                   closeInlineCalendar();
                 }}
-                className="h-8 min-w-[44px] rounded-md bg-transparent text-orange-700 active:opacity-60"
+                className="h-8 min-w-[44px] shrink-0 rounded-md bg-transparent text-orange-700 active:opacity-60"
               >
                 <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
                   ◎
@@ -356,104 +381,33 @@ export default function Page() {
             data-testid="inline-calendar-panel"
             className={[
               "overflow-hidden transition-all duration-300 ease-out",
-              isDatePickerOpen ? "max-h-[320px] opacity-100 pt-3" : "max-h-0 opacity-0 pt-0",
+              isDatePickerOpen
+                ? "flex max-h-[calc(100dvh-10rem)] flex-col opacity-100 pt-3"
+                : "max-h-0 opacity-0 pt-0",
             ].join(" ")}
           >
             <section
               className={[
-                "rounded-2xl bg-transparent px-1 py-2",
+                "flex min-h-0 flex-1 flex-col rounded-2xl bg-transparent px-1 py-2",
                 "transition-all duration-300 ease-out",
                 isDatePickerOpen ? "translate-y-0 scale-100" : "-translate-y-1 scale-[0.98]",
               ].join(" ")}
             >
-              <div className="mb-3 flex items-center justify-between">
-                <button
-                  type="button"
-                  aria-label="이전 달"
-                  onClick={() => {
-                    const [year, month] = visibleMonthYmd.split("-").map(Number);
-                    const prev = new Date(year, month - 2, 1);
-                    setVisibleMonthYmd(
-                      `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, "0")}`
-                    );
-                  }}
-                  className="h-9 min-w-[44px] rounded-md bg-transparent text-[20px] font-semibold text-orange-700 active:opacity-60"
+              {calendarMonthRange ? (
+                <div
+                  className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] px-0.5 pb-1"
                 >
-                  ‹
-                </button>
-                <button
-                  type="button"
-                  aria-label="캘린더 접기"
-                  onClick={closeInlineCalendar}
-                  className="rounded-md px-2 py-1 text-sm font-semibold text-slate-700 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
-                >
-                  {visibleMonthLabel}
-                </button>
-                <button
-                  type="button"
-                  aria-label="다음 달"
-                  onClick={() => {
-                    const [year, month] = visibleMonthYmd.split("-").map(Number);
-                    const next = new Date(year, month, 1);
-                    setVisibleMonthYmd(
-                      `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`
-                    );
-                  }}
-                  className="h-9 min-w-[44px] rounded-md bg-transparent text-[20px] font-semibold text-orange-700 active:opacity-60"
-                >
-                  ›
-                </button>
-              </div>
-
-              <div className="grid grid-cols-7 gap-1.5 text-center text-[12px] font-semibold text-slate-400">
-                {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
-                  <div key={d} className="py-1">
-                    {d}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-1 grid grid-cols-7 gap-y-1.5">
-                {calendarCells.map((cell, idx) => {
-                  if (!cell) {
-                    return <div key={`empty_${idx}`} className="min-h-[48px]" />;
-                  }
-
-                  const isSelected = cell.dateYmd === selectedDate;
-                  const isMarked = markedDates.has(cell.dateYmd);
-
-                  return (
-                    <div
-                      key={cell.dateYmd}
-                      className="flex min-h-[48px] flex-col items-center justify-start"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedDate(cell.dateYmd);
-                          closeInlineCalendar();
-                        }}
-                        className={[
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors",
-                          isSelected
-                            ? "bg-orange-600 text-white"
-                            : "bg-transparent text-slate-700 hover:bg-black/[0.04]",
-                          "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-                        ].join(" ")}
-                      >
-                        {cell.day}
-                      </button>
-                      <span
-                        aria-hidden
-                        className={[
-                          "mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full",
-                          isMarked ? "bg-orange-500" : "opacity-0",
-                        ].join(" ")}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+                  {calendarMonthRange.map((ym) => (
+                    <InlineCalendarMonth
+                      key={ym}
+                      ym={ym}
+                      selectedDate={selectedDate}
+                      markedDates={markedDates}
+                      onSelectDate={handlePickCalendarDate}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </section>
           </div>
         </div>
@@ -462,7 +416,7 @@ export default function Page() {
       <div
         className={[
           "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
-          isDatePickerOpen ? "pt-[380px]" : "pt-20",
+          isDatePickerOpen ? "pt-[calc(100dvh-6rem)]" : "pt-20",
         ].join(" ")}
       >
         <div className="space-y-8">

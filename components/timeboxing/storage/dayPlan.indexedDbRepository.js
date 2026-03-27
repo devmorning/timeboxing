@@ -122,5 +122,33 @@ export function createIndexedDbDayPlanRepository() {
         }
       );
     },
+    async listMarkedDatesInRange(startYmd, endYmd) {
+      const db = await getDb();
+      return withStore(
+        db,
+        "readonly",
+        (store, done, fail) => {
+          const keyRange = window.IDBKeyRange.bound(startYmd, endYmd, false, false);
+          const request = store.openCursor(keyRange);
+          const markedDates = [];
+
+          request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (!cursor) {
+              done(markedDates);
+              return;
+            }
+
+            const row = cursor.value;
+            if (row?.date && hasDayPlanContent(row)) {
+              markedDates.push(row.date);
+            }
+            cursor.continue();
+          };
+
+          request.onerror = () => fail(request.error || new Error("IndexedDB range cursor failed"));
+        }
+      );
+    },
   };
 }

@@ -9,3 +9,7 @@ Object.defineProperty(window, "requestAnimationFrame", {
   writable: true,
   value: (cb) => setTimeout(cb, 0),
 });
+
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function scrollIntoView() {};
+}
