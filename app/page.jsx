@@ -159,6 +159,26 @@ export default function Page() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const openInlineCalendar = (event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+
+    const activeEl = document.activeElement;
+    if (
+      activeEl instanceof HTMLElement &&
+      (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+    ) {
+      activeEl.blur();
+    }
+
+    // 입력 포커스/키보드 닫힘 중 레이아웃 흔들림을 피하려고 즉시 상단 이동 후 캘린더를 연다.
+    window.scrollTo({ top: 0, behavior: "auto" });
+    setVisibleMonthYmd(selectedDate.slice(0, 7));
+    requestAnimationFrame(() => {
+      setIsDatePickerOpen(true);
+    });
+  };
+
   useEffect(() => {
     let cancelled = false;
     setReadyDate("");
@@ -275,18 +295,20 @@ export default function Page() {
 
               <button
                 type="button"
+                aria-label="날짜 선택 열기"
                 className="rounded-md px-2 py-1 text-[13px] font-semibold text-slate-600 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
                 onPointerDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  const activeEl = document.activeElement;
+                  if (
+                    activeEl instanceof HTMLElement &&
+                    (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+                  ) {
+                    activeEl.blur();
+                  }
                 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                  setVisibleMonthYmd(selectedDate.slice(0, 7));
-                  setIsDatePickerOpen(true);
-                }}
+                onClick={openInlineCalendar}
                 suppressHydrationWarning
               >
                 <span className="inline-flex items-center">{selectedDateLabel}</span>
@@ -331,6 +353,7 @@ export default function Page() {
           )}
 
           <div
+            data-testid="inline-calendar-panel"
             className={[
               "overflow-hidden transition-all duration-300 ease-out",
               isDatePickerOpen ? "max-h-[320px] opacity-100 pt-3" : "max-h-0 opacity-0 pt-0",
