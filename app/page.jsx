@@ -277,15 +277,7 @@ export default function Page() {
                 }}
                 suppressHydrationWarning
               >
-                <span className="inline-flex items-center gap-1.5">
-                  {selectedDateLabel}
-                  <span
-                    aria-hidden
-                    className="inline-block text-[11px] text-slate-500 transition-transform duration-300"
-                  >
-                    ▾
-                  </span>
-                </span>
+                <span className="inline-flex items-center">{selectedDateLabel}</span>
               </button>
 
               <button
@@ -354,7 +346,14 @@ export default function Page() {
                 >
                   ‹
                 </button>
-                <h2 className="text-sm font-semibold text-slate-700">{visibleMonthLabel}</h2>
+                <button
+                  type="button"
+                  aria-label="캘린더 접기"
+                  onClick={() => setIsDatePickerOpen(false)}
+                  className="rounded-md px-2 py-1 text-sm font-semibold text-slate-700 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
+                >
+                  {visibleMonthLabel}
+                </button>
                 <button
                   type="button"
                   aria-label="다음 달"
@@ -425,7 +424,7 @@ export default function Page() {
       <div
         className={[
           "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
-          isDatePickerOpen ? "pt-[332px]" : "pt-20",
+          isDatePickerOpen ? "pt-[380px]" : "pt-20",
         ].join(" ")}
       >
         <div className="space-y-8">
