@@ -154,25 +154,6 @@ export default function Page() {
     }
   };
 
-  const closeCalendarOnInputFocus = (event) => {
-    const tagName = event.target?.tagName;
-    if (tagName === "INPUT" || tagName === "TEXTAREA") {
-      const focusedEl = event.target;
-      setIsDatePickerOpen(false);
-      // 헤더 높이 변화(캘린더 접힘) 이후 포커스된 입력 위치를 자연스럽게 보정
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (document.activeElement === focusedEl) {
-            focusedEl.scrollIntoView({
-              block: "center",
-              behavior: "smooth",
-            });
-          }
-        });
-      });
-    }
-  };
-
   useEffect(() => {
     let cancelled = false;
     setReadyDate("");
@@ -445,7 +426,6 @@ export default function Page() {
           "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
           isDatePickerOpen ? "pt-[380px]" : "pt-20",
         ].join(" ")}
-        onFocusCapture={closeCalendarOnInputFocus}
       >
         <div className="space-y-8">
           {/* 1) 가장 중요한 3가지 */}
