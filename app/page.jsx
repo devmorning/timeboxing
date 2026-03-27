@@ -68,6 +68,13 @@ export default function Page() {
     return newContent.trim().length > 0;
   }, [newContent]);
 
+  const sortItemsByTimeAsc = useCallback((list) => {
+    return [...list].sort((a, b) => {
+      if (a.time === b.time) return 0;
+      return a.time < b.time ? -1 : 1;
+    });
+  }, []);
+
   const filledImportant3 = useMemo(
     () => important3.map((v) => v.trim()).filter(Boolean),
     [important3]
@@ -89,14 +96,16 @@ export default function Page() {
   const addItem = () => {
     if (!canAdd) return;
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    setItems((prev) => [
-      ...prev,
-      {
-        id,
-        time: newTime,
-        content: newContent.trim(),
-      },
-    ]);
+    setItems((prev) =>
+      sortItemsByTimeAsc([
+        ...prev,
+        {
+          id,
+          time: newTime,
+          content: newContent.trim(),
+        },
+      ])
+    );
     setNewContent("");
   };
 
@@ -118,14 +127,16 @@ export default function Page() {
     if (!nextContent) return;
 
     setItems((prev) =>
-      prev.map((it) =>
-        it.id === editingId
-          ? {
-              ...it,
-              time: newTime,
-              content: nextContent,
-            }
-          : it
+      sortItemsByTimeAsc(
+        prev.map((it) =>
+          it.id === editingId
+            ? {
+                ...it,
+                time: newTime,
+                content: nextContent,
+              }
+            : it
+        )
       )
     );
     resetEditState();
@@ -260,7 +271,7 @@ export default function Page() {
         if (cancelled) return;
         setImportant3(plan.important3);
         setBrainDump(plan.brainDump);
-        setItems(plan.items);
+        setItems(sortItemsByTimeAsc(plan.items));
       } catch (error) {
         if (!cancelled) {
           console.error("Failed to load day plan", error);
@@ -280,7 +291,7 @@ export default function Page() {
     return () => {
       cancelled = true;
     };
-  }, [dayPlanRepository, selectedDate]);
+  }, [dayPlanRepository, selectedDate, sortItemsByTimeAsc]);
 
   useEffect(() => {
     if (readyDate !== selectedDate) return;
