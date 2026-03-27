@@ -394,7 +394,7 @@ export default function Page() {
             className={[
               "overflow-hidden transition-all duration-300 ease-out",
               isDatePickerOpen
-                ? "flex max-h-[calc(100dvh-10rem)] flex-col opacity-100 pt-3"
+                ? "flex max-h-[calc(100dvh-5.5rem)] flex-col opacity-100 pt-3"
                 : "max-h-0 opacity-0 pt-0",
             ].join(" ")}
           >
@@ -428,7 +428,7 @@ export default function Page() {
       <div
         className={[
           "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
-          isDatePickerOpen ? "pt-[calc(100dvh-6rem)]" : "pt-20",
+          isDatePickerOpen ? "pt-[calc(100dvh-5.5rem)]" : "pt-20",
         ].join(" ")}
       >
         <div className="space-y-8">
@@ -618,6 +618,13 @@ export default function Page() {
           </div>
         </div>
       </div>
+
+      {isDatePickerOpen ? (
+        <div
+          aria-hidden
+          className="fixed inset-x-0 bottom-0 z-40 h-[5.5rem] bg-[#F2F2F7]"
+        />
+      ) : null}
 
       {isReportOpen ? (
         <div

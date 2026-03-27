@@ -12,7 +12,7 @@ describe("인라인 캘린더 열기", () => {
     fireEvent.click(screen.getByLabelText("날짜 선택 열기"));
 
     await waitFor(() => {
-      expect(panel.className).toContain("max-h-[calc(100dvh-10rem)]");
+      expect(panel.className).toContain("max-h-[calc(100dvh-5.5rem)]");
     });
   });
 
@@ -26,7 +26,7 @@ describe("인라인 캘린더 열기", () => {
     const panel = screen.getByTestId("inline-calendar-panel");
     fireEvent.click(screen.getByLabelText("날짜 선택 열기"));
     await waitFor(() => {
-      expect(panel.className).toContain("max-h-[calc(100dvh-10rem)]");
+      expect(panel.className).toContain("max-h-[calc(100dvh-5.5rem)]");
     });
   });
 });
