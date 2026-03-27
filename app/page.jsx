@@ -344,12 +344,12 @@ export default function Page() {
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
           onClick={() => setIsReportOpen(false)}
         >
-          <div className="mx-auto flex min-h-full w-full max-w-md items-end px-4 pb-6 pt-10">
+          <div className="mx-auto flex h-full min-h-0 w-full max-w-md items-end justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-10">
             <section
-              className="w-full rounded-2xl bg-white p-5 shadow-xl ring-1 ring-black/5"
+              className="flex max-h-[min(88vh,calc(100dvh-2.5rem))] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-black/5"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="mb-4 flex items-start justify-between">
+              <div className="flex shrink-0 items-start justify-between border-b border-black/[0.06] px-5 py-4">
                 <div>
                   <p className="text-sm font-semibold text-slate-700" suppressHydrationWarning>
                     {selectedDateLabel}
@@ -365,6 +365,7 @@ export default function Page() {
                 </button>
               </div>
 
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]">
               <div className="space-y-4">
                 <div>
                   <h3 className="text-[13px] font-semibold text-slate-500">가장 중요한 3가지</h3>
@@ -409,6 +410,7 @@ export default function Page() {
                     <p className="mt-2 text-sm text-slate-400">추가된 일정이 없습니다.</p>
                   )}
                 </div>
+              </div>
               </div>
             </section>
           </div>
