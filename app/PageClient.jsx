@@ -358,6 +358,45 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   useEffect(() => {
+    if (initialAuthUser?.id) {
+      setAuthReady(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadAuthMe = async () => {
+      try {
+        const auth = await dayPlanRepository.getAuthMe?.();
+        if (cancelled) return;
+        if (auth?.authenticated && auth.user?.id) {
+          setAuthUser(auth.user);
+          return;
+        }
+        setAuthUser(null);
+      } catch (error) {
+        if (!cancelled) {
+          if (error?.status !== 401) {
+            console.error("Failed to load auth user", error);
+          }
+          setAuthUser(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setAuthReady(true);
+        }
+      }
+    };
+
+    setAuthReady(false);
+    loadAuthMe();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialAuthUser?.id, dayPlanRepository]);
+
+  useEffect(() => {
     if (!authReady || !authUser?.id) return;
     let cancelled = false;
 
