@@ -25,14 +25,19 @@ export function createApiDayPlanRepository() {
   }
 
   async function requestJson(path, init) {
+    const headers = {
+      ...(init?.headers ?? {}),
+    };
+
+    if (init?.body != null && !("Content-Type" in headers)) {
+      headers["Content-Type"] = "application/json";
+    }
+
     const res = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
       mode: "cors",
       credentials: "include",
-      headers: {
-        ...(init?.headers ?? {}),
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     if (res.status === 401) {
