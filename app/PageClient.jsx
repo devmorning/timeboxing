@@ -19,7 +19,7 @@ import { hasDayPlanContent } from "../components/timeboxing/storage/dayPlan.sche
 export default function PageClient({ initialAuthUser = null, initialSelectedDate = null, initialPlan = null }) {
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
   const saveTimerRef = useRef(null);
-  const [authReady, setAuthReady] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(initialAuthUser);
 
   const toLocalYmd = (d) => {
@@ -358,11 +358,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   useEffect(() => {
-    if (initialAuthUser?.id) {
-      setAuthReady(true);
-      return;
-    }
-
     let cancelled = false;
 
     const loadAuthMe = async () => {
@@ -373,13 +368,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           setAuthUser(auth.user);
           return;
         }
-        setAuthUser(null);
+        setAuthUser(initialAuthUser?.id ? initialAuthUser : null);
       } catch (error) {
         if (!cancelled) {
           if (error?.status !== 401) {
             console.error("Failed to load auth user", error);
+            setAuthUser(initialAuthUser?.id ? initialAuthUser : null);
+          } else {
+            setAuthUser(null);
           }
-          setAuthUser(null);
         }
       } finally {
         if (!cancelled) {
@@ -541,6 +538,20 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       setIsDatePickerOpen(false);
     }
   };
+
+  if (!authReady) {
+    return (
+      <main className="flex min-h-[100dvh] items-center justify-center bg-[#F2F2F7] px-6">
+        <section className="w-full max-w-sm rounded-3xl bg-white px-6 py-8 shadow-sm ring-1 ring-black/5">
+          <div className="space-y-3 animate-pulse">
+            <div className="mx-auto h-6 w-28 rounded-full bg-slate-200" />
+            <div className="mx-auto h-4 w-52 rounded-full bg-slate-100" />
+            <div className="mx-auto h-12 w-full rounded-xl bg-slate-200" />
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   if (authReady && !authUser) {
     return (
