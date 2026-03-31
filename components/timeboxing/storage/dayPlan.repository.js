@@ -1,18 +1,16 @@
-import { createIndexedDbDayPlanRepository } from "./dayPlan.indexedDbRepository.js";
 import { createMemoryDayPlanRepository } from "./dayPlan.memoryRepository.js";
+import { createApiDayPlanRepository } from "./dayPlan.apiRepository.js";
 
 let repository = null;
 
 export function getDayPlanRepository() {
   if (repository) return repository;
 
-  const canUseIndexedDb =
-    typeof window !== "undefined" &&
-    typeof window.indexedDB !== "undefined";
-
-  repository = canUseIndexedDb
-    ? createIndexedDbDayPlanRepository()
-    : createMemoryDayPlanRepository();
+  if (typeof window !== "undefined" && typeof fetch === "function") {
+    repository = createApiDayPlanRepository();
+  } else {
+    repository = createMemoryDayPlanRepository();
+  }
 
   return repository;
 }
