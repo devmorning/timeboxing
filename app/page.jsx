@@ -1,14 +1,13 @@
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import PageClient from "./PageClient.jsx";
 import { createEmptyDayPlan, normalizeDayPlan } from "../components/timeboxing/storage/dayPlan.schema.js";
 
-function getApiBaseUrl() {
-  const base =
-    process.env.NEXT_PUBLIC_TIMEBOXING_API_BASE_URL ||
-    (process.env.NODE_ENV === "development"
-      ? "http://localhost"
-      : "https://timeboxing-api.vercel.app");
-  return base.replace(/\/+$/, "");
+async function getApiBaseUrl() {
+  const headerStore = await headers();
+  const proto = headerStore.get("x-forwarded-proto") || "http";
+  const host = headerStore.get("x-forwarded-host") || headerStore.get("host");
+  if (!host) return "/api/proxy";
+  return `${proto}://${host}/api/proxy`;
 }
 
 function toLocalYmd(d) {
@@ -20,12 +19,13 @@ function toLocalYmd(d) {
 
 async function fetchWithCookies(path) {
   const cookieStore = await cookies();
+  const apiBaseUrl = await getApiBaseUrl();
   const cookieHeader = cookieStore
     .getAll()
     .map(({ name, value }) => `${name}=${value}`)
     .join('; ');
 
-  const res = await fetch(`${getApiBaseUrl()}${path}`, {
+  const res = await fetch(`${apiBaseUrl}${path}`, {
     headers: cookieHeader ? { cookie: cookieHeader } : {},
     cache: "no-store",
   });
