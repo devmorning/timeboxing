@@ -359,6 +359,54 @@ export default function Page() {
           </div>
         </div>
       </footer>
+
+      <style jsx global>{`
+        .text-shadow-custom {
+          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-separator {
+          border-bottom: 2px dashed #e2e8f0;
+        }
+
+        .fade-in {
+          animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .scale-up-on-hover {
+          transition: transform 0.3s ease;
+        }
+
+        .scale-up-on-hover:hover {
+          transform: scale(1.05);
+        }
+
+        .animate-slide-in {
+          animation: slideIn 0.8s ease-out;
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }
