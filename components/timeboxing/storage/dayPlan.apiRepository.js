@@ -9,12 +9,17 @@ function getApiBaseUrl() {
   return base.replace(/\/+$/, "");
 }
 
+function getAuthProxyBaseUrl() {
+  return "/api/proxy";
+}
+
 export function getApiAuthUrl(path = "") {
-  return `${getApiBaseUrl()}${path}`;
+  return `${getAuthProxyBaseUrl()}${path}`;
 }
 
 export function createApiDayPlanRepository() {
   const apiBaseUrl = getApiBaseUrl();
+  const authProxyBaseUrl = getAuthProxyBaseUrl();
 
   async function safeJson(res) {
     try {
@@ -24,7 +29,7 @@ export function createApiDayPlanRepository() {
     }
   }
 
-  async function requestJson(path, init) {
+  async function requestJson(baseUrl, path, init, options = {}) {
     const headers = {
       ...(init?.headers ?? {}),
     };
@@ -33,10 +38,10 @@ export function createApiDayPlanRepository() {
       headers["Content-Type"] = "application/json";
     }
 
-    const res = await fetch(`${apiBaseUrl}${path}`, {
+    const res = await fetch(`${baseUrl}${path}`, {
       ...init,
-      mode: "cors",
       credentials: "include",
+      ...(options.mode ? { mode: options.mode } : {}),
       headers,
     });
 
@@ -58,36 +63,48 @@ export function createApiDayPlanRepository() {
 
   return {
     async getAuthMe() {
-      return requestJson("/auth/me", { method: "GET" });
+      return requestJson(authProxyBaseUrl, "/auth/me", { method: "GET" });
     },
 
     async logout() {
-      return requestJson("/auth/logout", { method: "POST" });
+      return requestJson(authProxyBaseUrl, "/auth/logout", { method: "POST" });
     },
 
     async getByDate(dateYmd) {
-      const data = await requestJson(`/api/day-plans/${dateYmd}`, { method: "GET" });
+      const data = await requestJson(apiBaseUrl, `/api/day-plans/${dateYmd}`, { method: "GET" }, {
+        mode: "cors",
+      });
       return normalizeDayPlan(data ?? createEmptyDayPlan());
     },
 
     async saveByDate(dateYmd, plan) {
-      await requestJson(`/api/day-plans/${dateYmd}`, {
-        method: "PUT",
-        body: JSON.stringify(plan),
-      });
+      await requestJson(
+        apiBaseUrl,
+        `/api/day-plans/${dateYmd}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(plan),
+        },
+        { mode: "cors" }
+      );
     },
 
     async listMarkedDatesInMonth(year, month) {
-      const data = await requestJson(`/api/day-plans/marked/month?year=${year}&month=${month}`, {
-        method: "GET",
-      });
+      const data = await requestJson(
+        apiBaseUrl,
+        `/api/day-plans/marked/month?year=${year}&month=${month}`,
+        { method: "GET" },
+        { mode: "cors" }
+      );
       return Array.isArray(data?.dates) ? data.dates : [];
     },
 
     async listMarkedDatesInRange(startYmd, endYmd) {
       const data = await requestJson(
+        apiBaseUrl,
         `/api/day-plans/marked/range?startYmd=${startYmd}&endYmd=${endYmd}`,
-        { method: "GET" }
+        { method: "GET" },
+        { mode: "cors" }
       );
       return Array.isArray(data?.dates) ? data.dates : [];
     },
