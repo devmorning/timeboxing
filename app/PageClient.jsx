@@ -633,6 +633,36 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return () => clearTimeout(timer);
   }, [isDayPlanLoading]);
 
+  useEffect(() => {
+    if (!isReportOpen) return;
+
+    const body = document.body;
+    const html = document.documentElement;
+    const scrollY = window.scrollY;
+    const previousBodyStyle = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+    };
+    const previousHtmlOverscroll = html.style.overscrollBehavior;
+
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    html.style.overscrollBehavior = "none";
+
+    return () => {
+      body.style.overflow = previousBodyStyle.overflow;
+      body.style.position = previousBodyStyle.position;
+      body.style.top = previousBodyStyle.top;
+      body.style.width = previousBodyStyle.width;
+      html.style.overscrollBehavior = previousHtmlOverscroll;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isReportOpen]);
+
   const handleLogin = () => {
     window.location.href = getApiAuthUrl("/auth/google");
   };
