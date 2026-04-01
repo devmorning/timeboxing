@@ -95,23 +95,23 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   const serializePlan = useCallback(
-    (plan) =>
-      JSON.stringify({
-        important3: normalizeDayPlan(plan).important3,
-        brainDump: normalizeDayPlan(plan).brainDump,
-        items: sortItemsByTimeAsc(normalizeDayPlan(plan).items).map((it) => ({
-          id: it.id,
-          time: it.time,
-          content: it.content,
-          done: Boolean(it.done),
-        })),
-      }),
-    [sortItemsByTimeAsc]
+      (plan) =>
+          JSON.stringify({
+            important3: normalizeDayPlan(plan).important3,
+            brainDump: normalizeDayPlan(plan).brainDump,
+            items: sortItemsByTimeAsc(normalizeDayPlan(plan).items).map((it) => ({
+              id: it.id,
+              time: it.time,
+              content: it.content,
+              done: Boolean(it.done),
+            })),
+          }),
+      [sortItemsByTimeAsc]
   );
 
   const filledImportant3 = useMemo(
-    () => important3.map((v) => v.trim()).filter(Boolean),
-    [important3]
+      () => important3.map((v) => v.trim()).filter(Boolean),
+      [important3]
   );
 
   useEffect(() => {
@@ -128,8 +128,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const isEditingChanged = useMemo(() => {
     if (!editingItem) return false;
     return (
-      editingItem.time !== newTime ||
-      editingItem.content !== newContent.trim()
+        editingItem.time !== newTime ||
+        editingItem.content !== newContent.trim()
     );
   }, [editingItem, newTime, newContent]);
 
@@ -137,15 +137,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!canAdd) return;
     const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     setItems((prev) =>
-      sortItemsByTimeAsc([
-        ...prev,
-        {
-          id,
-          time: newTime,
-          content: newContent.trim(),
-          done: false,
-        },
-      ])
+        sortItemsByTimeAsc([
+          ...prev,
+          {
+            id,
+            time: newTime,
+            content: newContent.trim(),
+            done: false,
+          },
+        ])
     );
     setNewContent("");
   };
@@ -168,17 +168,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!nextContent) return;
 
     setItems((prev) =>
-      sortItemsByTimeAsc(
-        prev.map((it) =>
-          it.id === editingId
-            ? {
-                ...it,
-                time: newTime,
-                content: nextContent,
-              }
-            : it
+        sortItemsByTimeAsc(
+            prev.map((it) =>
+                it.id === editingId
+                    ? {
+                      ...it,
+                      time: newTime,
+                      content: nextContent,
+                    }
+                    : it
+            )
         )
-      )
     );
     resetEditState();
   };
@@ -198,14 +198,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const toggleItemDoneById = (id) => {
     setItems((prev) =>
-      prev.map((it) =>
-        it.id === id
-          ? {
-              ...it,
-              done: !it.done,
-            }
-          : it
-      )
+        prev.map((it) =>
+            it.id === id
+                ? {
+                  ...it,
+                  done: !it.done,
+                }
+                : it
+        )
     );
   };
 
@@ -348,11 +348,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   const handlePickCalendarDate = useCallback(
-    (dateYmd) => {
-      setSelectedDate(dateYmd);
-      closeInlineCalendar();
-    },
-    [closeInlineCalendar]
+      (dateYmd) => {
+        setSelectedDate(dateYmd);
+        closeInlineCalendar();
+      },
+      [closeInlineCalendar]
   );
 
   const openInlineCalendar = (event) => {
@@ -361,8 +361,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     const activeEl = document.activeElement;
     if (
-      activeEl instanceof HTMLElement &&
-      (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+        activeEl instanceof HTMLElement &&
+        (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
     ) {
       activeEl.blur();
     }
@@ -553,15 +553,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         let list;
         if (typeof dayPlanRepository.listMarkedDatesInRange === "function") {
           list = await dayPlanRepository.listMarkedDatesInRange(
-            bounds.startYmd,
-            bounds.endYmd
+              bounds.startYmd,
+              bounds.endYmd
           );
         } else {
           const lists = await Promise.all(
-            calendarMonthRange.map((ym) => {
-              const [year, month] = ym.split("-").map(Number);
-              return dayPlanRepository.listMarkedDatesInMonth(year, month);
-            })
+              calendarMonthRange.map((ym) => {
+                const [year, month] = ym.split("-").map(Number);
+                return dayPlanRepository.listMarkedDatesInMonth(year, month);
+              })
           );
           list = lists.flat();
         }
@@ -609,16 +609,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const hasCachedSelectedPlan = dayPlanCacheRef.current.has(selectedDate);
   const isDateTransitionLoading =
-    Boolean(authUser?.id) &&
-    readyDate !== "" &&
-    readyDate !== selectedDate &&
-    !hasCachedSelectedPlan;
+      Boolean(authUser?.id) &&
+      readyDate !== "" &&
+      readyDate !== selectedDate &&
+      !hasCachedSelectedPlan;
   const isDayPlanLoading =
-    !authReady ||
-    (authUser?.id &&
-      (readyDate === "" ||
-        (readyDate !== selectedDate && !hasCachedSelectedPlan) ||
-        !isInitialSkeletonDelayDone));
+      !authReady ||
+      (authUser?.id &&
+          (readyDate === "" ||
+              (readyDate !== selectedDate && !hasCachedSelectedPlan) ||
+              !isInitialSkeletonDelayDone));
 
   useEffect(() => {
     if (isDayPlanLoading) {
@@ -655,615 +655,615 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   if (!authUser) {
     return (
-      <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#F2F2F7]">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-70"
-          aria-hidden
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at top, rgba(255,255,255,0.85), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.28), rgba(0,0,0,0.03))",
-          }}
-        />
-        <section
-          className="relative mx-auto flex w-full max-w-md flex-col px-8 py-12 sm:px-10"
-          style={{ paddingBottom: "max(3rem, calc(env(safe-area-inset-bottom) + 2rem))" }}
-        >
+        <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#F2F2F7]">
           <div
-            className={[
-              "w-full transition-opacity duration-200",
-              authReady ? "pointer-events-none absolute inset-x-8 top-12 opacity-0 sm:inset-x-10" : "relative opacity-100",
-            ].join(" ")}
-            aria-hidden={authReady}
+              className="pointer-events-none absolute inset-0 opacity-70"
+              aria-hidden
+              style={{
+                backgroundImage:
+                    "radial-gradient(circle at top, rgba(255,255,255,0.85), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.28), rgba(0,0,0,0.03))",
+              }}
+          />
+          <section
+              className="relative mx-auto flex w-full max-w-md flex-col px-8 py-12 sm:px-10"
+              style={{ paddingBottom: "max(3rem, calc(env(safe-area-inset-bottom) + 2rem))" }}
           >
-            <div className="animate-pulse">
-              <div className="space-y-4">
-                <div className="h-12 w-52 rounded-full bg-slate-200" />
-                <div className="h-4 w-36 rounded-full bg-slate-100" />
-                <div className="h-4 w-32 rounded-full bg-slate-100" />
-              </div>
-              <div className="mt-14 flex flex-col items-start">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-950/10">
-                  <div className="h-7 w-7 rounded-full bg-slate-300" />
+            <div
+                className={[
+                  "w-full transition-opacity duration-200",
+                  authReady ? "pointer-events-none absolute inset-x-8 top-12 opacity-0 sm:inset-x-10" : "relative opacity-100",
+                ].join(" ")}
+                aria-hidden={authReady}
+            >
+              <div className="flex min-h-[70dvh] items-center justify-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+                  <div className="grid grid-cols-2 gap-1.5" aria-hidden>
+                    <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-700" />
+                    <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-300" />
+                    <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-400" />
+                    <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-700" />
+                  </div>
                 </div>
-                <div className="mt-5 h-3 w-24 rounded-full bg-slate-200" />
               </div>
             </div>
-          </div>
 
-          <div
-            className={[
-              "w-full transition-opacity duration-200",
-              authReady ? "relative opacity-100" : "pointer-events-none absolute inset-x-8 top-12 opacity-0 sm:inset-x-10",
-            ].join(" ")}
-            aria-hidden={!authReady}
-          >
-            <div>
-              <h1 className="text-[40px] font-semibold leading-[0.96] tracking-[-0.07em] text-slate-950 sm:text-[48px]">
-                Timeboxing
-              </h1>
-              <p className="mt-3 text-[18px] leading-[1.35] tracking-[-0.03em] text-slate-700">
-                Plan your day.
-              </p>
-              <p className="mt-2 text-[14px] leading-6 text-slate-400">
-                Focus on what matters most.
-              </p>
-            </div>
+            <div
+                className={[
+                  "w-full transition-opacity duration-200",
+                  authReady ? "relative opacity-100" : "pointer-events-none absolute inset-x-8 top-12 opacity-0 sm:inset-x-10",
+                ].join(" ")}
+                aria-hidden={!authReady}
+            >
+              <div>
+                <h1 className="text-[42px] font-semibold leading-[0.9] tracking-[-0.08em] text-slate-950 sm:text-[52px]">
+                  Time
+                  <span className="ml-2 inline-block text-slate-300">/</span>
+                  <br />
+                  <span className="inline-block pl-6">boxing</span>
+                </h1>
+                <p className="mt-3 text-[18px] leading-[1.35] tracking-[-0.03em] text-slate-700">
+                  Plan your day.
+                </p>
+                <p className="mt-2 text-[14px] leading-6 text-slate-400">
+                  Focus on what matters most.
+                </p>
+              </div>
 
-            <div className="mt-14 max-w-sm">
-              <button
-                type="button"
-                onClick={handleLogin}
-                aria-label="Google로 로그인"
-                className="group flex h-16 w-16 items-center justify-center rounded-full bg-[#1F1F1F] text-white shadow-[0_12px_30px_rgba(15,23,42,0.16)] transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] active:opacity-90"
-              >
-                <i className="fab fa-google text-[20px] transition-transform duration-150 group-active:scale-95" aria-hidden />
-              </button>
-              <p className="mt-5 text-[11px] leading-5 tracking-[0.12em] text-slate-300">
-                TAP TO SIGN IN
-              </p>
+              <div className="mt-14 max-w-sm">
+                <button
+                    type="button"
+                    onClick={handleLogin}
+                    aria-label="Google로 로그인"
+                    className="group flex h-16 w-16 items-center justify-center rounded-full bg-[#1F1F1F] text-white shadow-[0_12px_30px_rgba(15,23,42,0.16)] transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] active:opacity-90"
+                >
+                  <i className="fab fa-google text-[20px] transition-transform duration-150 group-active:scale-95" aria-hidden />
+                </button>
+                <p className="mt-5 text-[11px] leading-5 tracking-[0.12em] text-slate-300">
+                  TAP TO SIGN IN
+                </p>
+              </div>
             </div>
-          </div>
-        </section>
-      </main>
+          </section>
+        </main>
     );
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
-      <header
-        className={[
-          "fixed inset-x-0 top-0 z-50 bg-[#F2F2F7]/95 backdrop-blur-sm transition-opacity duration-200",
-          isReportOpen ? "pointer-events-none opacity-0" : "opacity-100",
-        ].join(" ")}
-      >
-        <div className="mx-auto w-full max-w-md px-4 py-3">
-          <div
+      <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
+        <header
             className={[
-              "grid h-10 w-full grid-cols-[minmax(44px,auto)_1fr_minmax(44px,auto)] items-center",
-              "gap-0",
+              "fixed inset-x-0 top-0 z-50 bg-[#F2F2F7]/95 backdrop-blur-sm transition-opacity duration-200",
+              isReportOpen ? "pointer-events-none opacity-0" : "opacity-100",
             ].join(" ")}
-          >
-            {!isDatePickerOpen ? (
-              <>
-                <button
-                  type="button"
-                  aria-label="전날"
-                  disabled={isDateTransitionLoading}
-                  className={[
-                    "flex h-10 w-full min-w-[44px] select-none items-center justify-center bg-transparent text-[22px] font-semibold leading-none",
-                    "text-orange-700 active:opacity-60",
-                    "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                    isDateTransitionLoading ? "cursor-wait opacity-40" : "",
-                  ].join(" ")}
-                  onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
-                >
-                  ‹
-                </button>
+        >
+          <div className="mx-auto w-full max-w-md px-4 py-3">
+            <div
+                className={[
+                  "grid h-10 w-full grid-cols-[minmax(44px,auto)_1fr_minmax(44px,auto)] items-center",
+                  "gap-0",
+                ].join(" ")}
+            >
+              {!isDatePickerOpen ? (
+                  <>
+                    <button
+                        type="button"
+                        aria-label="전날"
+                        disabled={isDateTransitionLoading}
+                        className={[
+                          "flex h-10 w-full min-w-[44px] select-none items-center justify-center bg-transparent text-[22px] font-semibold leading-none",
+                          "text-orange-700 active:opacity-60",
+                          "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                          isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                        ].join(" ")}
+                        onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
+                    >
+                      ‹
+                    </button>
 
-                <button
-                  type="button"
-                  aria-label="날짜 선택 열기"
-                  disabled={isDateTransitionLoading}
-                  className={[
-                    "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-[13px] font-semibold text-slate-600",
-                    "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-                    isDateTransitionLoading ? "cursor-wait opacity-50" : "",
-                  ].join(" ")}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const activeEl = document.activeElement;
-                    if (
-                      activeEl instanceof HTMLElement &&
-                      (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
-                    ) {
-                      activeEl.blur();
-                    }
-                  }}
-                  onClick={openInlineCalendar}
-                  suppressHydrationWarning
-                >
-                  <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
-                </button>
+                    <button
+                        type="button"
+                        aria-label="날짜 선택 열기"
+                        disabled={isDateTransitionLoading}
+                        className={[
+                          "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-[13px] font-semibold text-slate-600",
+                          "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                          isDateTransitionLoading ? "cursor-wait opacity-50" : "",
+                        ].join(" ")}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const activeEl = document.activeElement;
+                          if (
+                              activeEl instanceof HTMLElement &&
+                              (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")
+                          ) {
+                            activeEl.blur();
+                          }
+                        }}
+                        onClick={openInlineCalendar}
+                        suppressHydrationWarning
+                    >
+                      <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
+                    </button>
 
-                <button
-                  type="button"
-                  aria-label="다음날"
-                  disabled={isDateTransitionLoading}
-                  className={[
-                    "flex h-10 w-full min-w-[44px] select-none items-center justify-center bg-transparent text-[22px] font-semibold leading-none",
-                    "text-orange-700 active:opacity-60",
-                    "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                    isDateTransitionLoading ? "cursor-wait opacity-40" : "",
-                  ].join(" ")}
-                  onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
-                >
-                  ›
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="h-10 min-w-[44px]" aria-hidden />
-                <button
-                  type="button"
-                  aria-label="캘린더 닫기"
-                  onClick={closeInlineCalendar}
-                  className={[
-                    "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-[13px] font-semibold text-slate-600",
-                    "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-                  ].join(" ")}
-                  suppressHydrationWarning
-                >
-                  <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
-                </button>
-                <button
-                  type="button"
-                  aria-label="오늘 날짜로 이동"
-                  disabled={isDateTransitionLoading}
-                  onClick={() => {
-                    const today = toLocalYmd(new Date());
-                    setSelectedDate(today);
-                    closeInlineCalendar();
-                  }}
-                  className={[
-                    "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
-                    isDateTransitionLoading ? "cursor-wait opacity-40" : "",
-                  ].join(" ")}
-                >
+                    <button
+                        type="button"
+                        aria-label="다음날"
+                        disabled={isDateTransitionLoading}
+                        className={[
+                          "flex h-10 w-full min-w-[44px] select-none items-center justify-center bg-transparent text-[22px] font-semibold leading-none",
+                          "text-orange-700 active:opacity-60",
+                          "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                          isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                        ].join(" ")}
+                        onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
+                    >
+                      ›
+                    </button>
+                  </>
+              ) : (
+                  <>
+                    <div className="h-10 min-w-[44px]" aria-hidden />
+                    <button
+                        type="button"
+                        aria-label="캘린더 닫기"
+                        onClick={closeInlineCalendar}
+                        className={[
+                          "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-[13px] font-semibold text-slate-600",
+                          "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                        ].join(" ")}
+                        suppressHydrationWarning
+                    >
+                      <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="오늘 날짜로 이동"
+                        disabled={isDateTransitionLoading}
+                        onClick={() => {
+                          const today = toLocalYmd(new Date());
+                          setSelectedDate(today);
+                          closeInlineCalendar();
+                        }}
+                        className={[
+                          "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
+                          isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                        ].join(" ")}
+                    >
                   <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
                     ◎
                   </span>
-                  <span className="sr-only">오늘</span>
-                </button>
-              </>
-            )}
-          </div>
-
-          {authUser?.id ? (
-            <div className="mt-1 flex justify-end">
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="rounded-md px-2 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:text-slate-700 active:opacity-60"
-              >
-                로그아웃
-              </button>
+                      <span className="sr-only">오늘</span>
+                    </button>
+                  </>
+              )}
             </div>
-          ) : null}
 
-          <div
-            data-testid="inline-calendar-panel"
-            className={[
-              "overflow-hidden transition-[max-height,opacity,padding-top] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
-              isDatePickerOpen
-                ? "flex max-h-[calc(100dvh-4rem)] flex-col opacity-100 pt-3"
-                : "max-h-0 opacity-0 pt-0",
-            ].join(" ")}
-          >
-            <section
-              className={[
-                "flex min-h-0 flex-1 flex-col rounded-2xl bg-transparent px-1 py-2",
-                "transition-[transform,opacity] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
-                isDatePickerOpen ? "translate-y-0 scale-100" : "-translate-y-1 scale-[0.98]",
-              ].join(" ")}
-            >
-              {calendarMonthRange ? (
-                <div
-                  className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] px-0.5 pb-1"
-                >
-                  {calendarMonthRange.map((ym) => (
-                    <InlineCalendarMonth
-                      key={ym}
-                      ym={ym}
-                      selectedDate={selectedDate}
-                      markedDates={markedDates}
-                      onSelectDate={handlePickCalendarDate}
-                    />
-                  ))}
+            {authUser?.id ? (
+                <div className="mt-1 flex justify-end">
+                  <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="rounded-md px-2 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:text-slate-700 active:opacity-60"
+                  >
+                    로그아웃
+                  </button>
                 </div>
-              ) : null}
-            </section>
-          </div>
-        </div>
-      </header>
+            ) : null}
 
-      <div
-        className={[
-          "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
-          isDatePickerOpen ? "pt-[calc(100dvh-4rem)]" : "pt-20",
-        ].join(" ")}
-      >
-        <div className="relative">
-          {showDayPlanSkeleton ? (
             <div
-              className={[
-                "space-y-8 animate-pulse transition-opacity duration-200",
-                isDayPlanLoading ? "opacity-100" : "pointer-events-none opacity-0",
-              ].join(" ")}
-              aria-label="일정 불러오는 중"
+                data-testid="inline-calendar-panel"
+                className={[
+                  "overflow-hidden transition-[max-height,opacity,padding-top] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  isDatePickerOpen
+                      ? "flex max-h-[calc(100dvh-4rem)] flex-col opacity-100 pt-3"
+                      : "max-h-0 opacity-0 pt-0",
+                ].join(" ")}
             >
+              <section
+                  className={[
+                    "flex min-h-0 flex-1 flex-col rounded-2xl bg-transparent px-1 py-2",
+                    "transition-[transform,opacity] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+                    isDatePickerOpen ? "translate-y-0 scale-100" : "-translate-y-1 scale-[0.98]",
+                  ].join(" ")}
+              >
+                {calendarMonthRange ? (
+                    <div
+                        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] px-0.5 pb-1"
+                    >
+                      {calendarMonthRange.map((ym) => (
+                          <InlineCalendarMonth
+                              key={ym}
+                              ym={ym}
+                              selectedDate={selectedDate}
+                              markedDates={markedDates}
+                              onSelectDate={handlePickCalendarDate}
+                          />
+                      ))}
+                    </div>
+                ) : null}
+              </section>
+            </div>
+          </div>
+        </header>
+
+        <div
+            className={[
+              "mx-auto w-full max-w-md px-4 pb-24 transition-[padding-top] duration-300 ease-out",
+              isDatePickerOpen ? "pt-[calc(100dvh-4rem)]" : "pt-20",
+            ].join(" ")}
+        >
+          <div className="relative">
+            {showDayPlanSkeleton ? (
+                <div
+                    className={[
+                      "space-y-8 animate-pulse transition-opacity duration-200",
+                      isDayPlanLoading ? "opacity-100" : "pointer-events-none opacity-0",
+                    ].join(" ")}
+                    aria-label="일정 불러오는 중"
+                >
+                  <section>
+                    <div className="space-y-3">
+                      <div className="h-10 rounded-md bg-slate-200/70" />
+                      <div className="h-10 rounded-md bg-slate-200/70" />
+                      <div className="h-10 rounded-md bg-slate-200/70" />
+                    </div>
+                  </section>
+                  <section>
+                    <div className="h-[120px] rounded-md bg-slate-200/70" />
+                  </section>
+                  <section>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-[120px] rounded-md bg-slate-200/70" />
+                        <div className="h-10 flex-1 rounded-md bg-slate-200/70" />
+                        <div className="h-10 w-[56px] rounded-md bg-slate-200/70" />
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-14 rounded-md bg-slate-200/60" />
+                        <div className="h-14 rounded-md bg-slate-200/60" />
+                      </div>
+                    </div>
+                  </section>
+                </div>
+            ) : null}
+            <div
+                className={[
+                  "space-y-8 transition-[opacity,transform] duration-200 ease-out",
+                  isDayPlanLoading ? "pointer-events-none absolute inset-0 opacity-0" : "relative opacity-100",
+                  "translate-y-0 scale-100",
+                ].join(" ")}
+            >
+              {/* 1) 가장 중요한 3가지 */}
               <section>
                 <div className="space-y-3">
-                  <div className="h-10 rounded-md bg-slate-200/70" />
-                  <div className="h-10 rounded-md bg-slate-200/70" />
-                  <div className="h-10 rounded-md bg-slate-200/70" />
+                  {important3.map((v, idx) => (
+                      <TextInput
+                          key={idx}
+                          value={v}
+                          placeholder={`가장 중요한 일 ${idx + 1}`}
+                          disabled={isDatePickerOpen}
+                          inputClassName="text-[15px]"
+                          onChange={(next) =>
+                              setImportant3((prev) => {
+                                const copy = [...prev];
+                                copy[idx] = next;
+                                return copy;
+                              })
+                          }
+                      />
+                  ))}
                 </div>
               </section>
+
+              {/* 2) 브레인 덤프 */}
               <section>
-                <div className="h-[120px] rounded-md bg-slate-200/70" />
+                <div>
+                <textarea
+                    id="brain_dump"
+                    aria-label="브레인 덤프"
+                    value={brainDump}
+                    disabled={isDatePickerOpen}
+                    onChange={(e) => setBrainDump(e.target.value)}
+                    placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
+                    className={[
+                      "block w-full border-0 border-b border-slate-200 bg-transparent px-0 py-2.5 text-[16px] text-slate-900 placeholder:text-slate-400",
+                      "focus:border-orange-500 focus:outline-none focus:ring-0",
+                      "disabled:cursor-not-allowed disabled:text-slate-400",
+                      "resize-none min-h-[120px]",
+                    ]
+                        .filter(Boolean)
+                        .join(" ")}
+                />
+                </div>
               </section>
+
+              {/* 3) 시간, 내용 입력 */}
               <section>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-[120px] rounded-md bg-slate-200/70" />
-                    <div className="h-10 flex-1 rounded-md bg-slate-200/70" />
-                    <div className="h-10 w-[56px] rounded-md bg-slate-200/70" />
+                    <div className="w-[120px] flex-none">
+                      <TextInput
+                          type="time"
+                          value={newTime}
+                          disabled={isDatePickerOpen}
+                          onChange={setNewTime}
+                          inputClassName="text-[15px]"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <TextInput
+                          value={newContent}
+                          placeholder="예: 09:00 - 고객 피드백 정리"
+                          disabled={isDatePickerOpen}
+                          inputClassName="text-[15px]"
+                          onChange={setNewContent}
+                      />
+                    </div>
+                    <div className="w-[56px]">
+                      {editingId ? (
+                          isEditingChanged ? (
+                              <button
+                                  type="button"
+                                  aria-label="저장"
+                                  disabled={!canAdd}
+                                  onClick={saveEditItem}
+                                  className={[
+                                    "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
+                                    "text-orange-700 active:opacity-60",
+                                    "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                                    "disabled:cursor-not-allowed disabled:opacity-40",
+                                  ].join(" ")}
+                              >
+                                ✓
+                              </button>
+                          ) : (
+                              <button
+                                  type="button"
+                                  aria-label="취소"
+                                  onClick={resetEditState}
+                                  className={[
+                                    "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
+                                    "text-orange-700 active:opacity-60",
+                                    "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                                  ].join(" ")}
+                              >
+                                ✕
+                              </button>
+                          )
+                      ) : (
+                          <button
+                              type="button"
+                              aria-label="추가"
+                              disabled={!canAdd}
+                              onClick={addItem}
+                              className={[
+                                "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
+                                "text-orange-700 active:opacity-60",
+                                "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                                "disabled:cursor-not-allowed disabled:opacity-40",
+                              ].join(" ")}
+                          >
+                            +
+                          </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-3">
-                    <div className="h-14 rounded-md bg-slate-200/60" />
-                    <div className="h-14 rounded-md bg-slate-200/60" />
-                  </div>
+
+                  {/* 추가된 항목 목록 */}
+                  {items.length > 0 ? (
+                      <div className="space-y-3">
+                        {items.map((it) => (
+                            <div
+                                key={it.id}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => {
+                                  if (swipingItemId === it.id && swipeOffsetX !== 0) return;
+                                  startEditItem(it);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    startEditItem(it);
+                                  }
+                                }}
+                                onTouchStart={(e) => handleItemTouchStart(it.id, e)}
+                                onTouchMove={(e) => handleItemTouchMove(it.id, e)}
+                                onTouchEnd={(e) => {
+                                  const moved = handleItemTouchEnd(it.id);
+                                  if (moved) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                  }
+                                }}
+                                onTouchCancel={() => {
+                                  handleItemTouchEnd(it.id);
+                                }}
+                                className={[
+                                  "cursor-pointer rounded-md px-1 py-1 outline-none transition-colors",
+                                  it.done ? "bg-emerald-50/70" : "hover:bg-black/[0.02] focus:bg-black/[0.04]",
+                                ].join(" ")}
+                                style={{
+                                  touchAction: "pan-y",
+                                  transform:
+                                      swipingItemId === it.id && swipeOffsetX !== 0
+                                          ? `translateX(${swipeOffsetX}px)`
+                                          : "translateX(0)",
+                                  transition:
+                                      swipingItemId === it.id
+                                          ? "none"
+                                          : "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+                                }}
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="min-w-0">
+                                  <div className="text-[13px] font-semibold text-orange-700">{it.time}</div>
+                                  <div
+                                      className={[
+                                        "mt-1 whitespace-pre-wrap break-words text-sm",
+                                        it.done ? "text-slate-500 line-through" : "text-slate-900",
+                                      ].join(" ")}
+                                  >
+                                    {it.content}
+                                  </div>
+                                </div>
+                                {it.done ? (
+                                    <span className="mt-0.5 inline-flex h-5 min-w-[38px] items-center justify-center rounded-full bg-emerald-100 px-2 text-[11px] font-semibold text-emerald-700">
+                              실행
+                            </span>
+                                ) : null}
+                              </div>
+                            </div>
+                        ))}
+                      </div>
+                  ) : (
+                      <p className="text-center text-xs text-slate-500">아직 추가된 시간이 없어요.</p>
+                  )}
                 </div>
               </section>
             </div>
-          ) : null}
-          <div
-            className={[
-              "space-y-8 transition-[opacity,transform] duration-200 ease-out",
-              isDayPlanLoading ? "pointer-events-none absolute inset-0 opacity-0" : "relative opacity-100",
-              "translate-y-0 scale-100",
-            ].join(" ")}
-          >
-            {/* 1) 가장 중요한 3가지 */}
-            <section>
-              <div className="space-y-3">
-                {important3.map((v, idx) => (
-                  <TextInput
-                    key={idx}
-                    value={v}
-                    placeholder={`가장 중요한 일 ${idx + 1}`}
-                    disabled={isDatePickerOpen}
-                    inputClassName="text-[15px]"
-                    onChange={(next) =>
-                      setImportant3((prev) => {
-                        const copy = [...prev];
-                        copy[idx] = next;
-                        return copy;
-                      })
-                    }
-                  />
-                ))}
-              </div>
-            </section>
-
-            {/* 2) 브레인 덤프 */}
-            <section>
-              <div>
-                <textarea
-                  id="brain_dump"
-                  aria-label="브레인 덤프"
-                  value={brainDump}
-                  disabled={isDatePickerOpen}
-                  onChange={(e) => setBrainDump(e.target.value)}
-                  placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
-                  className={[
-                    "block w-full border-0 border-b border-slate-200 bg-transparent px-0 py-2.5 text-[16px] text-slate-900 placeholder:text-slate-400",
-                    "focus:border-orange-500 focus:outline-none focus:ring-0",
-                    "disabled:cursor-not-allowed disabled:text-slate-400",
-                    "resize-none min-h-[120px]",
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                />
-              </div>
-            </section>
-
-            {/* 3) 시간, 내용 입력 */}
-            <section>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-[120px] flex-none">
-                    <TextInput
-                      type="time"
-                      value={newTime}
-                      disabled={isDatePickerOpen}
-                      onChange={setNewTime}
-                      inputClassName="text-[15px]"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <TextInput
-                      value={newContent}
-                      placeholder="예: 09:00 - 고객 피드백 정리"
-                      disabled={isDatePickerOpen}
-                      inputClassName="text-[15px]"
-                      onChange={setNewContent}
-                    />
-                  </div>
-                  <div className="w-[56px]">
-                    {editingId ? (
-                      isEditingChanged ? (
-                        <button
-                          type="button"
-                          aria-label="저장"
-                          disabled={!canAdd}
-                          onClick={saveEditItem}
-                          className={[
-                            "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
-                            "text-orange-700 active:opacity-60",
-                            "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                            "disabled:cursor-not-allowed disabled:opacity-40",
-                          ].join(" ")}
-                        >
-                          ✓
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          aria-label="취소"
-                          onClick={resetEditState}
-                          className={[
-                            "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
-                            "text-orange-700 active:opacity-60",
-                            "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                          ].join(" ")}
-                        >
-                          ✕
-                        </button>
-                      )
-                    ) : (
-                      <button
-                        type="button"
-                        aria-label="추가"
-                        disabled={!canAdd}
-                        onClick={addItem}
-                        className={[
-                          "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
-                          "text-orange-700 active:opacity-60",
-                          "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                          "disabled:cursor-not-allowed disabled:opacity-40",
-                        ].join(" ")}
-                      >
-                        +
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* 추가된 항목 목록 */}
-                {items.length > 0 ? (
-                  <div className="space-y-3">
-                    {items.map((it) => (
-                      <div
-                        key={it.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => {
-                          if (swipingItemId === it.id && swipeOffsetX !== 0) return;
-                          startEditItem(it);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            startEditItem(it);
-                          }
-                        }}
-                        onTouchStart={(e) => handleItemTouchStart(it.id, e)}
-                        onTouchMove={(e) => handleItemTouchMove(it.id, e)}
-                        onTouchEnd={(e) => {
-                          const moved = handleItemTouchEnd(it.id);
-                          if (moved) {
-                            e.preventDefault();
-                            e.stopPropagation();
-                          }
-                        }}
-                        onTouchCancel={() => {
-                          handleItemTouchEnd(it.id);
-                        }}
-                        className={[
-                          "cursor-pointer rounded-md px-1 py-1 outline-none transition-colors",
-                          it.done ? "bg-emerald-50/70" : "hover:bg-black/[0.02] focus:bg-black/[0.04]",
-                        ].join(" ")}
-                        style={{
-                          touchAction: "pan-y",
-                          transform:
-                            swipingItemId === it.id && swipeOffsetX !== 0
-                              ? `translateX(${swipeOffsetX}px)`
-                              : "translateX(0)",
-                          transition:
-                            swipingItemId === it.id
-                              ? "none"
-                              : "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
-                        }}
-                      >
-                        <div className="flex items-start gap-2">
-                          <div className="min-w-0">
-                            <div className="text-[13px] font-semibold text-orange-700">{it.time}</div>
-                            <div
-                              className={[
-                                "mt-1 whitespace-pre-wrap break-words text-sm",
-                                it.done ? "text-slate-500 line-through" : "text-slate-900",
-                              ].join(" ")}
-                            >
-                              {it.content}
-                            </div>
-                          </div>
-                          {it.done ? (
-                            <span className="mt-0.5 inline-flex h-5 min-w-[38px] items-center justify-center rounded-full bg-emerald-100 px-2 text-[11px] font-semibold text-emerald-700">
-                              실행
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-center text-xs text-slate-500">아직 추가된 시간이 없어요.</p>
-                )}
-              </div>
-            </section>
           </div>
         </div>
-      </div>
 
-      {!isDatePickerOpen ? (
-        <div className="fixed inset-x-0 bottom-0 z-30">
-          <div className="mx-auto w-full max-w-md px-4 pb-4 pt-2">
-            <div className="flex justify-end">
-              <button
-                type="button"
-                aria-label="일정 리포트 열기"
-                onClick={() => {
-                  setIsDatePickerOpen(false);
-                  setIsReportOpen(true);
-                }}
-                className={[
-                  "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-600 p-0",
-                  "text-white shadow-md",
-                  "active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30",
-                ].join(" ")}
-              >
-                <i className="fas fa-clipboard-list text-[22px] leading-none" aria-hidden />
-              </button>
+        {!isDatePickerOpen ? (
+            <div className="fixed inset-x-0 bottom-0 z-30">
+              <div className="mx-auto w-full max-w-md px-4 pb-4 pt-2">
+                <div className="flex justify-end">
+                  <button
+                      type="button"
+                      aria-label="일정 리포트 열기"
+                      onClick={() => {
+                        setIsDatePickerOpen(false);
+                        setIsReportOpen(true);
+                      }}
+                      className={[
+                        "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-600 p-0",
+                        "text-white shadow-md",
+                        "active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30",
+                      ].join(" ")}
+                  >
+                    <i className="fas fa-clipboard-list text-[22px] leading-none" aria-hidden />
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      {isReportOpen ? (
-        <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
-          onClick={() => setIsReportOpen(false)}
-        >
-          <div className="mx-auto flex h-full min-h-0 w-full max-w-md items-stretch justify-center px-0 pb-0 pt-0">
-            <section
-              className="flex h-full w-full flex-col overflow-hidden bg-white"
-              onClick={(e) => e.stopPropagation()}
-              onTouchStart={handleReportTouchStart}
-              onTouchMove={handleReportTouchMove}
-              onTouchEnd={handleReportTouchEnd}
-              onTouchCancel={() => {
-                reportSwipeRef.current = {
-                  startX: 0,
-                  startY: 0,
-                  tracking: false,
-                  horizontalLocked: false,
-                  moved: false,
-                };
-              }}
-              style={{ touchAction: "pan-y" }}
+        {isReportOpen ? (
+            <div
+                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
+                onClick={() => setIsReportOpen(false)}
             >
-              <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-3">
-                <p
-                  className="min-w-0 flex-1 text-sm font-semibold leading-snug text-slate-700"
-                  suppressHydrationWarning
+              <div className="mx-auto flex h-full min-h-0 w-full max-w-md items-stretch justify-center px-0 pb-0 pt-0">
+                <section
+                    className="flex h-full w-full flex-col overflow-hidden bg-white"
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchStart={handleReportTouchStart}
+                    onTouchMove={handleReportTouchMove}
+                    onTouchEnd={handleReportTouchEnd}
+                    onTouchCancel={() => {
+                      reportSwipeRef.current = {
+                        startX: 0,
+                        startY: 0,
+                        tracking: false,
+                        horizontalLocked: false,
+                        moved: false,
+                      };
+                    }}
+                    style={{ touchAction: "pan-y" }}
                 >
-                  {selectedDateLabel}
-                </p>
-                <button
-                  type="button"
-                  aria-label="리포트 닫기"
-                  onClick={() => setIsReportOpen(false)}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-[13px] font-semibold text-slate-500">가장 중요한 3가지</h3>
-                  {filledImportant3.length > 0 ? (
-                    <ul className="mt-2 space-y-1.5">
-                      {filledImportant3.map((v, idx) => (
-                        <li key={`${idx}_${v}`} className="text-sm text-slate-900">
-                          {idx + 1}. {v}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-400">작성된 항목이 없습니다.</p>
-                  )}
-                </div>
-
-                <div className="h-px w-full bg-black/[0.06]" />
-
-                <div>
-                  <h3 className="text-[13px] font-semibold text-slate-500">브레인 덤프</h3>
-                  {brainDump.trim() ? (
-                    <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">
-                      {brainDump.trim()}
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-3">
+                    <p
+                        className="min-w-0 flex-1 text-sm font-semibold leading-snug text-slate-700"
+                        suppressHydrationWarning
+                    >
+                      {selectedDateLabel}
                     </p>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-400">작성된 내용이 없습니다.</p>
-                  )}
-                </div>
+                    <button
+                        type="button"
+                        aria-label="리포트 닫기"
+                        onClick={() => setIsReportOpen(false)}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                    >
+                      ✕
+                    </button>
+                  </div>
 
-                <div className="h-px w-full bg-black/[0.06]" />
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]">
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-[13px] font-semibold text-slate-500">가장 중요한 3가지</h3>
+                        {filledImportant3.length > 0 ? (
+                            <ul className="mt-2 space-y-1.5">
+                              {filledImportant3.map((v, idx) => (
+                                  <li key={`${idx}_${v}`} className="text-sm text-slate-900">
+                                    {idx + 1}. {v}
+                                  </li>
+                              ))}
+                            </ul>
+                        ) : (
+                            <p className="mt-2 text-sm text-slate-400">작성된 항목이 없습니다.</p>
+                        )}
+                      </div>
 
-                <div>
-                  <h3 className="text-[13px] font-semibold text-slate-500">시간 + 내용</h3>
-                  {items.length > 0 ? (
-                    <div className="mt-2 space-y-2.5">
-                      {items.map((it) => (
-                        <div
-                          key={it.id}
-                          className={[
-                            "flex items-start gap-3 rounded-md px-2 py-1",
-                            it.done ? "bg-emerald-50/70" : "",
-                          ].join(" ")}
-                        >
-                          <div className="min-w-[58px] text-[12px] font-semibold text-orange-700">
-                            {it.time}
-                          </div>
-                          <div
-                            className={[
-                              "flex-1 break-words text-sm",
-                              it.done ? "text-slate-500 line-through" : "text-slate-900",
-                            ].join(" ")}
-                          >
-                            {it.content}
-                          </div>
-                          {it.done ? (
-                            <span className="inline-flex h-5 min-w-[38px] items-center justify-center rounded-full bg-emerald-100 px-2 text-[11px] font-semibold text-emerald-700">
+                      <div className="h-px w-full bg-black/[0.06]" />
+
+                      <div>
+                        <h3 className="text-[13px] font-semibold text-slate-500">브레인 덤프</h3>
+                        {brainDump.trim() ? (
+                            <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">
+                              {brainDump.trim()}
+                            </p>
+                        ) : (
+                            <p className="mt-2 text-sm text-slate-400">작성된 내용이 없습니다.</p>
+                        )}
+                      </div>
+
+                      <div className="h-px w-full bg-black/[0.06]" />
+
+                      <div>
+                        <h3 className="text-[13px] font-semibold text-slate-500">시간 + 내용</h3>
+                        {items.length > 0 ? (
+                            <div className="mt-2 space-y-2.5">
+                              {items.map((it) => (
+                                  <div
+                                      key={it.id}
+                                      className={[
+                                        "flex items-start gap-3 rounded-md px-2 py-1",
+                                        it.done ? "bg-emerald-50/70" : "",
+                                      ].join(" ")}
+                                  >
+                                    <div className="min-w-[58px] text-[12px] font-semibold text-orange-700">
+                                      {it.time}
+                                    </div>
+                                    <div
+                                        className={[
+                                          "flex-1 break-words text-sm",
+                                          it.done ? "text-slate-500 line-through" : "text-slate-900",
+                                        ].join(" ")}
+                                    >
+                                      {it.content}
+                                    </div>
+                                    {it.done ? (
+                                        <span className="inline-flex h-5 min-w-[38px] items-center justify-center rounded-full bg-emerald-100 px-2 text-[11px] font-semibold text-emerald-700">
                               실행
                             </span>
-                          ) : null}
-                        </div>
-                      ))}
+                                    ) : null}
+                                  </div>
+                              ))}
+                            </div>
+                        ) : (
+                            <p className="mt-2 text-sm text-slate-400">추가된 일정이 없습니다.</p>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-400">추가된 일정이 없습니다.</p>
-                  )}
-                </div>
+                  </div>
+                </section>
               </div>
-              </div>
-            </section>
-          </div>
-        </div>
-      ) : null}
+            </div>
+        ) : null}
 
-    </main>
+      </main>
   );
 }
