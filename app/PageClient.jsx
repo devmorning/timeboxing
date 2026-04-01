@@ -646,7 +646,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     const timer = setTimeout(() => {
       setShowAuthTransitionContent(true);
-    }, 140);
+    }, 180);
 
     return () => clearTimeout(timer);
   }, [isAuthBootstrapDone]);
@@ -719,9 +719,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           <div className="relative min-h-[70dvh]">
             <div
                 className={[
-                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
+                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]",
               showAuthTransitionContent
-                ? "pointer-events-none absolute inset-0 translate-y-1 scale-[0.985] opacity-0 blur-[2px]"
+                ? "pointer-events-none absolute inset-0 translate-y-0.5 scale-[0.992] opacity-0 blur-[1.5px]"
                 : "translate-y-0 scale-100 opacity-100 blur-0",
                 ].join(" ")}
                 aria-hidden={showAuthTransitionContent}
@@ -740,10 +740,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
             <div
                 className={[
-                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
+                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]",
               showAuthTransitionContent
                 ? "translate-y-0 scale-100 opacity-100 blur-0"
-                : "pointer-events-none translate-y-2 scale-[0.99] opacity-0 blur-[4px]",
+                : "pointer-events-none translate-y-1.5 scale-[0.995] opacity-0 blur-[3px]",
                 ].join(" ")}
                 aria-hidden={!showAuthTransitionContent}
             >
