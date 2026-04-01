@@ -893,7 +893,26 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   </>
               ) : (
                   <>
-                    <div className="h-10 min-w-[44px]" aria-hidden />
+                    <button
+                        type="button"
+                        aria-label="오늘 날짜로 이동"
+                        disabled={isDateTransitionLoading}
+                        onClick={() => {
+                          const today = toLocalYmd(new Date());
+                          setSelectedDate(today);
+                          closeInlineCalendar();
+                        }}
+                        className={[
+                          "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
+                          "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                          isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                        ].join(" ")}
+                    >
+                      <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
+                        ◎
+                      </span>
+                      <span className="sr-only">오늘</span>
+                    </button>
                     <button
                         type="button"
                         aria-label="캘린더 닫기"
@@ -906,26 +925,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     >
                       <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
                     </button>
-                    <div className="flex min-w-[88px] items-center justify-end gap-1">
-                      <button
-                          type="button"
-                          aria-label="오늘 날짜로 이동"
-                          disabled={isDateTransitionLoading}
-                          onClick={() => {
-                            const today = toLocalYmd(new Date());
-                            setSelectedDate(today);
-                            closeInlineCalendar();
-                          }}
-                          className={[
-                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
-                            isDateTransitionLoading ? "cursor-wait opacity-40" : "",
-                          ].join(" ")}
-                      >
-                        <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
-                          ◎
-                        </span>
-                        <span className="sr-only">오늘</span>
-                      </button>
+                    <div className="flex min-w-[44px] items-center justify-end">
                       <button
                           type="button"
                           aria-label="로그아웃"
