@@ -20,7 +20,7 @@ import {
 } from "../components/timeboxing/storage/dayPlan.apiRepository.js";
 import { hasDayPlanContent, normalizeDayPlan } from "../components/timeboxing/storage/dayPlan.schema.js";
 
-export default function PageClient({ initialAuthUser = null, initialSelectedDate = null, initialPlan = null }) {
+export default function PageClient({ initialAuthUser = null, initial = null, initialPlan = null }) {
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
   const saveTimerRef = useRef(null);
   const lastSavedPlanRef = useRef("");
@@ -37,7 +37,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   };
 
 
-  const [selectedDate, setSelectedDate] = useState(() => initialSelectedDate || toLocalYmd(new Date()));
+  const [, setSelectedDate] = useState(() => initialSelectedDate || toLocalYmd(new Date()));
 
   const selectedDateLabel = useMemo(() => {
     const [y, m, d] = selectedDate.split("-").map(Number);
@@ -701,8 +701,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           <div className="relative min-h-[70dvh]">
             <div
                 className={[
-                  "w-full transition-opacity duration-200",
-              authReady ? "pointer-events-none absolute inset-0 opacity-0" : "relative opacity-100",
+                  "w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
+              authReady
+                ? "pointer-events-none absolute inset-0 translate-y-1 scale-[0.985] opacity-0 blur-[2px]"
+                : "relative translate-y-0 scale-100 opacity-100 blur-0",
                 ].join(" ")}
                 aria-hidden={authReady}
             >
@@ -720,8 +722,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
             <div
                 className={[
-                  "w-full transition-opacity duration-200",
-              authReady ? "relative opacity-100" : "pointer-events-none absolute inset-0 opacity-0",
+                  "w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
+              authReady
+                ? "relative translate-y-0 scale-100 opacity-100 blur-0"
+                : "pointer-events-none absolute inset-0 translate-y-2 scale-[0.99] opacity-0 blur-[4px]",
                 ].join(" ")}
                 aria-hidden={!authReady}
             >
