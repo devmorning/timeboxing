@@ -32,9 +32,21 @@ function copySetCookieHeaders(fromHeaders, toHeaders) {
   }
 }
 
+function logProxyTiming(method, path, status, startedAt) {
+  // eslint-disable-next-line no-console
+  console.log("[proxy]", {
+    method,
+    path,
+    status,
+    elapsedMs: Date.now() - startedAt,
+  });
+}
+
 async function proxyRequest(request, { params }) {
+  const startedAt = Date.now();
   const { path = [] } = await params;
   const targetUrl = buildTargetUrl(request, path);
+  const requestPath = `/${Array.isArray(path) ? path.join("/") : ""}${request.nextUrl.search || ""}`;
   const requestHeaders = new Headers(request.headers);
 
   requestHeaders.delete("host");
@@ -65,12 +77,14 @@ async function proxyRequest(request, { params }) {
 
   if (location) {
     responseHeaders.set("location", location);
+    logProxyTiming(request.method, requestPath, upstream.status, startedAt);
     return new NextResponse(null, {
       status: upstream.status,
       headers: responseHeaders,
     });
   }
 
+  logProxyTiming(request.method, requestPath, upstream.status, startedAt);
   return new NextResponse(await upstream.arrayBuffer(), {
     status: upstream.status,
     headers: responseHeaders,

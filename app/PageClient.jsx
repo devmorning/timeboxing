@@ -14,11 +14,12 @@ import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/util
 import { addDaysToYmd } from "../components/timeboxing/utils/dateYmd.js";
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
 import { getApiAuthUrl } from "../components/timeboxing/storage/dayPlan.apiRepository.js";
-import { hasDayPlanContent } from "../components/timeboxing/storage/dayPlan.schema.js";
+import { hasDayPlanContent, normalizeDayPlan } from "../components/timeboxing/storage/dayPlan.schema.js";
 
 export default function PageClient({ initialAuthUser = null, initialSelectedDate = null, initialPlan = null }) {
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
   const saveTimerRef = useRef(null);
+  const lastSavedPlanRef = useRef("");
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(initialAuthUser);
 
@@ -85,10 +86,30 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     });
   }, []);
 
+  const serializePlan = useCallback(
+    (plan) =>
+      JSON.stringify({
+        important3: normalizeDayPlan(plan).important3,
+        brainDump: normalizeDayPlan(plan).brainDump,
+        items: sortItemsByTimeAsc(normalizeDayPlan(plan).items).map((it) => ({
+          id: it.id,
+          time: it.time,
+          content: it.content,
+          done: Boolean(it.done),
+        })),
+      }),
+    [sortItemsByTimeAsc]
+  );
+
   const filledImportant3 = useMemo(
     () => important3.map((v) => v.trim()).filter(Boolean),
     [important3]
   );
+
+  useEffect(() => {
+    if (!initialAuthUser?.id || !initialSelectedDate) return;
+    lastSavedPlanRef.current = serializePlan(initialPlan);
+  }, [initialAuthUser?.id, initialSelectedDate, initialPlan, serializePlan]);
 
   const editingItem = useMemo(() => {
     if (!editingId) return null;
@@ -358,6 +379,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   useEffect(() => {
+    if (initialAuthUser?.id) {
+      setAuthUser(initialAuthUser);
+      setAuthReady(true);
+      return;
+    }
+
     let cancelled = false;
 
     const loadAuthMe = async () => {
@@ -368,12 +395,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           setAuthUser(auth.user);
           return;
         }
-        setAuthUser(initialAuthUser?.id ? initialAuthUser : null);
+        setAuthUser(null);
       } catch (error) {
         if (!cancelled) {
           if (error?.status !== 401) {
             console.error("Failed to load auth user", error);
-            setAuthUser(initialAuthUser?.id ? initialAuthUser : null);
+            setAuthUser(null);
           } else {
             setAuthUser(null);
           }
@@ -391,7 +418,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return () => {
       cancelled = true;
     };
-  }, [initialAuthUser?.id, dayPlanRepository]);
+  }, [initialAuthUser, dayPlanRepository]);
 
   useEffect(() => {
     if (!authReady || !authUser?.id) return;
@@ -401,6 +428,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       try {
         const plan = await dayPlanRepository.getByDate(selectedDate);
         if (cancelled) return;
+        lastSavedPlanRef.current = serializePlan(plan);
         setImportant3(plan.important3);
         setBrainDump(plan.brainDump);
         setItems(sortItemsByTimeAsc(plan.items));
@@ -423,7 +451,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return () => {
       cancelled = true;
     };
-  }, [authReady, authUser?.id, dayPlanRepository, selectedDate, sortItemsByTimeAsc]);
+  }, [authReady, authUser?.id, dayPlanRepository, selectedDate, sortItemsByTimeAsc, serializePlan]);
 
   useEffect(() => {
     if (!authUser?.id) return;
@@ -432,13 +460,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       clearTimeout(saveTimerRef.current);
     }
 
+    const currentPlan = { important3, brainDump, items };
+    const nextSnapshot = serializePlan(currentPlan);
+    if (lastSavedPlanRef.current === nextSnapshot) return;
+
     saveTimerRef.current = setTimeout(async () => {
       try {
-        await dayPlanRepository.saveByDate(selectedDate, {
-          important3,
-          brainDump,
-          items,
-        });
+        await dayPlanRepository.saveByDate(selectedDate, currentPlan);
+        lastSavedPlanRef.current = nextSnapshot;
       } catch (error) {
         console.error("Failed to save day plan", error);
       }
@@ -449,7 +478,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         clearTimeout(saveTimerRef.current);
       }
     };
-  }, [authUser?.id, readyDate, selectedDate, important3, brainDump, items, dayPlanRepository]);
+  }, [authUser?.id, readyDate, selectedDate, important3, brainDump, items, dayPlanRepository, serializePlan]);
 
   useEffect(() => {
     if (!authUser?.id) return;
