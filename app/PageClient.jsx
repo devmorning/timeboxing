@@ -655,9 +655,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   if (!authUser) {
     return (
-      <main className="relative overflow-hidden bg-[#F6F1E8]">
+      <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#F7F3EB]">
         <div
-          className="pointer-events-none absolute inset-0 opacity-60"
+          className="pointer-events-none absolute inset-0 opacity-50"
           aria-hidden
           style={{
             backgroundImage:
@@ -665,24 +665,25 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           }}
         />
         <section
-          className="relative mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col justify-between px-6 pb-8 pt-16 sm:px-10 sm:pb-10 sm:pt-20"
-          style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
+          className="relative mx-auto flex w-full max-w-md flex-col px-8 py-12 sm:px-10"
+          style={{ paddingBottom: "max(3rem, calc(env(safe-area-inset-bottom) + 2rem))" }}
         >
           <div
             className={[
               "w-full transition-opacity duration-200",
-              authReady ? "pointer-events-none absolute inset-x-6 top-16 opacity-0 sm:inset-x-10 sm:top-20" : "relative opacity-100",
+              authReady ? "pointer-events-none absolute inset-x-8 top-12 opacity-0 sm:inset-x-10" : "relative opacity-100",
             ].join(" ")}
             aria-hidden={authReady}
           >
-            <div className="animate-pulse pt-2">
-              <div className="max-w-2xl space-y-5">
-                <div className="h-4 w-20 rounded-full bg-stone-200" />
-                <div className="h-14 w-52 rounded-full bg-stone-200" />
-                <div className="h-14 w-64 rounded-full bg-stone-200" />
-                <div className="h-3 w-28 rounded-full bg-stone-100" />
+            <div className="animate-pulse">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 ring-1 ring-stone-200/80">
+                <div className="h-5 w-5 rounded-full border-2 border-stone-400" />
               </div>
-              <div className="mt-14 max-w-sm">
+              <div className="mt-10 space-y-4">
+                <div className="h-12 w-52 rounded-full bg-stone-200" />
+                <div className="h-4 w-36 rounded-full bg-stone-100" />
+              </div>
+              <div className="mt-16 max-w-sm">
                 <div className="h-12 w-full rounded-full bg-stone-900/10" />
                 <div className="mx-auto mt-4 h-3 w-28 rounded-full bg-stone-100" />
               </div>
@@ -692,25 +693,29 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           <div
             className={[
               "w-full transition-opacity duration-200",
-              authReady ? "relative opacity-100" : "pointer-events-none absolute inset-x-6 top-16 opacity-0 sm:inset-x-10 sm:top-20",
+              authReady ? "relative opacity-100" : "pointer-events-none absolute inset-x-8 top-12 opacity-0 sm:inset-x-10",
             ].join(" ")}
             aria-hidden={!authReady}
           >
-            <div className="max-w-2xl pt-2">
-              <p className="text-[12px] font-medium uppercase tracking-[0.24em] text-stone-400">
+            <div>
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 ring-1 ring-stone-200/80">
+                <div className="relative h-5 w-5 rounded-full border-2 border-stone-700">
+                  <span className="absolute left-1/2 top-[2px] h-1.5 w-[2px] -translate-x-1/2 rounded-full bg-stone-700" />
+                  <span className="absolute right-[4px] top-1/2 h-[2px] w-1.5 -translate-y-1/2 rounded-full bg-stone-700" />
+                </div>
+              </div>
+              <h1 className="mt-10 text-[40px] font-semibold leading-[0.96] tracking-[-0.07em] text-slate-950 sm:text-[48px]">
                 Timeboxing
-              </p>
-              <h1 className="mt-5 text-[52px] font-semibold leading-[0.9] tracking-[-0.09em] text-slate-950 sm:text-[72px]">
-                Own
-                <br />
-                your hours.
               </h1>
-              <p className="mt-4 text-[13px] font-medium tracking-[0.08em] text-stone-400">
-                Plan less. Move clearly.
+              <p className="mt-3 text-[18px] leading-[1.35] tracking-[-0.03em] text-slate-700">
+                Plan your day.
+              </p>
+              <p className="mt-2 text-[14px] leading-6 text-stone-400">
+                Focus on what matters most.
               </p>
             </div>
 
-            <div className="mt-14 max-w-sm">
+            <div className="mt-16 max-w-sm">
               <button
                 type="button"
                 onClick={handleLogin}
