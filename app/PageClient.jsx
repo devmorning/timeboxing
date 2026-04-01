@@ -633,11 +633,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     const contentTimer = setTimeout(() => {
       setShowDayPlanContent(true);
-    }, 120);
+    }, 150);
 
     const skeletonTimer = setTimeout(() => {
       setShowDayPlanSkeleton(false);
-    }, 260);
+    }, 340);
 
     return () => {
       clearTimeout(contentTimer);
@@ -655,7 +655,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     const timer = setTimeout(() => {
       setShowAuthTransitionContent(true);
-    }, 180);
+    }, 220);
 
     return () => clearTimeout(timer);
   }, [isAuthBootstrapDone]);
@@ -728,31 +728,26 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           <div className="relative min-h-[70dvh]">
             <div
                 className={[
-                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]",
+                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-650 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]",
               showAuthTransitionContent
-                ? "pointer-events-none absolute inset-0 translate-y-0.5 scale-[0.992] opacity-0 blur-[1.5px]"
+                ? "pointer-events-none absolute inset-0 translate-y-0.5 scale-[0.996] opacity-0 blur-[1px]"
                 : "translate-y-0 scale-100 opacity-100 blur-0",
                 ].join(" ")}
                 aria-hidden={showAuthTransitionContent}
             >
             <div className="flex min-h-[70dvh] items-center justify-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-                  <div className="grid grid-cols-2 gap-1.5" aria-hidden>
-                    <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-700" />
-                    <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-300" />
-                    <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-400" />
-                    <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-700" />
-                  </div>
+                  <div className="h-[3px] w-6 rounded-full bg-slate-700/80" aria-hidden />
                 </div>
               </div>
             </div>
 
             <div
                 className={[
-                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]",
+                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-650 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]",
               showAuthTransitionContent
                 ? "translate-y-0 scale-100 opacity-100 blur-0"
-                : "pointer-events-none translate-y-1.5 scale-[0.995] opacity-0 blur-[3px]",
+                : "pointer-events-none translate-y-1 scale-[0.998] opacity-0 blur-[2px]",
                 ].join(" ")}
                 aria-hidden={!showAuthTransitionContent}
             >
@@ -950,10 +945,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             {showDayPlanSkeleton ? (
                 <div
                     className={[
-                      "col-start-1 row-start-1 space-y-8 animate-pulse transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      "col-start-1 row-start-1 space-y-8 animate-pulse transition-[opacity,transform,filter] duration-420 ease-[cubic-bezier(0.22,1,0.36,1)]",
                       isDayPlanLoading
                         ? "opacity-100 translate-y-0 scale-100 blur-0"
-                        : "pointer-events-none opacity-0 -translate-y-1 scale-[0.992] blur-[2px]",
+                        : "pointer-events-none opacity-0 -translate-y-0.5 scale-[0.996] blur-[1.5px]",
                     ].join(" ")}
                     aria-label="일정 불러오는 중"
                 >
@@ -984,10 +979,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             ) : null}
             <div
                 className={[
-                  "col-start-1 row-start-1 space-y-8 transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "col-start-1 row-start-1 space-y-8 transition-[opacity,transform,filter] duration-420 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   showDayPlanContent
                     ? "opacity-100 translate-y-0 scale-100 blur-0"
-                    : "pointer-events-none opacity-0 translate-y-1.5 scale-[0.996] blur-[3px]",
+                    : "pointer-events-none opacity-0 translate-y-1 scale-[0.998] blur-[2px]",
                 ].join(" ")}
             >
               {/* 1) 가장 중요한 3가지 */}
