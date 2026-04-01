@@ -26,7 +26,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const lastSavedPlanRef = useRef("");
   const skippedInitialLoadRef = useRef(false);
   const dayPlanCacheRef = useRef(new Map());
-  const cachedTransitionTimerRef = useRef(null);
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(initialAuthUser);
 
@@ -62,8 +61,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [readyDate, setReadyDate] = useState(initialAuthUser && initialSelectedDate ? initialSelectedDate : "");
   const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(Boolean(initialAuthUser));
   const [showDayPlanSkeleton, setShowDayPlanSkeleton] = useState(true);
-  const [isCachedDateTransitionActive, setIsCachedDateTransitionActive] = useState(false);
-  const [cachedTransitionDirection, setCachedTransitionDirection] = useState("next");
   const [swipingItemId, setSwipingItemId] = useState(null);
   const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
@@ -115,14 +112,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     () => important3.map((v) => v.trim()).filter(Boolean),
     [important3]
   );
-
-  useEffect(() => {
-    return () => {
-      if (cachedTransitionTimerRef.current) {
-        clearTimeout(cachedTransitionTimerRef.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!initialAuthUser?.id || !initialSelectedDate) return;
@@ -339,13 +328,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!isHorizontal) return;
 
     if (dx <= -72) {
-      moveSelectedDateBy(1);
+      setSelectedDate((d) => addDaysToYmd(d, 1));
       event.preventDefault();
       event.stopPropagation();
       return;
     }
     if (dx >= 72) {
-      moveSelectedDateBy(-1);
+      setSelectedDate((d) => addDaysToYmd(d, -1));
       event.preventDefault();
       event.stopPropagation();
     }
@@ -359,17 +348,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const handlePickCalendarDate = useCallback(
     (dateYmd) => {
-      setCachedTransitionDirection(dateYmd > selectedDate ? "next" : "prev");
       setSelectedDate(dateYmd);
       closeInlineCalendar();
     },
-    [closeInlineCalendar, selectedDate]
+    [closeInlineCalendar]
   );
-
-  const moveSelectedDateBy = useCallback((days) => {
-    setCachedTransitionDirection(days > 0 ? "next" : "prev");
-    setSelectedDate((d) => addDaysToYmd(d, days));
-  }, []);
 
   const openInlineCalendar = (event) => {
     event?.preventDefault();
@@ -477,13 +460,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     const cachedPlan = dayPlanCacheRef.current.get(selectedDate);
     if (cachedPlan) {
       const normalizedPlan = normalizeDayPlan(cachedPlan);
-      if (cachedTransitionTimerRef.current) {
-        clearTimeout(cachedTransitionTimerRef.current);
-      }
-      setIsCachedDateTransitionActive(true);
-      cachedTransitionTimerRef.current = setTimeout(() => {
-        setIsCachedDateTransitionActive(false);
-      }, 220);
       lastSavedPlanRef.current = serializePlan(normalizedPlan);
       setImportant3(normalizedPlan.important3);
       setBrainDump(normalizedPlan.brainDump);
@@ -736,7 +712,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
                     isDateTransitionLoading ? "cursor-wait opacity-40" : "",
                   ].join(" ")}
-                  onClick={() => moveSelectedDateBy(-1)}
+                  onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
                 >
                   ‹
                 </button>
@@ -777,7 +753,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
                     isDateTransitionLoading ? "cursor-wait opacity-40" : "",
                   ].join(" ")}
-                  onClick={() => moveSelectedDateBy(1)}
+                  onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
                 >
                   ›
                 </button>
@@ -803,7 +779,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   disabled={isDateTransitionLoading}
                   onClick={() => {
                     const today = toLocalYmd(new Date());
-                    setCachedTransitionDirection(today > selectedDate ? "next" : "prev");
                     setSelectedDate(today);
                     closeInlineCalendar();
                   }}
@@ -913,11 +888,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             className={[
               "space-y-8 transition-[opacity,transform] duration-200 ease-out",
               isDayPlanLoading ? "pointer-events-none absolute inset-0 opacity-0" : "relative opacity-100",
-              isCachedDateTransitionActive
-                ? cachedTransitionDirection === "next"
-                  ? "translate-x-[10px] opacity-[0.985]"
-                  : "-translate-x-[10px] opacity-[0.985]"
-                : "translate-x-0 opacity-100",
+              "translate-y-0 scale-100",
             ].join(" ")}
           >
             {/* 1) 가장 중요한 3가지 */}
