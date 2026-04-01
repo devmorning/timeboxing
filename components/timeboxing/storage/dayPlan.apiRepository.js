@@ -1,7 +1,12 @@
 import { createEmptyDayPlan, normalizeDayPlan } from "./dayPlan.schema.js";
 
 function getApiBaseUrl() {
-  return "/api/proxy";
+  const base =
+    process.env.NEXT_PUBLIC_TIMEBOXING_API_BASE_URL ||
+    (process.env.NODE_ENV === "development"
+      ? "http://localhost"
+      : "https://timeboxing-api.vercel.app");
+  return base.replace(/\/+$/, "");
 }
 
 export function getApiAuthUrl(path = "") {
