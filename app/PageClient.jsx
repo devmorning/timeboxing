@@ -783,7 +783,28 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       aria-label="Google로 로그인"
                       className="group flex h-16 w-16 items-center justify-center rounded-full bg-[#1F1F1F] text-white shadow-[0_12px_30px_rgba(15,23,42,0.16)] transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] active:opacity-90"
                   >
-                    <i className="fab fa-google text-[20px] transition-transform duration-150 group-active:scale-95" aria-hidden />
+                    <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-5 w-5 transition-transform duration-150 group-active:scale-95"
+                    >
+                      <path
+                          fill="#EA4335"
+                          d="M12 10.2v3.9h5.4c-.2 1.3-1.5 3.9-5.4 3.9-3.2 0-5.9-2.7-5.9-6s2.7-6 5.9-6c1.8 0 3 .8 3.7 1.4l2.5-2.4C16.7 3.7 14.6 3 12 3 7 3 3 7 3 12s4 9 9 9c5.2 0 8.6-3.7 8.6-8.9 0-.6-.1-1.1-.2-1.6z"
+                      />
+                      <path
+                          fill="#34A853"
+                          d="M3 16.7l3.1-2.4c.8 1.9 2.6 3.2 5 3.2 3 0 4.7-2 5.3-3H12v-3.8h8.4c.1.4.2 1 .2 1.6 0 5.2-3.5 8.9-8.6 8.9-3.8 0-7-2.2-8.6-5.5z"
+                      />
+                      <path
+                          fill="#FBBC05"
+                          d="M4.8 7.9C4.3 8.9 4 10 4 11.2c0 1.2.3 2.3.8 3.3l-1.8 2.2C2.4 15.4 2 13.8 2 12s.4-3.4 1.1-4.8z"
+                      />
+                      <path
+                          fill="#4285F4"
+                          d="M12 4.8c2 0 3.4.9 4.2 1.6l2.8-2.8C17.3 2 14.9 1 12 1 8.1 1 4.7 3.2 3 6.4l3 2.3C6.8 6.4 9.1 4.8 12 4.8z"
+                      />
+                    </svg>
                   </button>
                   <p className="mt-5 text-[11px] leading-5 tracking-[0.12em] text-slate-300">
                     TAP TO SIGN IN
@@ -1203,7 +1224,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         "active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30",
                       ].join(" ")}
                   >
-                    <i className="fas fa-clipboard-list text-[22px] leading-none" aria-hidden />
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[22px] w-[22px]">
+                      <path
+                          fill="currentColor"
+                          d="M9 3a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2zm0 2h6v2H9zm-1 6h8v2H8zm0 4h8v2H8z"
+                      />
+                    </svg>
                   </button>
                 </div>
               </div>
