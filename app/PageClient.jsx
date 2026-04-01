@@ -27,6 +27,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const skippedInitialLoadRef = useRef(false);
   const dayPlanCacheRef = useRef(new Map());
   const [authReady, setAuthReady] = useState(Boolean(initialAuthUser?.id));
+  const [isAuthBootstrapDone, setIsAuthBootstrapDone] = useState(Boolean(initialAuthUser?.id));
   const [authUser, setAuthUser] = useState(initialAuthUser);
 
   const toLocalYmd = (d) => {
@@ -436,12 +437,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         }
       } finally {
         if (!cancelled) {
+          setIsAuthBootstrapDone(true);
           setAuthReady(true);
         }
       }
     };
 
     if (!initialAuthUser?.id) {
+      setIsAuthBootstrapDone(false);
       setAuthReady(false);
     }
     loadBootstrap();
@@ -633,6 +636,21 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return () => clearTimeout(timer);
   }, [isDayPlanLoading]);
 
+  const [showAuthTransitionContent, setShowAuthTransitionContent] = useState(Boolean(initialAuthUser?.id));
+
+  useEffect(() => {
+    if (!isAuthBootstrapDone) {
+      setShowAuthTransitionContent(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowAuthTransitionContent(true);
+    }, 140);
+
+    return () => clearTimeout(timer);
+  }, [isAuthBootstrapDone]);
+
   useEffect(() => {
     if (!isReportOpen) return;
 
@@ -702,11 +720,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             <div
                 className={[
                   "absolute inset-0 w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
-              authReady
+              showAuthTransitionContent
                 ? "pointer-events-none absolute inset-0 translate-y-1 scale-[0.985] opacity-0 blur-[2px]"
                 : "translate-y-0 scale-100 opacity-100 blur-0",
                 ].join(" ")}
-                aria-hidden={authReady}
+                aria-hidden={showAuthTransitionContent}
             >
             <div className="flex min-h-[70dvh] items-center justify-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
@@ -723,11 +741,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             <div
                 className={[
                   "absolute inset-0 w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
-              authReady
+              showAuthTransitionContent
                 ? "translate-y-0 scale-100 opacity-100 blur-0"
                 : "pointer-events-none translate-y-2 scale-[0.99] opacity-0 blur-[4px]",
                 ].join(" ")}
-                aria-hidden={!authReady}
+                aria-hidden={!showAuthTransitionContent}
             >
               <div className="flex min-h-[70dvh] flex-col justify-center">
                 <div>
