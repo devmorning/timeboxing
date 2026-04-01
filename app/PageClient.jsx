@@ -676,13 +676,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             aria-hidden={authReady}
           >
             <div className="animate-pulse pt-2">
-              <div className="max-w-2xl space-y-4">
-                <div className="h-4 w-16 rounded-full bg-stone-200" />
-                <div className="h-14 w-56 rounded-full bg-stone-200" />
+              <div className="max-w-2xl space-y-5">
+                <div className="h-4 w-20 rounded-full bg-stone-200" />
                 <div className="h-14 w-52 rounded-full bg-stone-200" />
+                <div className="h-14 w-64 rounded-full bg-stone-200" />
+                <div className="h-3 w-28 rounded-full bg-stone-100" />
               </div>
-              <div className="mt-16 max-w-sm">
+              <div className="mt-14 max-w-sm">
                 <div className="h-12 w-full rounded-full bg-stone-900/10" />
+                <div className="mx-auto mt-4 h-3 w-28 rounded-full bg-stone-100" />
               </div>
             </div>
           </div>
@@ -699,13 +701,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 Timeboxing
               </p>
               <h1 className="mt-5 text-[52px] font-semibold leading-[0.9] tracking-[-0.09em] text-slate-950 sm:text-[72px]">
-                Make
+                Own
                 <br />
-                time visible.
+                your hours.
               </h1>
+              <p className="mt-4 text-[13px] font-medium tracking-[0.08em] text-stone-400">
+                Plan less. Move clearly.
+              </p>
             </div>
 
-            <div className="mt-16 max-w-sm">
+            <div className="mt-14 max-w-sm">
               <button
                 type="button"
                 onClick={handleLogin}
