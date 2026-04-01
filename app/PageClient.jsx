@@ -654,11 +654,30 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   if (!authReady) {
     return (
       <main className="flex min-h-[100dvh] items-center justify-center bg-[#F2F2F7] px-6">
-        <section className="w-full max-w-sm rounded-3xl bg-white px-6 py-8 shadow-sm ring-1 ring-black/5">
-          <div className="space-y-3 animate-pulse">
-            <div className="mx-auto h-6 w-28 rounded-full bg-slate-200" />
-            <div className="mx-auto h-4 w-52 rounded-full bg-slate-100" />
-            <div className="mx-auto h-12 w-full rounded-xl bg-slate-200" />
+        <section className="w-full max-w-sm rounded-[28px] bg-white px-6 py-7 shadow-sm ring-1 ring-black/5">
+          <div className="animate-pulse space-y-6">
+            <div className="flex items-center justify-between rounded-2xl bg-[#FFF7ED] px-4 py-3">
+              <div className="space-y-2">
+                <div className="h-3 w-14 rounded-full bg-orange-200/80" />
+                <div className="h-5 w-28 rounded-full bg-orange-100" />
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="h-3 w-3 rounded-[4px] bg-orange-200/80" />
+                <div className="h-3 w-3 rounded-[4px] bg-orange-200/80" />
+                <div className="h-3 w-3 rounded-[4px] bg-orange-200/80" />
+                <div className="h-3 w-3 rounded-[4px] bg-orange-200/80" />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="mx-auto h-6 w-32 rounded-full bg-slate-200" />
+              <div className="mx-auto h-4 w-52 rounded-full bg-slate-100" />
+            </div>
+            <div className="space-y-3">
+              <div className="h-11 rounded-xl bg-slate-200/80" />
+              <div className="h-11 rounded-xl bg-slate-100" />
+              <div className="h-11 rounded-xl bg-slate-100" />
+            </div>
+            <div className="h-12 w-full rounded-2xl bg-slate-900/10" />
           </div>
         </section>
       </main>
@@ -668,19 +687,61 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   if (authReady && !authUser) {
     return (
       <main className="flex min-h-[100dvh] items-center justify-center bg-[#F2F2F7] px-6">
-        <section className="w-full max-w-sm rounded-3xl bg-white px-6 py-8 shadow-sm ring-1 ring-black/5">
-          <h1 className="text-center text-xl font-semibold text-slate-900">Timeboxing</h1>
-          <p className="mt-3 text-center text-sm leading-6 text-slate-500">
-            구글 계정으로 로그인하면 나만의 타임박싱 데이터를 안전하게 저장하고 불러올 수 있어요.
-          </p>
+        <section className="w-full max-w-sm rounded-[28px] bg-white px-6 py-7 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl bg-[#FFF7ED] px-4 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-500">
+                  Daily Focus
+                </p>
+                <h1 className="mt-1 text-[24px] font-semibold tracking-[-0.02em] text-slate-900">
+                  Timeboxing
+                </h1>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-white/70 p-2 ring-1 ring-orange-100">
+                <span className="h-3 w-3 rounded-[4px] bg-orange-200" />
+                <span className="h-3 w-3 rounded-[4px] bg-orange-300" />
+                <span className="h-3 w-3 rounded-[4px] bg-orange-300" />
+                <span className="h-3 w-3 rounded-[4px] bg-orange-200" />
+              </div>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              오늘 해야 할 일을 정리하고, 시간 블록 단위로 차분하게 실행해보세요.
+            </p>
+          </div>
+
+          <div className="mt-5 space-y-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-orange-500 ring-1 ring-slate-200">
+                1
+              </span>
+              <p className="text-sm text-slate-600">가장 중요한 일 3가지를 먼저 정리</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-orange-500 ring-1 ring-slate-200">
+                2
+              </span>
+              <p className="text-sm text-slate-600">브레인 덤프와 시간 블록을 한 화면에서 관리</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-orange-500 ring-1 ring-slate-200">
+                3
+              </span>
+              <p className="text-sm text-slate-600">구글 계정으로 내 기록을 안전하게 저장</p>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={handleLogin}
-            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white active:opacity-90"
+            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm active:opacity-90"
           >
             <i className="fab fa-google text-[16px]" aria-hidden />
             <span>Google로 로그인</span>
           </button>
+          <p className="mt-3 text-center text-[12px] leading-5 text-slate-400">
+            로그인 후 내 일정과 실행 기록이 날짜별로 저장됩니다.
+          </p>
         </section>
       </main>
     );
