@@ -906,25 +906,40 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     >
                       <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
                     </button>
-                    <button
-                        type="button"
-                        aria-label="오늘 날짜로 이동"
-                        disabled={isDateTransitionLoading}
-                        onClick={() => {
-                          const today = toLocalYmd(new Date());
-                          setSelectedDate(today);
-                          closeInlineCalendar();
-                        }}
-                        className={[
-                          "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
-                          isDateTransitionLoading ? "cursor-wait opacity-40" : "",
-                        ].join(" ")}
-                    >
-                  <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
-                    ◎
-                  </span>
-                      <span className="sr-only">오늘</span>
-                    </button>
+                    <div className="flex min-w-[88px] items-center justify-end gap-1">
+                      <button
+                          type="button"
+                          aria-label="오늘 날짜로 이동"
+                          disabled={isDateTransitionLoading}
+                          onClick={() => {
+                            const today = toLocalYmd(new Date());
+                            setSelectedDate(today);
+                            closeInlineCalendar();
+                          }}
+                          className={[
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
+                            isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                          ].join(" ")}
+                      >
+                        <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
+                          ◎
+                        </span>
+                        <span className="sr-only">오늘</span>
+                      </button>
+                      <button
+                          type="button"
+                          aria-label="로그아웃"
+                          onClick={handleLogout}
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-transparent text-slate-500 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
+                      >
+                        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]">
+                          <path
+                              fill="currentColor"
+                              d="M10 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3v-2H7V6h3zm5.59 3.41L14.17 8.83 16.34 11H9v2h7.34l-2.17 2.17 1.42 1.42L20.17 12z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </>
               )}
             </div>
