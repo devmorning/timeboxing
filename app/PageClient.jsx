@@ -13,7 +13,11 @@ import { InlineCalendarMonth } from "../components/timeboxing/InlineCalendarMont
 import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/utils/calendarMonth.js";
 import { addDaysToYmd } from "../components/timeboxing/utils/dateYmd.js";
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
-import { getApiAuthUrl } from "../components/timeboxing/storage/dayPlan.apiRepository.js";
+import {
+  clearStoredAccessToken,
+  getApiAuthUrl,
+  setStoredAccessToken,
+} from "../components/timeboxing/storage/dayPlan.apiRepository.js";
 import { hasDayPlanContent, normalizeDayPlan } from "../components/timeboxing/storage/dayPlan.schema.js";
 
 export default function PageClient({ initialAuthUser = null, initialSelectedDate = null, initialPlan = null }) {
@@ -380,15 +384,23 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   useEffect(() => {
-    if (initialAuthUser?.id) {
-      setAuthUser(initialAuthUser);
-      setAuthReady(true);
-      return;
-    }
-
     let cancelled = false;
 
     const loadAuthMe = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const accessToken = params.get("token");
+        if (accessToken) {
+          setStoredAccessToken(accessToken);
+          params.delete("token");
+          const nextQuery = params.toString();
+          const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`;
+          window.history.replaceState({}, "", nextUrl);
+        }
+      } catch (_error) {
+        // ignore URL parsing failures
+      }
+
       try {
         const auth = await dayPlanRepository.getAuthMe?.();
         if (cancelled) return;
@@ -396,15 +408,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           setAuthUser(auth.user);
           return;
         }
+        clearStoredAccessToken();
         setAuthUser(null);
       } catch (error) {
         if (!cancelled) {
           if (error?.status !== 401) {
             console.error("Failed to load auth user", error);
-            setAuthUser(null);
-          } else {
-            setAuthUser(null);
           }
+          clearStoredAccessToken();
+          setAuthUser(null);
         }
       } finally {
         if (!cancelled) {
@@ -419,7 +431,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return () => {
       cancelled = true;
     };
-  }, [initialAuthUser, dayPlanRepository]);
+  }, [dayPlanRepository]);
 
   useEffect(() => {
     if (!authReady || !authUser?.id) return;
@@ -578,6 +590,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     try {
       await dayPlanRepository.logout?.();
     } finally {
+      clearStoredAccessToken();
       setAuthUser(null);
       setAuthReady(true);
       setReadyDate("");

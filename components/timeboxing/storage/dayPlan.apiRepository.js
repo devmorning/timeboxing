@@ -1,7 +1,40 @@
 import { createEmptyDayPlan, normalizeDayPlan } from "./dayPlan.schema.js";
 
 function getApiBaseUrl() {
-  return "/api/proxy";
+  const base =
+    process.env.NEXT_PUBLIC_TIMEBOXING_API_BASE_URL ||
+    (process.env.NODE_ENV === "development"
+      ? "http://localhost"
+      : "https://timeboxing-api.vercel.app");
+  return base.replace(/\/+$/, "");
+}
+
+const ACCESS_TOKEN_STORAGE_KEY = "timeboxing.accessToken";
+
+export function getStoredAccessToken() {
+  if (typeof window === "undefined") return "";
+  try {
+    return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) || "";
+  } catch (_error) {
+    return "";
+  }
+}
+
+export function setStoredAccessToken(token) {
+  if (typeof window === "undefined") return;
+  try {
+    if (!token) {
+      localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+      return;
+    }
+    localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+  } catch (_error) {
+    // ignore storage failures
+  }
+}
+
+export function clearStoredAccessToken() {
+  setStoredAccessToken("");
 }
 
 export function getApiAuthUrl(path = "") {
@@ -23,14 +56,17 @@ export function createApiDayPlanRepository() {
     const headers = {
       ...(init?.headers ?? {}),
     };
+    const accessToken = getStoredAccessToken();
 
     if (init?.body != null && !("Content-Type" in headers)) {
       headers["Content-Type"] = "application/json";
     }
+    if (accessToken && !("Authorization" in headers)) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
 
     const res = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
-      credentials: "include",
       headers,
     });
 
