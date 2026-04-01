@@ -946,11 +946,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               isDatePickerOpen ? "pt-[calc(100dvh-4rem)]" : "pt-20",
             ].join(" ")}
         >
-          <div className="relative">
+          <div className="relative grid">
             {showDayPlanSkeleton ? (
                 <div
                     className={[
-                      "space-y-8 animate-pulse transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                      "col-start-1 row-start-1 space-y-8 animate-pulse transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                       isDayPlanLoading
                         ? "opacity-100 translate-y-0 scale-100 blur-0"
                         : "pointer-events-none opacity-0 -translate-y-1 scale-[0.992] blur-[2px]",
@@ -984,10 +984,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             ) : null}
             <div
                 className={[
-                  "space-y-8 transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "col-start-1 row-start-1 space-y-8 transition-[opacity,transform,filter] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   showDayPlanContent
-                    ? "relative opacity-100 translate-y-0 scale-100 blur-0"
-                    : "pointer-events-none absolute inset-0 opacity-0 translate-y-1.5 scale-[0.996] blur-[3px]",
+                    ? "opacity-100 translate-y-0 scale-100 blur-0"
+                    : "pointer-events-none opacity-0 translate-y-1.5 scale-[0.996] blur-[3px]",
                 ].join(" ")}
             >
               {/* 1) 가장 중요한 3가지 */}
