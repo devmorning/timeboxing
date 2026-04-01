@@ -447,12 +447,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   useEffect(() => {
     if (!authReady || !authUser?.id) return;
 
-    if (
-      !skippedInitialLoadRef.current &&
-      initialAuthUser?.id &&
-      initialSelectedDate === selectedDate
-    ) {
-      skippedInitialLoadRef.current = true;
+    if (skippedInitialLoadRef.current && initialSelectedDate === selectedDate) {
+      skippedInitialLoadRef.current = false;
       setReadyDate(selectedDate);
       return;
     }
@@ -490,7 +486,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     authReady,
     authUser?.id,
     dayPlanRepository,
-    initialAuthUser?.id,
     initialSelectedDate,
     selectedDate,
     sortItemsByTimeAsc,
