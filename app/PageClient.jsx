@@ -20,6 +20,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
   const saveTimerRef = useRef(null);
   const lastSavedPlanRef = useRef("");
+  const skippedInitialLoadRef = useRef(false);
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(initialAuthUser);
 
@@ -422,6 +423,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   useEffect(() => {
     if (!authReady || !authUser?.id) return;
+
+    if (
+      !skippedInitialLoadRef.current &&
+      initialAuthUser?.id &&
+      initialSelectedDate === selectedDate
+    ) {
+      skippedInitialLoadRef.current = true;
+      setReadyDate(selectedDate);
+      return;
+    }
+
     let cancelled = false;
 
     const loadDayPlan = async () => {
@@ -451,7 +463,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return () => {
       cancelled = true;
     };
-  }, [authReady, authUser?.id, dayPlanRepository, selectedDate, sortItemsByTimeAsc, serializePlan]);
+  }, [
+    authReady,
+    authUser?.id,
+    dayPlanRepository,
+    initialAuthUser?.id,
+    initialSelectedDate,
+    selectedDate,
+    sortItemsByTimeAsc,
+    serializePlan,
+  ]);
 
   useEffect(() => {
     if (!authUser?.id) return;
