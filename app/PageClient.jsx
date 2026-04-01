@@ -665,8 +665,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           }}
         />
         <section
-          className="relative mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col justify-between px-6 pt-16 sm:px-10 sm:pt-20"
-          style={{ paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))" }}
+          className="relative mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col justify-between px-6 pb-8 pt-16 sm:px-10 sm:pb-10 sm:pt-20"
+          style={{ paddingBottom: "max(2rem, env(safe-area-inset-bottom))" }}
         >
           <div
             className={[
@@ -681,15 +681,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <div className="h-14 w-56 rounded-full bg-stone-200" />
                 <div className="h-14 w-52 rounded-full bg-stone-200" />
               </div>
-              <div className="mt-8 max-w-sm space-y-3">
-                <div className="h-4 w-48 rounded-full bg-stone-100" />
-                <div className="h-4 w-40 rounded-full bg-stone-100" />
-              </div>
-              <div className="mt-[34vh] max-w-xs space-y-2">
-                <div className="h-3 w-24 rounded-full bg-stone-200" />
-                <div className="h-3 w-40 rounded-full bg-stone-100" />
-              </div>
-              <div className="mt-8 max-w-sm">
+              <div className="mt-16 max-w-sm">
                 <div className="h-12 w-full rounded-full bg-stone-900/10" />
               </div>
             </div>
@@ -711,18 +703,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <br />
                 time visible.
               </h1>
-              <p className="mt-6 max-w-[280px] text-[15px] leading-7 text-stone-500 sm:max-w-sm">
-                오늘 해야 할 일과 시간을 또렷하게 정리하고, 하루를 조용하게 실행하세요.
-              </p>
             </div>
 
-            <div className="mt-[34vh] max-w-sm">
-              <div className="mb-4 space-y-1.5">
-                <p className="text-[13px] font-medium text-stone-500">Google 계정으로 시작</p>
-                <p className="text-[12px] leading-6 text-stone-400">
-                  계획과 실행 기록은 날짜별로 부드럽게 이어집니다.
-                </p>
-              </div>
+            <div className="mt-16 max-w-sm">
               <button
                 type="button"
                 onClick={handleLogin}
