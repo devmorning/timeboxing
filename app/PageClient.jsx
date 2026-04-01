@@ -655,13 +655,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   if (!authUser) {
     return (
-      <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#F7F3EB]">
+      <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#F2F2F7]">
         <div
-          className="pointer-events-none absolute inset-0 opacity-50"
+          className="pointer-events-none absolute inset-0 opacity-70"
           aria-hidden
           style={{
             backgroundImage:
-              "radial-gradient(circle at top, rgba(255,255,255,0.7), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.16), rgba(0,0,0,0.02))",
+              "radial-gradient(circle at top, rgba(255,255,255,0.85), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.28), rgba(0,0,0,0.03))",
           }}
         />
         <section
@@ -676,16 +676,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             aria-hidden={authReady}
           >
             <div className="animate-pulse">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 ring-1 ring-stone-200/80">
-                <div className="h-5 w-5 rounded-full border-2 border-stone-400" />
+              <div className="space-y-4">
+                <div className="h-12 w-52 rounded-full bg-slate-200" />
+                <div className="h-4 w-36 rounded-full bg-slate-100" />
+                <div className="h-4 w-32 rounded-full bg-slate-100" />
               </div>
-              <div className="mt-10 space-y-4">
-                <div className="h-12 w-52 rounded-full bg-stone-200" />
-                <div className="h-4 w-36 rounded-full bg-stone-100" />
-              </div>
-              <div className="mt-16 max-w-sm">
-                <div className="h-12 w-full rounded-full bg-stone-900/10" />
-                <div className="mx-auto mt-4 h-3 w-28 rounded-full bg-stone-100" />
+              <div className="mt-14 flex flex-col items-start">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-950/10">
+                  <div className="h-7 w-7 rounded-full bg-slate-300" />
+                </div>
+                <div className="mt-5 h-3 w-24 rounded-full bg-slate-200" />
               </div>
             </div>
           </div>
@@ -698,34 +698,28 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             aria-hidden={!authReady}
           >
             <div>
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 ring-1 ring-stone-200/80">
-                <div className="relative h-5 w-5 rounded-full border-2 border-stone-700">
-                  <span className="absolute left-1/2 top-[2px] h-1.5 w-[2px] -translate-x-1/2 rounded-full bg-stone-700" />
-                  <span className="absolute right-[4px] top-1/2 h-[2px] w-1.5 -translate-y-1/2 rounded-full bg-stone-700" />
-                </div>
-              </div>
-              <h1 className="mt-10 text-[40px] font-semibold leading-[0.96] tracking-[-0.07em] text-slate-950 sm:text-[48px]">
+              <h1 className="text-[40px] font-semibold leading-[0.96] tracking-[-0.07em] text-slate-950 sm:text-[48px]">
                 Timeboxing
               </h1>
               <p className="mt-3 text-[18px] leading-[1.35] tracking-[-0.03em] text-slate-700">
                 Plan your day.
               </p>
-              <p className="mt-2 text-[14px] leading-6 text-stone-400">
+              <p className="mt-2 text-[14px] leading-6 text-slate-400">
                 Focus on what matters most.
               </p>
             </div>
 
-            <div className="mt-16 max-w-sm">
+            <div className="mt-14 max-w-sm">
               <button
                 type="button"
                 onClick={handleLogin}
-                className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1F1F1F] px-4 text-sm font-medium text-white transition-transform duration-150 active:scale-[0.99] active:opacity-90"
+                aria-label="Google로 로그인"
+                className="group flex h-16 w-16 items-center justify-center rounded-full bg-[#1F1F1F] text-white shadow-[0_12px_30px_rgba(15,23,42,0.16)] transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] active:opacity-90"
               >
-                <i className="fab fa-google text-[16px]" aria-hidden />
-                <span>Google로 계속</span>
+                <i className="fab fa-google text-[20px] transition-transform duration-150 group-active:scale-95" aria-hidden />
               </button>
-              <p className="mt-4 text-center text-[11px] leading-5 tracking-[0.12em] text-stone-300">
-                SIGN IN TO START
+              <p className="mt-5 text-[11px] leading-5 tracking-[0.12em] text-slate-300">
+                TAP TO SIGN IN
               </p>
             </div>
           </div>
