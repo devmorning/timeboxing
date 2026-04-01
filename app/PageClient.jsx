@@ -736,13 +736,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 aria-hidden={showAuthTransitionContent}
             >
             <div className="flex min-h-[70dvh] items-center justify-center">
-                <div className="relative h-16 w-16" aria-hidden>
-                  <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-slate-950/10 ring-1 ring-slate-300/60" />
-                  <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-[46%] -translate-y-[46%] rounded-xl bg-slate-100 ring-1 ring-slate-300/80" />
-                  <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-[42%] -translate-y-[42%] rounded-xl bg-white shadow-[0_10px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-                    <div className="flex h-full w-full items-center justify-center">
-                      <div className="h-[3px] w-4 rounded-full bg-slate-700/80" />
-                    </div>
+                <div className="flex items-center gap-3" aria-hidden>
+                  <div className="space-y-2">
+                    <div className="h-[2px] w-3.5 rounded-full bg-slate-300" />
+                    <div className="h-[2px] w-3.5 rounded-full bg-slate-300" />
+                    <div className="h-[2px] w-3.5 rounded-full bg-slate-300" />
+                  </div>
+                  <div className="space-y-2.5">
+                    <div className="h-2.5 w-11 rounded-full bg-slate-700/85" />
+                    <div className="h-2.5 w-9 rounded-full bg-slate-400/85" />
+                    <div className="h-2.5 w-13 rounded-full bg-slate-700/85" />
                   </div>
                 </div>
               </div>
