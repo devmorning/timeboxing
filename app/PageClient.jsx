@@ -60,6 +60,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [readyDate, setReadyDate] = useState(initialAuthUser && initialSelectedDate ? initialSelectedDate : "");
   const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(Boolean(initialAuthUser));
+  const [showDayPlanSkeleton, setShowDayPlanSkeleton] = useState(true);
   const [swipingItemId, setSwipingItemId] = useState(null);
   const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
@@ -603,12 +604,31 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     });
   }, [isDatePickerOpen, calendarMonthRange, selectedDate]);
 
+  const hasCachedSelectedPlan = dayPlanCacheRef.current.has(selectedDate);
   const isDateTransitionLoading =
-    Boolean(authUser?.id) && readyDate !== "" && readyDate !== selectedDate;
+    Boolean(authUser?.id) &&
+    readyDate !== "" &&
+    readyDate !== selectedDate &&
+    !hasCachedSelectedPlan;
   const isDayPlanLoading =
     !authReady ||
     (authUser?.id &&
-      (readyDate === "" || readyDate !== selectedDate || !isInitialSkeletonDelayDone));
+      (readyDate === "" ||
+        (readyDate !== selectedDate && !hasCachedSelectedPlan) ||
+        !isInitialSkeletonDelayDone));
+
+  useEffect(() => {
+    if (isDayPlanLoading) {
+      setShowDayPlanSkeleton(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setShowDayPlanSkeleton(false);
+    }, 180);
+
+    return () => clearTimeout(timer);
+  }, [isDayPlanLoading]);
 
   const handleLogin = () => {
     window.location.href = getApiAuthUrl("/auth/google");
@@ -830,34 +850,46 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           isDatePickerOpen ? "pt-[calc(100dvh-4rem)]" : "pt-20",
         ].join(" ")}
       >
-        {isDayPlanLoading ? (
-          <div className="space-y-8 animate-pulse" aria-label="일정 불러오는 중">
-            <section>
-              <div className="space-y-3">
-                <div className="h-10 rounded-md bg-slate-200/70" />
-                <div className="h-10 rounded-md bg-slate-200/70" />
-                <div className="h-10 rounded-md bg-slate-200/70" />
-              </div>
-            </section>
-            <section>
-              <div className="h-[120px] rounded-md bg-slate-200/70" />
-            </section>
-            <section>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-[120px] rounded-md bg-slate-200/70" />
-                  <div className="h-10 flex-1 rounded-md bg-slate-200/70" />
-                  <div className="h-10 w-[56px] rounded-md bg-slate-200/70" />
-                </div>
+        <div className="relative">
+          {showDayPlanSkeleton ? (
+            <div
+              className={[
+                "space-y-8 animate-pulse transition-opacity duration-200",
+                isDayPlanLoading ? "opacity-100" : "pointer-events-none opacity-0",
+              ].join(" ")}
+              aria-label="일정 불러오는 중"
+            >
+              <section>
                 <div className="space-y-3">
-                  <div className="h-14 rounded-md bg-slate-200/60" />
-                  <div className="h-14 rounded-md bg-slate-200/60" />
+                  <div className="h-10 rounded-md bg-slate-200/70" />
+                  <div className="h-10 rounded-md bg-slate-200/70" />
+                  <div className="h-10 rounded-md bg-slate-200/70" />
                 </div>
-              </div>
-            </section>
-          </div>
-        ) : (
-          <div className="space-y-8 opacity-100 transition-opacity duration-200">
+              </section>
+              <section>
+                <div className="h-[120px] rounded-md bg-slate-200/70" />
+              </section>
+              <section>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-[120px] rounded-md bg-slate-200/70" />
+                    <div className="h-10 flex-1 rounded-md bg-slate-200/70" />
+                    <div className="h-10 w-[56px] rounded-md bg-slate-200/70" />
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-14 rounded-md bg-slate-200/60" />
+                    <div className="h-14 rounded-md bg-slate-200/60" />
+                  </div>
+                </div>
+              </section>
+            </div>
+          ) : null}
+          <div
+            className={[
+              "space-y-8 transition-opacity duration-200",
+              isDayPlanLoading ? "pointer-events-none absolute inset-0 opacity-0" : "relative opacity-100",
+            ].join(" ")}
+          >
             {/* 1) 가장 중요한 3가지 */}
             <section>
               <div className="space-y-3">
@@ -1047,7 +1079,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               </div>
             </section>
           </div>
-        )}
+        </div>
       </div>
 
       {!isDatePickerOpen ? (
