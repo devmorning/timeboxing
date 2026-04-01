@@ -36,6 +36,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return `${yy}-${mm}-${dd}`;
   };
 
+
   const [selectedDate, setSelectedDate] = useState(() => initialSelectedDate || toLocalYmd(new Date()));
 
   const selectedDateLabel = useMemo(() => {
