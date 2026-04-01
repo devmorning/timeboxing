@@ -20,7 +20,7 @@ import {
 } from "../components/timeboxing/storage/dayPlan.apiRepository.js";
 import { hasDayPlanContent, normalizeDayPlan } from "../components/timeboxing/storage/dayPlan.schema.js";
 
-export default function PageClient({ initialAuthUser = null, initial = null, initialPlan = null }) {
+export default function PageClient({ initialAuthUser = null, initialSelectedDate = null, initialPlan = null }) {
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
   const saveTimerRef = useRef(null);
   const lastSavedPlanRef = useRef("");
@@ -37,7 +37,7 @@ export default function PageClient({ initialAuthUser = null, initial = null, ini
   };
 
 
-  const [, setSelectedDate] = useState(() => initialSelectedDate || toLocalYmd(new Date()));
+  const [selectedDate, setSelectedDate] = useState(() => initialSelectedDate || toLocalYmd(new Date()));
 
   const selectedDateLabel = useMemo(() => {
     const [y, m, d] = selectedDate.split("-").map(Number);
@@ -701,10 +701,10 @@ export default function PageClient({ initialAuthUser = null, initial = null, ini
           <div className="relative min-h-[70dvh]">
             <div
                 className={[
-                  "w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
+                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
               authReady
                 ? "pointer-events-none absolute inset-0 translate-y-1 scale-[0.985] opacity-0 blur-[2px]"
-                : "relative translate-y-0 scale-100 opacity-100 blur-0",
+                : "translate-y-0 scale-100 opacity-100 blur-0",
                 ].join(" ")}
                 aria-hidden={authReady}
             >
@@ -722,40 +722,42 @@ export default function PageClient({ initialAuthUser = null, initial = null, ini
 
             <div
                 className={[
-                  "w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
+                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-300 ease-out will-change-[opacity,transform]",
               authReady
-                ? "relative translate-y-0 scale-100 opacity-100 blur-0"
-                : "pointer-events-none absolute inset-0 translate-y-2 scale-[0.99] opacity-0 blur-[4px]",
+                ? "translate-y-0 scale-100 opacity-100 blur-0"
+                : "pointer-events-none translate-y-2 scale-[0.99] opacity-0 blur-[4px]",
                 ].join(" ")}
                 aria-hidden={!authReady}
             >
-              <div>
-                <h1 className="text-[42px] font-semibold leading-[0.9] tracking-[-0.08em] text-slate-950 sm:text-[52px]">
-                  Time
-                  <span className="ml-2 inline-block text-slate-300">/</span>
-                  <br />
-                  <span className="inline-block pl-6">boxing</span>
-                </h1>
-                <p className="mt-3 text-[18px] leading-[1.35] tracking-[-0.03em] text-slate-700">
-                  Plan your day.
-                </p>
-                <p className="mt-2 text-[14px] leading-6 text-slate-400">
-                  Focus on what matters most.
-                </p>
-              </div>
+              <div className="flex min-h-[70dvh] flex-col justify-center">
+                <div>
+                  <h1 className="text-[42px] font-semibold leading-[0.9] tracking-[-0.08em] text-slate-950 sm:text-[52px]">
+                    Time
+                    <span className="ml-2 inline-block text-slate-300">/</span>
+                    <br />
+                    <span className="inline-block pl-6">boxing</span>
+                  </h1>
+                  <p className="mt-3 text-[18px] leading-[1.35] tracking-[-0.03em] text-slate-700">
+                    Plan your day.
+                  </p>
+                  <p className="mt-2 text-[14px] leading-6 text-slate-400">
+                    Focus on what matters most.
+                  </p>
+                </div>
 
-              <div className="mt-14 max-w-sm">
-                <button
-                    type="button"
-                    onClick={handleLogin}
-                    aria-label="Google로 로그인"
-                    className="group flex h-16 w-16 items-center justify-center rounded-full bg-[#1F1F1F] text-white shadow-[0_12px_30px_rgba(15,23,42,0.16)] transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] active:opacity-90"
-                >
-                  <i className="fab fa-google text-[20px] transition-transform duration-150 group-active:scale-95" aria-hidden />
-                </button>
-                <p className="mt-5 text-[11px] leading-5 tracking-[0.12em] text-slate-300">
-                  TAP TO SIGN IN
-                </p>
+                <div className="mt-14 max-w-sm">
+                  <button
+                      type="button"
+                      onClick={handleLogin}
+                      aria-label="Google로 로그인"
+                      className="group flex h-16 w-16 items-center justify-center rounded-full bg-[#1F1F1F] text-white shadow-[0_12px_30px_rgba(15,23,42,0.16)] transition-all duration-150 hover:scale-[1.02] active:scale-[0.98] active:opacity-90"
+                  >
+                    <i className="fab fa-google text-[20px] transition-transform duration-150 group-active:scale-95" aria-hidden />
+                  </button>
+                  <p className="mt-5 text-[11px] leading-5 tracking-[0.12em] text-slate-300">
+                    TAP TO SIGN IN
+                  </p>
+                </div>
               </div>
             </div>
           </div>
