@@ -386,7 +386,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   useEffect(() => {
     let cancelled = false;
 
-    const loadAuthMe = async () => {
+    const loadBootstrap = async () => {
+      const bootstrapDate = initialSelectedDate || toLocalYmd(new Date());
+
       try {
         const params = new URLSearchParams(window.location.search);
         const accessToken = params.get("token");
@@ -402,21 +404,30 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       }
 
       try {
-        const auth = await dayPlanRepository.getAuthMe?.();
+        const auth = await dayPlanRepository.getBootstrap?.(bootstrapDate);
         if (cancelled) return;
         if (auth?.authenticated && auth.user?.id) {
+          const plan = normalizeDayPlan(auth?.plan ?? createEmptyDayPlan());
           setAuthUser(auth.user);
+          lastSavedPlanRef.current = serializePlan(plan);
+          setImportant3(plan.important3);
+          setBrainDump(plan.brainDump);
+          setItems(sortItemsByTimeAsc(plan.items));
+          setReadyDate(bootstrapDate);
+          skippedInitialLoadRef.current = initialSelectedDate === bootstrapDate;
           return;
         }
         clearStoredAccessToken();
         setAuthUser(null);
+        setReadyDate("");
       } catch (error) {
         if (!cancelled) {
           if (error?.status !== 401) {
-            console.error("Failed to load auth user", error);
+            console.error("Failed to load bootstrap data", error);
           }
           clearStoredAccessToken();
           setAuthUser(null);
+          setReadyDate("");
         }
       } finally {
         if (!cancelled) {
@@ -426,12 +437,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     };
 
     setAuthReady(false);
-    loadAuthMe();
+    loadBootstrap();
 
     return () => {
       cancelled = true;
     };
-  }, [dayPlanRepository]);
+  }, [dayPlanRepository, initialSelectedDate, serializePlan, sortItemsByTimeAsc]);
 
   useEffect(() => {
     if (!authReady || !authUser?.id) return;

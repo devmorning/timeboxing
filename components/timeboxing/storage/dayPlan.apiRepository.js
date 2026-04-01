@@ -91,6 +91,10 @@ export function createApiDayPlanRepository() {
       return requestJson("/auth/me", { method: "GET" });
     },
 
+    async getBootstrap(dateYmd) {
+      return requestJson(`/auth/bootstrap?dateYmd=${dateYmd}`, { method: "GET" });
+    },
+
     async logout() {
       return requestJson("/auth/logout", { method: "POST" });
     },
