@@ -42,6 +42,28 @@ function logProxyTiming(method, path, status, startedAt) {
   });
 }
 
+function logAuthProxyDebug(method, path, requestHeaders, upstreamHeaders, upstreamStatus) {
+  if (!path.startsWith("/auth/")) return;
+
+  const requestCookie = requestHeaders.get("cookie") || "";
+  const setCookieCount =
+    typeof upstreamHeaders.getSetCookie === "function"
+      ? upstreamHeaders.getSetCookie().length
+      : upstreamHeaders.get("set-cookie")
+        ? 1
+        : 0;
+
+  // eslint-disable-next-line no-console
+  console.log("[proxy:auth]", {
+    method,
+    path,
+    upstreamStatus,
+    hasRequestCookie: requestCookie.length > 0,
+    setCookieCount,
+    location: upstreamHeaders.get("location") || null,
+  });
+}
+
 async function proxyRequest(request, { params }) {
   const startedAt = Date.now();
   const { path = [] } = await params;
@@ -74,6 +96,7 @@ async function proxyRequest(request, { params }) {
   }
 
   copySetCookieHeaders(upstream.headers, responseHeaders);
+  logAuthProxyDebug(request.method, requestPath, requestHeaders, upstream.headers, upstream.status);
 
   if (location) {
     responseHeaders.set("location", location);
