@@ -871,18 +871,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               )}
             </div>
 
-            {authUser?.id ? (
-                <div className="mt-1 flex justify-end">
-                  <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="rounded-md px-2 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:text-slate-700 active:opacity-60"
-                  >
-                    로그아웃
-                  </button>
-                </div>
-            ) : null}
-
             <div
                 data-testid="inline-calendar-panel"
                 className={[
