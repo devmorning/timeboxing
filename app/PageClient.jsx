@@ -656,7 +656,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   if (!authUser) {
     return (
       <main className="flex min-h-[100dvh] items-center justify-center bg-[#F5F5F7] px-6">
-        <section className="relative w-full max-w-sm overflow-hidden rounded-[32px] bg-white px-6 py-8 shadow-[0_24px_80px_rgba(15,23,42,0.06)] ring-1 ring-black/[0.04] min-h-[408px]">
+        <section className="relative w-full max-w-sm overflow-hidden rounded-[32px] bg-white px-6 py-8 shadow-[0_18px_60px_rgba(15,23,42,0.05)] ring-1 ring-black/[0.03] min-h-[360px]">
           <div
             className={[
               "transition-opacity duration-200",
@@ -664,28 +664,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             ].join(" ")}
             aria-hidden={authReady}
           >
-            <div className="animate-pulse space-y-7">
-              <div className="inline-flex rounded-full bg-slate-100 px-3 py-1.5">
-                <div className="h-2.5 w-14 rounded-full bg-slate-200" />
-              </div>
+            <div className="animate-pulse space-y-8">
               <div className="space-y-3">
-                <div className="h-8 w-40 rounded-full bg-slate-200" />
+                <div className="h-9 w-40 rounded-full bg-slate-200" />
                 <div className="h-4 w-52 rounded-full bg-slate-100" />
-                <div className="h-4 w-36 rounded-full bg-slate-100" />
+                <div className="h-4 w-44 rounded-full bg-slate-100" />
               </div>
-              <div className="space-y-3">
-                <div className="rounded-3xl bg-[#F5F5F7] px-5 py-5">
-                  <div className="h-3 w-16 rounded-full bg-slate-200" />
-                  <div className="mt-3 h-5 w-28 rounded-full bg-slate-200/80" />
-                </div>
-                <div className="rounded-3xl bg-[#F5F5F7] px-5 py-5">
-                  <div className="h-3 w-20 rounded-full bg-slate-200" />
-                  <div className="mt-3 h-5 w-32 rounded-full bg-slate-200/80" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="h-3 w-20 rounded-full bg-slate-200" />
-                <div className="h-3 w-44 rounded-full bg-slate-100" />
+              <div className="space-y-2 pt-6">
+                <div className="h-3 w-28 rounded-full bg-slate-200" />
+                <div className="h-3 w-36 rounded-full bg-slate-100" />
               </div>
               <div className="h-12 w-full rounded-full bg-slate-900/10" />
             </div>
@@ -698,43 +685,30 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             ].join(" ")}
             aria-hidden={!authReady}
           >
-            <div className="inline-flex rounded-full bg-[#F5F5F7] px-3 py-1 text-[11px] font-medium tracking-[0.08em] text-slate-500">
-              DAILY PLANNER
-            </div>
-            <div className="mt-5">
-              <h1 className="text-[32px] font-semibold tracking-[-0.05em] text-slate-950">
+            <div className="pt-2">
+              <h1 className="text-[34px] font-semibold tracking-[-0.06em] text-slate-950">
                 Timeboxing
               </h1>
-              <p className="mt-3 text-[15px] leading-7 text-slate-500">
-                복잡한 할 일을 비우고, 오늘의 시간 흐름만 선명하게 정리하세요.
+              <p className="mt-4 text-[15px] leading-7 text-slate-500">
+                오늘 해야 할 일과 시간을 가장 조용한 방식으로 정리하세요.
               </p>
             </div>
 
-            <div className="mt-8 space-y-3">
-              <div className="rounded-3xl bg-[#F5F5F7] px-5 py-5">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Focus</p>
-                <p className="mt-2 text-[15px] font-medium tracking-[-0.02em] text-slate-800">
-                  가장 중요한 세 가지부터
-                </p>
-              </div>
-              <div className="rounded-3xl bg-[#F5F5F7] px-5 py-5">
-                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Flow</p>
-                <p className="mt-2 text-[15px] font-medium tracking-[-0.02em] text-slate-800">
-                  시간 블록과 메모를 한 흐름으로
-                </p>
-              </div>
+            <div className="mt-10 space-y-2">
+              <p className="text-[13px] text-slate-400">Google 계정으로 바로 시작</p>
+              <p className="text-[13px] text-slate-400">기록은 날짜별로 안전하게 동기화됩니다.</p>
             </div>
 
             <button
               type="button"
               onClick={handleLogin}
-              className="mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm shadow-slate-950/10 transition-transform duration-150 active:scale-[0.99] active:opacity-90"
+              className="mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-transform duration-150 active:scale-[0.99] active:opacity-90"
             >
               <i className="fab fa-google text-[16px]" aria-hidden />
-              <span>Google로 로그인</span>
+              <span>Google로 계속</span>
             </button>
-            <p className="mt-4 text-center text-[12px] leading-5 text-slate-400">
-              로그인 후 일정과 실행 기록이 모든 날짜에 걸쳐 동기화됩니다.
+            <p className="mt-4 text-center text-[12px] leading-5 text-slate-300">
+              Sign in to continue
             </p>
           </div>
         </section>
