@@ -728,16 +728,22 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           <div className="relative min-h-[70dvh]">
             <div
                 className={[
-                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-650 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]",
+                  "absolute inset-0 w-full transition-[opacity,transform,filter] duration-820 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[opacity,transform]",
               showAuthTransitionContent
-                ? "pointer-events-none absolute inset-0 translate-y-0.5 scale-[0.996] opacity-0 blur-[1px]"
+                ? "pointer-events-none absolute inset-0 translate-y-0.5 scale-[0.998] opacity-0 blur-[0.5px]"
                 : "translate-y-0 scale-100 opacity-100 blur-0",
                 ].join(" ")}
                 aria-hidden={showAuthTransitionContent}
             >
             <div className="flex min-h-[70dvh] items-center justify-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
-                  <div className="h-[3px] w-6 rounded-full bg-slate-700/80" aria-hidden />
+                <div className="relative h-16 w-16" aria-hidden>
+                  <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-1/2 -translate-y-1/2 rounded-xl bg-slate-950/10 ring-1 ring-slate-300/60" />
+                  <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-[46%] -translate-y-[46%] rounded-xl bg-slate-100 ring-1 ring-slate-300/80" />
+                  <div className="absolute left-1/2 top-1/2 h-9 w-9 -translate-x-[42%] -translate-y-[42%] rounded-xl bg-white shadow-[0_10px_24px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
+                    <div className="flex h-full w-full items-center justify-center">
+                      <div className="h-[3px] w-4 rounded-full bg-slate-700/80" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
