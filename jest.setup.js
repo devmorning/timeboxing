@@ -17,6 +17,22 @@ global.fetch = jest.fn(async (input, init = {}) => {
     };
   }
 
+  if (url.includes("/auth/bootstrap")) {
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        authenticated: true,
+        user: { id: "test-user", email: "test@example.com", name: "테스트 사용자" },
+        plan: {
+          important3: ["", "", ""],
+          brainDump: "",
+          items: [],
+        },
+      }),
+    };
+  }
+
   if (url.includes("/auth/logout")) {
     return {
       ok: true,
