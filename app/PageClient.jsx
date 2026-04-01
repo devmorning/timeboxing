@@ -63,6 +63,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(Boolean(initialAuthUser));
   const [showDayPlanSkeleton, setShowDayPlanSkeleton] = useState(true);
   const [isCachedDateTransitionActive, setIsCachedDateTransitionActive] = useState(false);
+  const [cachedTransitionDirection, setCachedTransitionDirection] = useState("next");
   const [swipingItemId, setSwipingItemId] = useState(null);
   const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
@@ -338,13 +339,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!isHorizontal) return;
 
     if (dx <= -72) {
-      setSelectedDate((d) => addDaysToYmd(d, 1));
+      moveSelectedDateBy(1);
       event.preventDefault();
       event.stopPropagation();
       return;
     }
     if (dx >= 72) {
-      setSelectedDate((d) => addDaysToYmd(d, -1));
+      moveSelectedDateBy(-1);
       event.preventDefault();
       event.stopPropagation();
     }
@@ -358,11 +359,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const handlePickCalendarDate = useCallback(
     (dateYmd) => {
+      setCachedTransitionDirection(dateYmd > selectedDate ? "next" : "prev");
       setSelectedDate(dateYmd);
       closeInlineCalendar();
     },
-    [closeInlineCalendar]
+    [closeInlineCalendar, selectedDate]
   );
+
+  const moveSelectedDateBy = useCallback((days) => {
+    setCachedTransitionDirection(days > 0 ? "next" : "prev");
+    setSelectedDate((d) => addDaysToYmd(d, days));
+  }, []);
 
   const openInlineCalendar = (event) => {
     event?.preventDefault();
@@ -729,7 +736,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
                     isDateTransitionLoading ? "cursor-wait opacity-40" : "",
                   ].join(" ")}
-                  onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
+                  onClick={() => moveSelectedDateBy(-1)}
                 >
                   ‹
                 </button>
@@ -770,7 +777,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
                     isDateTransitionLoading ? "cursor-wait opacity-40" : "",
                   ].join(" ")}
-                  onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
+                  onClick={() => moveSelectedDateBy(1)}
                 >
                   ›
                 </button>
@@ -796,6 +803,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   disabled={isDateTransitionLoading}
                   onClick={() => {
                     const today = toLocalYmd(new Date());
+                    setCachedTransitionDirection(today > selectedDate ? "next" : "prev");
                     setSelectedDate(today);
                     closeInlineCalendar();
                   }}
@@ -905,7 +913,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             className={[
               "space-y-8 transition-[opacity,transform] duration-200 ease-out",
               isDayPlanLoading ? "pointer-events-none absolute inset-0 opacity-0" : "relative opacity-100",
-              isCachedDateTransitionActive ? "translate-y-[2px] scale-[0.995]" : "translate-y-0 scale-100",
+              isCachedDateTransitionActive
+                ? cachedTransitionDirection === "next"
+                  ? "translate-x-[10px] opacity-[0.985]"
+                  : "-translate-x-[10px] opacity-[0.985]"
+                : "translate-x-0 opacity-100",
             ].join(" ")}
           >
             {/* 1) 가장 중요한 3가지 */}
