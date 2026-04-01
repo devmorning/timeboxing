@@ -656,7 +656,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   if (!authUser) {
     return (
       <main className="flex min-h-[100dvh] items-center justify-center bg-[#F2F2F7] px-6">
-        <section className="relative w-full max-w-sm overflow-hidden rounded-[28px] bg-white px-6 py-7 shadow-sm ring-1 ring-black/5 min-h-[408px]">
+        <section className="relative w-full max-w-sm overflow-hidden rounded-[32px] bg-white px-6 py-7 shadow-[0_20px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 min-h-[408px]">
           <div
             className={[
               "transition-opacity duration-200",
@@ -665,28 +665,29 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             aria-hidden={authReady}
           >
             <div className="animate-pulse space-y-6">
-              <div className="flex items-center justify-between rounded-2xl bg-[#FFF7ED] px-4 py-3">
-                <div className="space-y-2">
-                  <div className="h-3 w-14 rounded-full bg-orange-200/80" />
-                  <div className="h-5 w-28 rounded-full bg-orange-100" />
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  <div className="h-3 w-3 rounded-[4px] bg-orange-200/80" />
-                  <div className="h-3 w-3 rounded-[4px] bg-orange-200/80" />
-                  <div className="h-3 w-3 rounded-[4px] bg-orange-200/80" />
-                  <div className="h-3 w-3 rounded-[4px] bg-orange-200/80" />
-                </div>
+              <div className="inline-flex rounded-full bg-slate-100 px-3 py-1.5">
+                <div className="h-2.5 w-16 rounded-full bg-slate-200" />
               </div>
               <div className="space-y-3">
-                <div className="mx-auto h-6 w-32 rounded-full bg-slate-200" />
-                <div className="mx-auto h-4 w-52 rounded-full bg-slate-100" />
+                <div className="h-8 w-36 rounded-full bg-slate-200" />
+                <div className="h-4 w-56 rounded-full bg-slate-100" />
+                <div className="h-4 w-44 rounded-full bg-slate-100" />
               </div>
-              <div className="space-y-3">
-                <div className="h-11 rounded-xl bg-slate-200/80" />
-                <div className="h-11 rounded-xl bg-slate-100" />
-                <div className="h-11 rounded-xl bg-slate-100" />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                  <div className="h-3 w-14 rounded-full bg-slate-200" />
+                  <div className="mt-3 h-5 w-20 rounded-full bg-slate-200/80" />
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                  <div className="h-3 w-12 rounded-full bg-slate-200" />
+                  <div className="mt-3 h-5 w-16 rounded-full bg-slate-200/80" />
+                </div>
               </div>
-              <div className="h-12 w-full rounded-2xl bg-slate-900/10" />
+              <div className="space-y-2">
+                <div className="h-3 w-24 rounded-full bg-slate-200" />
+                <div className="h-3 w-40 rounded-full bg-slate-100" />
+              </div>
+              <div className="h-12 w-full rounded-full bg-slate-900/10" />
             </div>
           </div>
 
@@ -697,59 +698,39 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             ].join(" ")}
             aria-hidden={!authReady}
           >
-            <div className="rounded-2xl bg-[#FFF7ED] px-4 py-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-500">
-                    Daily Focus
-                  </p>
-                  <h1 className="mt-1 text-[24px] font-semibold tracking-[-0.02em] text-slate-900">
-                    Timeboxing
-                  </h1>
-                </div>
-                <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-white/70 p-2 ring-1 ring-orange-100">
-                  <span className="h-3 w-3 rounded-[4px] bg-orange-200" />
-                  <span className="h-3 w-3 rounded-[4px] bg-orange-300" />
-                  <span className="h-3 w-3 rounded-[4px] bg-orange-300" />
-                  <span className="h-3 w-3 rounded-[4px] bg-orange-200" />
-                </div>
-              </div>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
-                오늘 해야 할 일을 정리하고, 시간 블록 단위로 차분하게 실행해보세요.
+            <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium tracking-[0.08em] text-slate-500">
+              DAILY PLANNER
+            </div>
+            <div className="mt-5">
+              <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">
+                Timeboxing
+              </h1>
+              <p className="mt-3 text-[15px] leading-7 text-slate-500">
+                할 일을 덜어내고, 오늘 중요한 시간만 또렷하게 정리하세요.
               </p>
             </div>
 
-            <div className="mt-5 space-y-3 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-orange-500 ring-1 ring-slate-200">
-                  1
-                </span>
-                <p className="text-sm text-slate-600">가장 중요한 일 3가지를 먼저 정리</p>
+            <div className="mt-7 grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-slate-50 px-4 py-4 ring-1 ring-slate-100">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Focus</p>
+                <p className="mt-2 text-sm font-medium text-slate-700">Top 3 priorities</p>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-orange-500 ring-1 ring-slate-200">
-                  2
-                </span>
-                <p className="text-sm text-slate-600">브레인 덤프와 시간 블록을 한 화면에서 관리</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-[12px] font-semibold text-orange-500 ring-1 ring-slate-200">
-                  3
-                </span>
-                <p className="text-sm text-slate-600">구글 계정으로 내 기록을 안전하게 저장</p>
+              <div className="rounded-2xl bg-slate-50 px-4 py-4 ring-1 ring-slate-100">
+                <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Flow</p>
+                <p className="mt-2 text-sm font-medium text-slate-700">Time blocks & notes</p>
               </div>
             </div>
 
             <button
               type="button"
               onClick={handleLogin}
-              className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm active:opacity-90"
+              className="mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm shadow-slate-950/10 transition-transform duration-150 active:scale-[0.99] active:opacity-90"
             >
               <i className="fab fa-google text-[16px]" aria-hidden />
               <span>Google로 로그인</span>
             </button>
-            <p className="mt-3 text-center text-[12px] leading-5 text-slate-400">
-              로그인 후 내 일정과 실행 기록이 날짜별로 저장됩니다.
+            <p className="mt-4 text-center text-[12px] leading-5 text-slate-400">
+              로그인하면 날짜별 계획과 실행 기록이 안전하게 동기화됩니다.
             </p>
           </div>
         </section>
