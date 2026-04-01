@@ -655,8 +655,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   if (!authUser) {
     return (
-      <main className="flex min-h-[100dvh] items-center justify-center bg-[#F5F5F7] px-6">
-        <section className="relative w-full max-w-sm overflow-hidden rounded-[32px] bg-white px-6 py-8 shadow-[0_18px_60px_rgba(15,23,42,0.05)] ring-1 ring-black/[0.03] min-h-[360px]">
+      <main className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#F6F1E8] px-6">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-60"
+          aria-hidden
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at top, rgba(255,255,255,0.7), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.16), rgba(0,0,0,0.02))",
+          }}
+        />
+        <section className="relative w-full max-w-sm overflow-hidden rounded-[32px] bg-[#FFFDF8] px-6 py-8 shadow-[0_18px_60px_rgba(82,63,38,0.08)] ring-1 ring-[#6B5B4D]/[0.08] min-h-[360px]">
           <div
             className={[
               "transition-opacity duration-200",
@@ -666,15 +674,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           >
             <div className="animate-pulse space-y-8">
               <div className="space-y-3">
-                <div className="h-9 w-40 rounded-full bg-slate-200" />
-                <div className="h-4 w-52 rounded-full bg-slate-100" />
-                <div className="h-4 w-44 rounded-full bg-slate-100" />
+                <div className="h-9 w-40 rounded-full bg-stone-200" />
+                <div className="h-4 w-52 rounded-full bg-stone-100" />
+                <div className="h-4 w-44 rounded-full bg-stone-100" />
               </div>
               <div className="space-y-2 pt-6">
-                <div className="h-3 w-28 rounded-full bg-slate-200" />
-                <div className="h-3 w-36 rounded-full bg-slate-100" />
+                <div className="h-3 w-28 rounded-full bg-stone-200" />
+                <div className="h-3 w-36 rounded-full bg-stone-100" />
               </div>
-              <div className="h-12 w-full rounded-full bg-slate-900/10" />
+              <div className="h-12 w-full rounded-full bg-stone-900/10" />
             </div>
           </div>
 
@@ -689,25 +697,25 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               <h1 className="text-[34px] font-semibold tracking-[-0.06em] text-slate-950">
                 Timeboxing
               </h1>
-              <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              <p className="mt-4 text-[15px] leading-7 text-stone-500">
                 오늘 해야 할 일과 시간을 가장 조용한 방식으로 정리하세요.
               </p>
             </div>
 
             <div className="mt-10 space-y-2">
-              <p className="text-[13px] text-slate-400">Google 계정으로 바로 시작</p>
-              <p className="text-[13px] text-slate-400">기록은 날짜별로 안전하게 동기화됩니다.</p>
+              <p className="text-[13px] text-stone-400">Google 계정으로 바로 시작</p>
+              <p className="text-[13px] text-stone-400">기록은 날짜별로 안전하게 동기화됩니다.</p>
             </div>
 
             <button
               type="button"
               onClick={handleLogin}
-              className="mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-4 text-sm font-medium text-white transition-transform duration-150 active:scale-[0.99] active:opacity-90"
+              className="mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1F1F1F] px-4 text-sm font-medium text-white transition-transform duration-150 active:scale-[0.99] active:opacity-90"
             >
               <i className="fab fa-google text-[16px]" aria-hidden />
               <span>Google로 계속</span>
             </button>
-            <p className="mt-4 text-center text-[12px] leading-5 text-slate-300">
+            <p className="mt-4 text-center text-[12px] leading-5 text-stone-300">
               Sign in to continue
             </p>
           </div>
