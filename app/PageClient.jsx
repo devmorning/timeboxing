@@ -603,7 +603,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     });
   }, [isDatePickerOpen, calendarMonthRange, selectedDate]);
 
-  const isDayPlanLoading = !authReady || (authUser?.id && (readyDate === "" || !isInitialSkeletonDelayDone));
+  const isDateTransitionLoading =
+    Boolean(authUser?.id) && readyDate !== "" && readyDate !== selectedDate;
+  const isDayPlanLoading =
+    !authReady ||
+    (authUser?.id &&
+      (readyDate === "" || readyDate !== selectedDate || !isInitialSkeletonDelayDone));
 
   const handleLogin = () => {
     window.location.href = getApiAuthUrl("/auth/google");
@@ -680,10 +685,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <button
                   type="button"
                   aria-label="전날"
+                  disabled={isDateTransitionLoading}
                   className={[
                     "flex h-10 w-full min-w-[44px] select-none items-center justify-center bg-transparent text-[22px] font-semibold leading-none",
                     "text-orange-700 active:opacity-60",
                     "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                    isDateTransitionLoading ? "cursor-wait opacity-40" : "",
                   ].join(" ")}
                   onClick={() => setSelectedDate((d) => addDaysToYmd(d, -1))}
                 >
@@ -693,9 +700,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <button
                   type="button"
                   aria-label="날짜 선택 열기"
+                  disabled={isDateTransitionLoading}
                   className={[
                     "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-[13px] font-semibold text-slate-600",
                     "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                    isDateTransitionLoading ? "cursor-wait opacity-50" : "",
                   ].join(" ")}
                   onPointerDown={(e) => {
                     e.preventDefault();
@@ -717,10 +726,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <button
                   type="button"
                   aria-label="다음날"
+                  disabled={isDateTransitionLoading}
                   className={[
                     "flex h-10 w-full min-w-[44px] select-none items-center justify-center bg-transparent text-[22px] font-semibold leading-none",
                     "text-orange-700 active:opacity-60",
                     "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                    isDateTransitionLoading ? "cursor-wait opacity-40" : "",
                   ].join(" ")}
                   onClick={() => setSelectedDate((d) => addDaysToYmd(d, 1))}
                 >
@@ -745,12 +756,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <button
                   type="button"
                   aria-label="오늘 날짜로 이동"
+                  disabled={isDateTransitionLoading}
                   onClick={() => {
                     const today = toLocalYmd(new Date());
                     setSelectedDate(today);
                     closeInlineCalendar();
                   }}
-                  className="flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60"
+                  className={[
+                    "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
+                    isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                  ].join(" ")}
                 >
                   <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
                     ◎
