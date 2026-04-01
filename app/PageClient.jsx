@@ -26,6 +26,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const lastSavedPlanRef = useRef("");
   const skippedInitialLoadRef = useRef(false);
   const dayPlanCacheRef = useRef(new Map());
+  const cachedTransitionTimerRef = useRef(null);
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(initialAuthUser);
 
@@ -61,6 +62,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [readyDate, setReadyDate] = useState(initialAuthUser && initialSelectedDate ? initialSelectedDate : "");
   const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(Boolean(initialAuthUser));
   const [showDayPlanSkeleton, setShowDayPlanSkeleton] = useState(true);
+  const [isCachedDateTransitionActive, setIsCachedDateTransitionActive] = useState(false);
   const [swipingItemId, setSwipingItemId] = useState(null);
   const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
@@ -112,6 +114,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     () => important3.map((v) => v.trim()).filter(Boolean),
     [important3]
   );
+
+  useEffect(() => {
+    return () => {
+      if (cachedTransitionTimerRef.current) {
+        clearTimeout(cachedTransitionTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!initialAuthUser?.id || !initialSelectedDate) return;
@@ -460,6 +470,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     const cachedPlan = dayPlanCacheRef.current.get(selectedDate);
     if (cachedPlan) {
       const normalizedPlan = normalizeDayPlan(cachedPlan);
+      if (cachedTransitionTimerRef.current) {
+        clearTimeout(cachedTransitionTimerRef.current);
+      }
+      setIsCachedDateTransitionActive(true);
+      cachedTransitionTimerRef.current = setTimeout(() => {
+        setIsCachedDateTransitionActive(false);
+      }, 220);
       lastSavedPlanRef.current = serializePlan(normalizedPlan);
       setImportant3(normalizedPlan.important3);
       setBrainDump(normalizedPlan.brainDump);
@@ -886,8 +903,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           ) : null}
           <div
             className={[
-              "space-y-8 transition-opacity duration-200",
+              "space-y-8 transition-[opacity,transform] duration-200 ease-out",
               isDayPlanLoading ? "pointer-events-none absolute inset-0 opacity-0" : "relative opacity-100",
+              isCachedDateTransitionActive ? "translate-y-[2px] scale-[0.995]" : "translate-y-0 scale-100",
             ].join(" ")}
           >
             {/* 1) 가장 중요한 3가지 */}
