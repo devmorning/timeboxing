@@ -25,6 +25,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const saveTimerRef = useRef(null);
   const lastSavedPlanRef = useRef("");
   const skippedInitialLoadRef = useRef(false);
+  const dayPlanCacheRef = useRef(new Map());
   const [authReady, setAuthReady] = useState(false);
   const [authUser, setAuthUser] = useState(initialAuthUser);
 
@@ -114,6 +115,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   useEffect(() => {
     if (!initialAuthUser?.id || !initialSelectedDate) return;
     lastSavedPlanRef.current = serializePlan(initialPlan);
+    dayPlanCacheRef.current.set(initialSelectedDate, normalizeDayPlan(initialPlan));
   }, [initialAuthUser?.id, initialSelectedDate, initialPlan, serializePlan]);
 
   const editingItem = useMemo(() => {
@@ -410,6 +412,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           const plan = normalizeDayPlan(auth?.plan ?? createEmptyDayPlan());
           setAuthUser(auth.user);
           lastSavedPlanRef.current = serializePlan(plan);
+          dayPlanCacheRef.current.set(bootstrapDate, plan);
           setImportant3(plan.important3);
           setBrainDump(plan.brainDump);
           setItems(sortItemsByTimeAsc(plan.items));
@@ -453,12 +456,25 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       return;
     }
 
+    const cachedPlan = dayPlanCacheRef.current.get(selectedDate);
+    if (cachedPlan) {
+      const normalizedPlan = normalizeDayPlan(cachedPlan);
+      lastSavedPlanRef.current = serializePlan(normalizedPlan);
+      setImportant3(normalizedPlan.important3);
+      setBrainDump(normalizedPlan.brainDump);
+      setItems(sortItemsByTimeAsc(normalizedPlan.items));
+      resetEditState();
+      setReadyDate(selectedDate);
+      return;
+    }
+
     let cancelled = false;
 
     const loadDayPlan = async () => {
       try {
         const plan = await dayPlanRepository.getByDate(selectedDate);
         if (cancelled) return;
+        dayPlanCacheRef.current.set(selectedDate, plan);
         lastSavedPlanRef.current = serializePlan(plan);
         setImportant3(plan.important3);
         setBrainDump(plan.brainDump);
@@ -506,6 +522,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     saveTimerRef.current = setTimeout(async () => {
       try {
         await dayPlanRepository.saveByDate(selectedDate, currentPlan);
+        dayPlanCacheRef.current.set(selectedDate, normalizeDayPlan(currentPlan));
         lastSavedPlanRef.current = nextSnapshot;
       } catch (error) {
         console.error("Failed to save day plan", error);
