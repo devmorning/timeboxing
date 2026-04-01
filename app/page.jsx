@@ -40,14 +40,11 @@ async function fetchWithCookies(path) {
 
 export default async function Page() {
   const initialSelectedDate = toLocalYmd(new Date());
-  const auth = await fetchWithCookies('/auth/me');
-  const initialAuthUser = auth?.authenticated ? auth.user : null;
-
-  let initialPlan = createEmptyDayPlan();
-  if (initialAuthUser?.id) {
-    const plan = await fetchWithCookies(`/api/day-plans/${initialSelectedDate}`);
-    initialPlan = normalizeDayPlan(plan ?? createEmptyDayPlan());
-  }
+  const bootstrap = await fetchWithCookies(`/auth/bootstrap?dateYmd=${initialSelectedDate}`);
+  const initialAuthUser = bootstrap?.authenticated ? bootstrap.user : null;
+  const initialPlan = initialAuthUser?.id
+    ? normalizeDayPlan(bootstrap?.plan ?? createEmptyDayPlan())
+    : createEmptyDayPlan();
 
   return (
     <PageClient
