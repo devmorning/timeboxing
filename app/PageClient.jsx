@@ -668,14 +668,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               className="relative mx-auto flex w-full max-w-md flex-col px-8 py-12 sm:px-10"
               style={{ paddingBottom: "max(3rem, calc(env(safe-area-inset-bottom) + 2rem))" }}
           >
+          <div className="relative min-h-[70dvh]">
             <div
                 className={[
                   "w-full transition-opacity duration-200",
-                  authReady ? "pointer-events-none absolute inset-x-8 top-12 opacity-0 sm:inset-x-10" : "relative opacity-100",
+              authReady ? "pointer-events-none absolute inset-0 opacity-0" : "relative opacity-100",
                 ].join(" ")}
                 aria-hidden={authReady}
             >
-              <div className="flex min-h-[70dvh] items-center justify-center">
+            <div className="flex min-h-[70dvh] items-center justify-center">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
                   <div className="grid grid-cols-2 gap-1.5" aria-hidden>
                     <span className="h-2.5 w-2.5 rounded-[4px] bg-slate-700" />
@@ -690,7 +691,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             <div
                 className={[
                   "w-full transition-opacity duration-200",
-                  authReady ? "relative opacity-100" : "pointer-events-none absolute inset-x-8 top-12 opacity-0 sm:inset-x-10",
+              authReady ? "relative opacity-100" : "pointer-events-none absolute inset-0 opacity-0",
                 ].join(" ")}
                 aria-hidden={!authReady}
             >
@@ -723,6 +724,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 </p>
               </div>
             </div>
+          </div>
           </section>
         </main>
     );
