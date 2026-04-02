@@ -29,7 +29,7 @@ describe("인라인 캘린더 열기", () => {
   it("시간/내용 입력에 포커스 후에도 날짜 버튼으로 캘린더를 열 수 있다", async () => {
     render(<PageClient {...initialProps} />);
 
-    const contentInput = await screen.findByPlaceholderText("예: 09:00 - 고객 피드백 정리");
+    const contentInput = await screen.findByPlaceholderText("예: 고객 피드백 정리");
     contentInput.focus();
     fireEvent.change(contentInput, { target: { value: "테스트 일정" } });
 

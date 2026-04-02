@@ -13,6 +13,8 @@ import { InlineCalendarMonth } from "../components/timeboxing/InlineCalendarMont
 import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/utils/calendarMonth.js";
 import { addDaysToYmd } from "../components/timeboxing/utils/dateYmd.js";
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
+import ComposerContentInput from "./components/timeboxing/ComposerContentInput.jsx";
+import TimeRangeSelectors from "./components/timeboxing/TimeRangeSelectors.jsx";
 import {
   clearStoredAccessToken,
   getApiAuthUrl,
@@ -54,11 +56,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [important3, setImportant3] = useState(initialPlan?.important3 ?? ["", "", ""]);
   const [brainDump, setBrainDump] = useState(initialPlan?.brainDump ?? "");
 
-  const [newTime, setNewTime] = useState("09:00");
+  const [newStartTime, setNewStartTime] = useState("09:00");
+  const [newEndTime, setNewEndTime] = useState("");
   const [newContent, setNewContent] = useState("");
   const [items, setItems] = useState(initialPlan?.items ?? []);
   const [editingId, setEditingId] = useState(null);
+  const [activeExecutionItemId, setActiveExecutionItemId] = useState(null);
+  const [activeExecutionStartedAtMs, setActiveExecutionStartedAtMs] = useState(null);
+  const [executionNowMs, setExecutionNowMs] = useState(Date.now());
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [readyDate, setReadyDate] = useState(initialAuthUser && initialSelectedDate ? initialSelectedDate : "");
   const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(Boolean(initialAuthUser));
@@ -69,6 +77,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
   const [markedDates, setMarkedDates] = useState(new Set());
+  const [repeatingTemplates, setRepeatingTemplates] = useState([]);
+  const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
+  const [templateDraftContent, setTemplateDraftContent] = useState("");
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
   const swipeGestureRef = useRef({
     itemId: null,
     startX: 0,
@@ -85,16 +97,57 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     moved: false,
   });
 
+  const templateSwipeRef = useRef({
+    templateId: null,
+    startX: 0,
+    startY: 0,
+    dragging: false,
+    horizontalLocked: false,
+    didMove: false,
+    offsetX: 0,
+  });
+  const [swipingTemplateId, setSwipingTemplateId] = useState(null);
+  const [templateSwipeOffsetX, setTemplateSwipeOffsetX] = useState(0);
+  const deleteRepeatingTemplateRef = useRef(null);
+  const statsSwipeRef = useRef({
+    startX: 0,
+    startY: 0,
+    tracking: false,
+  });
+
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
   }, [newContent]);
 
   const sortItemsByTimeAsc = useCallback((list) => {
     return [...list].sort((a, b) => {
-      if (a.time === b.time) return 0;
-      return a.time < b.time ? -1 : 1;
+      const aStart = a.startTime || a.time || "09:00";
+      const bStart = b.startTime || b.time || "09:00";
+      if (aStart === bStart) {
+        const aEnd = a.endTime || "";
+        const bEnd = b.endTime || "";
+        if (aEnd === bEnd) return 0;
+        return aEnd < bEnd ? -1 : 1;
+      }
+      return aStart < bStart ? -1 : 1;
     });
   }, []);
+
+  const minuteTimeSlots = useMemo(() => {
+    const slots = [];
+    for (let hour = 0; hour < 24; hour += 1) {
+      for (let minute = 0; minute < 60; minute += 1) {
+        slots.push(`${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`);
+      }
+    }
+    return slots;
+  }, []);
+
+  const timeSlotOptions = useMemo(() => {
+    const values = [newStartTime, newEndTime].filter(Boolean);
+    const extras = values.filter((slot) => !minuteTimeSlots.includes(slot));
+    return [...minuteTimeSlots, ...extras].sort();
+  }, [minuteTimeSlots, newEndTime, newStartTime]);
 
   const serializePlan = useCallback(
       (plan) =>
@@ -103,9 +156,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             brainDump: normalizeDayPlan(plan).brainDump,
             items: sortItemsByTimeAsc(normalizeDayPlan(plan).items).map((it) => ({
               id: it.id,
-              time: it.time,
+              startTime: it.startTime || it.time || "09:00",
+              endTime: it.endTime || "",
               content: it.content,
               done: Boolean(it.done),
+              executedSeconds:
+                typeof it.executedSeconds === "number" && Number.isFinite(it.executedSeconds)
+                  ? Math.max(0, Math.floor(it.executedSeconds))
+                  : 0,
             })),
           }),
       [sortItemsByTimeAsc]
@@ -115,6 +173,42 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       () => important3.map((v) => v.trim()).filter(Boolean),
       [important3]
   );
+
+  const templateDraftCanSave = useMemo(() => templateDraftContent.trim().length > 0, [templateDraftContent]);
+
+  const editingTemplate = useMemo(() => {
+    if (!editingTemplateId) return null;
+    return repeatingTemplates.find((t) => t.id === editingTemplateId) ?? null;
+  }, [editingTemplateId, repeatingTemplates]);
+
+  const isEditingTemplateChanged = useMemo(() => {
+    if (!editingTemplate) return false;
+    return editingTemplate.content !== templateDraftContent.trim();
+  }, [editingTemplate, templateDraftContent]);
+
+  const getMonthBounds = useCallback((ymd) => {
+    const [year, month] = ymd.split("-").map(Number);
+    const start = `${year}-${String(month).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const end = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    return { startYmd: start, endYmd: end, year, month };
+  }, []);
+
+  const [statsMonthYmd, setStatsMonthYmd] = useState(() => initialSelectedDate || toLocalYmd(new Date()));
+  const [monthlyStats, setMonthlyStats] = useState({
+    loading: false,
+    days: [],
+    totalAdded: 0,
+    totalDone: 0,
+  });
+
+  const statsMonthLabel = useMemo(() => {
+    const [year, month] = statsMonthYmd.split("-").map(Number);
+    return new Date(year, month - 1, 1).toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+    });
+  }, [statsMonthYmd]);
 
   useEffect(() => {
     if (!initialAuthUser?.id || !initialSelectedDate) return;
@@ -130,10 +224,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const isEditingChanged = useMemo(() => {
     if (!editingItem) return false;
     return (
-        editingItem.time !== newTime ||
+        (editingItem.startTime || editingItem.time || "09:00") !== newStartTime ||
+        (editingItem.endTime || "") !== newEndTime ||
         editingItem.content !== newContent.trim()
     );
-  }, [editingItem, newTime, newContent]);
+  }, [editingItem, newContent, newEndTime, newStartTime]);
 
   const addItem = () => {
     if (!canAdd) return;
@@ -143,9 +238,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           ...prev,
           {
             id,
-            time: newTime,
+            startTime: newStartTime,
+            endTime: newEndTime,
             content: newContent.trim(),
             done: false,
+            executedSeconds: 0,
           },
         ])
     );
@@ -154,15 +251,22 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const startEditItem = (item) => {
     setEditingId(item.id);
-    setNewTime(item.time);
+    setNewStartTime(item.startTime || item.time || "09:00");
+    setNewEndTime(item.endTime || "");
     setNewContent(item.content);
   };
 
   const resetEditState = () => {
     setEditingId(null);
-    setNewTime("09:00");
+    setNewStartTime("09:00");
+    setNewEndTime("");
     setNewContent("");
   };
+
+  const resetTemplateDraft = useCallback(() => {
+    setEditingTemplateId(null);
+    setTemplateDraftContent("");
+  }, []);
 
   const saveEditItem = () => {
     if (!editingId) return;
@@ -175,7 +279,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 it.id === editingId
                     ? {
                       ...it,
-                      time: newTime,
+                      startTime: newStartTime,
+                      endTime: newEndTime,
                       content: nextContent,
                     }
                     : it
@@ -188,28 +293,136 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const deleteEditItem = () => {
     if (!editingId) return;
     setItems((prev) => prev.filter((it) => it.id !== editingId));
+    if (activeExecutionItemId === editingId) {
+      setActiveExecutionItemId(null);
+      setActiveExecutionStartedAtMs(null);
+      setExecutionNowMs(Date.now());
+    }
     resetEditState();
   };
 
   const deleteItemById = (id) => {
     setItems((prev) => prev.filter((it) => it.id !== id));
+    if (activeExecutionItemId === id) {
+      setActiveExecutionItemId(null);
+      setActiveExecutionStartedAtMs(null);
+      setExecutionNowMs(Date.now());
+    }
     if (editingId === id) {
       resetEditState();
     }
   };
 
-  const toggleItemDoneById = (id) => {
-    setItems((prev) =>
-        prev.map((it) =>
-            it.id === id
-                ? {
-                  ...it,
-                  done: !it.done,
-                }
-                : it
-        )
-    );
-  };
+  const resetExecutionState = useCallback(() => {
+    setActiveExecutionItemId(null);
+    setActiveExecutionStartedAtMs(null);
+    setExecutionNowMs(Date.now());
+  }, []);
+
+  const startExecution = useCallback(
+      (id, nowMs) => {
+        const startedAt = nowMs ?? Date.now();
+
+        // 실행 중이던 항목이 있다면 먼저 정지시킨다.
+        if (activeExecutionItemId && activeExecutionItemId !== id) {
+          const elapsedSeconds =
+              activeExecutionStartedAtMs
+                ? Math.max(0, Math.floor((startedAt - activeExecutionStartedAtMs) / 1000))
+                : 0;
+
+          setItems((prev) =>
+              prev.map((it) =>
+                  it.id === activeExecutionItemId
+                      ? {
+                        ...it,
+                        done: false,
+                        executedSeconds: (it.executedSeconds ?? 0) + elapsedSeconds,
+                      }
+                      : it
+              )
+          );
+        }
+
+        setActiveExecutionItemId(id);
+        setActiveExecutionStartedAtMs(startedAt);
+        setExecutionNowMs(startedAt);
+
+        setItems((prev) =>
+            prev.map((it) => (it.id === id ? { ...it, done: true } : it))
+        );
+      },
+      [activeExecutionItemId, activeExecutionStartedAtMs]
+  );
+
+  const stopExecution = useCallback(
+      (id, nowMs) => {
+        const now = nowMs ?? Date.now();
+        const elapsedSeconds =
+            activeExecutionItemId === id && activeExecutionStartedAtMs
+              ? Math.max(0, Math.floor((now - activeExecutionStartedAtMs) / 1000))
+              : 0;
+
+        setItems((prev) =>
+            prev.map((it) =>
+                it.id === id
+                    ? {
+                      ...it,
+                      done: false,
+                      executedSeconds: (it.executedSeconds ?? 0) + elapsedSeconds,
+                    }
+                    : it
+            )
+        );
+
+        resetExecutionState();
+      },
+      [activeExecutionItemId, activeExecutionStartedAtMs, resetExecutionState]
+  );
+
+  const toggleExecutionBySwipe = useCallback(
+      (id) => {
+        const target = items.find((it) => it.id === id);
+        if (!target) return;
+
+        // done=false(멈춤) -> done=true(시작)
+        // done=true(시작) -> done=false(정지)
+        if (!target.done) {
+          startExecution(id, Date.now());
+        } else {
+          stopExecution(id, Date.now());
+        }
+      },
+      [items, startExecution, stopExecution]
+  );
+
+  const getDisplayedExecutionSeconds = useCallback(
+      (item) => {
+        const base = typeof item.executedSeconds === "number" ? Math.max(0, Math.floor(item.executedSeconds)) : 0;
+        if (activeExecutionItemId === item.id && activeExecutionStartedAtMs) {
+          return base + Math.max(0, Math.floor((executionNowMs - activeExecutionStartedAtMs) / 1000));
+        }
+        return base;
+      },
+      [activeExecutionItemId, activeExecutionStartedAtMs, executionNowMs]
+  );
+
+  const formatSecondsToMMSS = useCallback((totalSeconds) => {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const mm = Math.floor(s / 60);
+    const ss = s % 60;
+    return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+  }, []);
+
+  useEffect(() => {
+    if (!activeExecutionItemId || !activeExecutionStartedAtMs) return;
+    const intervalId = window.setInterval(() => setExecutionNowMs(Date.now()), 1000);
+    return () => window.clearInterval(intervalId);
+  }, [activeExecutionItemId, activeExecutionStartedAtMs]);
+
+  useEffect(() => {
+    // 날짜 전환 시에는 실행(가상 타이머) 상태를 끊어준다.
+    resetExecutionState();
+  }, [selectedDate, resetExecutionState]);
 
   const handleItemTouchStart = (id, event) => {
     const touch = event.touches?.[0];
@@ -273,7 +486,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       return true;
     }
     if (shouldToggleDone) {
-      toggleItemDoneById(id);
+      toggleExecutionBySwipe(id);
       return true;
     }
     return didMove;
@@ -342,6 +555,155 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       event.stopPropagation();
     }
   };
+
+  const closeStatsModal = useCallback(() => {
+    setIsStatsOpen(false);
+  }, []);
+
+  const closeTemplatesModal = useCallback(() => {
+    setIsTemplatesOpen(false);
+    resetTemplateDraft();
+  }, [resetTemplateDraft]);
+
+  const handleStatsTouchStart = useCallback((event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    statsSwipeRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      tracking: true,
+    };
+  }, []);
+
+  const handleStatsTouchEnd = useCallback(
+      (event) => {
+        const touch = event.changedTouches?.[0];
+        const gesture = statsSwipeRef.current;
+        statsSwipeRef.current = {
+          startX: 0,
+          startY: 0,
+          tracking: false,
+        };
+
+        if (!touch || !gesture.tracking) return;
+
+        const dx = touch.clientX - gesture.startX;
+        const dy = touch.clientY - gesture.startY;
+
+        if (dy >= 96 && Math.abs(dy) > Math.abs(dx)) {
+          closeStatsModal();
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      [closeStatsModal]
+  );
+
+  const handleTemplateTouchStart = useCallback((id, event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+
+    templateSwipeRef.current = {
+      templateId: id,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      dragging: true,
+      horizontalLocked: false,
+      didMove: false,
+      offsetX: 0,
+    };
+
+    setSwipingTemplateId(id);
+    setTemplateSwipeOffsetX(0);
+  }, []);
+
+  const handleTemplateTouchMove = useCallback((id, event) => {
+    const touch = event.touches?.[0];
+    const gesture = templateSwipeRef.current;
+    if (!touch || !gesture.dragging || gesture.templateId !== id) return;
+
+    const dx = touch.clientX - gesture.startX;
+    const dy = touch.clientY - gesture.startY;
+
+    if (!gesture.horizontalLocked) {
+      if (Math.abs(dx) < 6) return;
+      if (Math.abs(dx) <= Math.abs(dy)) {
+        gesture.dragging = false;
+        setSwipingTemplateId(null);
+        setTemplateSwipeOffsetX(0);
+        return;
+      }
+      gesture.horizontalLocked = true;
+    }
+
+    const nextOffset = Math.max(-120, Math.min(96, dx));
+    gesture.didMove = Math.abs(nextOffset) > 10;
+    gesture.offsetX = nextOffset;
+    setTemplateSwipeOffsetX(nextOffset);
+  }, []);
+
+  const handleTemplateTouchEnd = useCallback(
+      (id) => {
+        const gesture = templateSwipeRef.current;
+        const isSame = gesture.templateId === id;
+        const shouldDelete = isSame && (gesture.offsetX ?? 0) <= -72;
+        const didMove = isSame && gesture.didMove;
+
+        templateSwipeRef.current = {
+          templateId: null,
+          startX: 0,
+          startY: 0,
+          dragging: false,
+          horizontalLocked: false,
+          didMove: false,
+          offsetX: 0,
+        };
+
+        setSwipingTemplateId(null);
+        setTemplateSwipeOffsetX(0);
+
+        if (shouldDelete) {
+          deleteRepeatingTemplateRef.current?.(id);
+          return true;
+        }
+        return didMove;
+      },
+      []
+  );
+
+  const handleTemplatesModalTouchStart = useCallback((event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    statsSwipeRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      tracking: true,
+    };
+  }, []);
+
+  const handleTemplatesModalTouchEnd = useCallback(
+      (event) => {
+        const touch = event.changedTouches?.[0];
+        const gesture = statsSwipeRef.current;
+        statsSwipeRef.current = {
+          startX: 0,
+          startY: 0,
+          tracking: false,
+        };
+
+        if (!touch || !gesture.tracking) return;
+
+        const dx = touch.clientX - gesture.startX;
+        const dy = touch.clientY - gesture.startY;
+
+        if (dy >= 96 && Math.abs(dy) > Math.abs(dx)) {
+          closeTemplatesModal();
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      [closeTemplatesModal]
+  );
 
   const closeInlineCalendar = useCallback(() => {
     setIsDatePickerOpen(false);
@@ -468,6 +830,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (cachedPlan) {
       const normalizedPlan = normalizeDayPlan(cachedPlan);
       lastSavedPlanRef.current = serializePlan(normalizedPlan);
+      resetExecutionState();
       setImportant3(normalizedPlan.important3);
       setBrainDump(normalizedPlan.brainDump);
       setItems(sortItemsByTimeAsc(normalizedPlan.items));
@@ -484,12 +847,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         if (cancelled) return;
         dayPlanCacheRef.current.set(selectedDate, plan);
         lastSavedPlanRef.current = serializePlan(plan);
+        resetExecutionState();
         setImportant3(plan.important3);
         setBrainDump(plan.brainDump);
         setItems(sortItemsByTimeAsc(plan.items));
       } catch (error) {
         if (!cancelled) {
           console.error("Failed to load day plan", error);
+          resetExecutionState();
           setImportant3(["", "", ""]);
           setBrainDump("");
           setItems([]);
@@ -661,7 +1026,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, [isAuthBootstrapDone]);
 
   useEffect(() => {
-    if (!isReportOpen) return;
+    if (!isReportOpen && !isStatsOpen && !isTemplatesOpen) return;
 
     const body = document.body;
     const html = document.documentElement;
@@ -688,7 +1053,161 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       html.style.overscrollBehavior = previousHtmlOverscroll;
       window.scrollTo(0, scrollY);
     };
-  }, [isReportOpen]);
+  }, [isReportOpen, isStatsOpen, isTemplatesOpen]);
+
+  useEffect(() => {
+    if (!isStatsOpen || !authUser?.id) return;
+
+    let cancelled = false;
+
+    const loadMonthlyStats = async () => {
+      setMonthlyStats((prev) => ({ ...prev, loading: true }));
+      try {
+        const { startYmd, endYmd, year, month } = getMonthBounds(statsMonthYmd);
+        const markedDates = typeof dayPlanRepository.listMarkedDatesInRange === "function"
+          ? await dayPlanRepository.listMarkedDatesInRange(startYmd, endYmd)
+          : await dayPlanRepository.listMarkedDatesInMonth(year, month);
+
+        const uniqueDates = [...new Set(markedDates)].sort();
+        const plans = await Promise.all(
+          uniqueDates.map(async (dateYmd) => {
+            if (dayPlanCacheRef.current.has(dateYmd)) {
+              return [dateYmd, normalizeDayPlan(dayPlanCacheRef.current.get(dateYmd))];
+            }
+            const plan = await dayPlanRepository.getByDate(dateYmd);
+            dayPlanCacheRef.current.set(dateYmd, plan);
+            return [dateYmd, normalizeDayPlan(plan)];
+          })
+        );
+
+        if (cancelled) return;
+
+        const days = plans.map(([dateYmd, plan]) => {
+          const addedCount = plan.items.length;
+          const doneCount = plan.items.filter((item) => item.done).length;
+          return {
+            dateYmd,
+            label: dateYmd.slice(8, 10),
+            addedCount,
+            doneCount,
+          };
+        });
+
+        setMonthlyStats({
+          loading: false,
+          days,
+          totalAdded: days.reduce((sum, day) => sum + day.addedCount, 0),
+          totalDone: days.reduce((sum, day) => sum + day.doneCount, 0),
+        });
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Failed to load monthly stats", error);
+        setMonthlyStats({
+          loading: false,
+          days: [],
+          totalAdded: 0,
+          totalDone: 0,
+        });
+      }
+    };
+
+    loadMonthlyStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser?.id, dayPlanRepository, getMonthBounds, isStatsOpen, statsMonthYmd]);
+
+  useEffect(() => {
+    if (!isTemplatesOpen || !authUser?.id) return;
+
+    let cancelled = false;
+
+    const loadTemplates = async () => {
+      setIsTemplatesLoading(true);
+      try {
+        const templates = await dayPlanRepository.listRepeatingTemplates?.();
+        if (!cancelled) {
+          setRepeatingTemplates(Array.isArray(templates) ? templates : []);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load repeating templates", error);
+          setRepeatingTemplates([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsTemplatesLoading(false);
+        }
+      }
+    };
+
+    loadTemplates();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authUser?.id, dayPlanRepository, isTemplatesOpen]);
+
+  const applyRepeatingTemplate = useCallback((template) => {
+    if (!template) return;
+    setNewContent(typeof template.content === "string" ? template.content : "");
+    setEditingId(null);
+  }, []);
+
+  const startEditingTemplate = useCallback((template) => {
+    setEditingTemplateId(template.id);
+    setTemplateDraftContent(template.content);
+  }, []);
+
+  const saveRepeatingTemplate = useCallback(async () => {
+    const content = templateDraftContent.trim();
+    if (!content) return;
+
+    try {
+      if (editingTemplateId) {
+        const updated = await dayPlanRepository.updateRepeatingTemplate?.(editingTemplateId, {
+          content,
+        });
+        if (updated) {
+          setRepeatingTemplates((prev) =>
+            prev.map((item) => (item.id === editingTemplateId ? updated : item))
+          );
+        }
+      } else {
+        const created = await dayPlanRepository.createRepeatingTemplate?.({
+          content,
+        });
+        if (created) {
+          setRepeatingTemplates((prev) =>
+            [...prev, created].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+          );
+        }
+      }
+      resetTemplateDraft();
+    } catch (error) {
+      console.error("Failed to save repeating template", error);
+    }
+  }, [dayPlanRepository, editingTemplateId, resetTemplateDraft, templateDraftContent]);
+
+  const deleteRepeatingTemplate = useCallback(
+      async (templateId) => {
+        try {
+          await dayPlanRepository.deleteRepeatingTemplate?.(templateId);
+          setRepeatingTemplates((prev) => prev.filter((item) => item.id !== templateId));
+          if (editingTemplateId === templateId) {
+            resetTemplateDraft();
+          }
+        } catch (error) {
+          console.error("Failed to delete repeating template", error);
+        }
+      },
+      [dayPlanRepository, editingTemplateId, resetTemplateDraft]
+  );
+
+  useEffect(() => {
+    deleteRepeatingTemplateRef.current = deleteRepeatingTemplate;
+  }, [deleteRepeatingTemplate]);
 
   const handleLogin = () => {
     window.location.href = getApiAuthUrl("/auth/google");
@@ -705,7 +1224,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       setImportant3(["", "", ""]);
       setBrainDump("");
       setItems([]);
+      setActiveExecutionItemId(null);
+      setActiveExecutionStartedAtMs(null);
+      setExecutionNowMs(Date.now());
       setIsReportOpen(false);
+      setIsStatsOpen(false);
+      setIsTemplatesOpen(false);
       setIsDatePickerOpen(false);
     }
   };
@@ -1078,21 +1602,19 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               <section>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-[120px] flex-none">
-                      <TextInput
-                          type="time"
-                          value={newTime}
-                          disabled={isDatePickerOpen}
-                          onChange={setNewTime}
-                          inputClassName="text-[15px]"
-                      />
-                    </div>
+                        <TimeRangeSelectors
+                            startTime={newStartTime}
+                            endTime={newEndTime}
+                            onChangeStartTime={setNewStartTime}
+                            onChangeEndTime={setNewEndTime}
+                            timeSlotOptions={timeSlotOptions}
+                            disabled={isDatePickerOpen}
+                        />
                     <div className="min-w-0 flex-1">
-                      <TextInput
+                      <ComposerContentInput
                           value={newContent}
-                          placeholder="예: 09:00 - 고객 피드백 정리"
+                          placeholder="예: 고객 피드백 정리"
                           disabled={isDatePickerOpen}
-                          inputClassName="text-[15px]"
                           onChange={setNewContent}
                       />
                     </div>
@@ -1194,7 +1716,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             >
                               <div className="flex items-start gap-2">
                                 <div className="min-w-0">
-                                  <div className="text-[13px] font-semibold text-orange-700">{it.time}</div>
+                                  <div className="text-[13px] font-semibold text-orange-700">
+                                    {it.endTime ? `${it.startTime} - ${it.endTime}` : it.startTime}
+                                  </div>
                                   <div
                                       className={[
                                         "mt-1 whitespace-pre-wrap break-words text-sm",
@@ -1204,10 +1728,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     {it.content}
                                   </div>
                                 </div>
-                                {it.done ? (
-                                    <span className="mt-0.5 inline-flex h-5 min-w-[38px] items-center justify-center rounded-full bg-emerald-100 px-2 text-[11px] font-semibold text-emerald-700">
-                              실행
-                            </span>
+                                {(it.done || (it.executedSeconds ?? 0) > 0) ? (
+                                    <span
+                                        className={[
+                                          "mt-0.5 inline-flex h-5 min-w-[78px] items-center justify-center rounded-full px-2 text-[11px] font-semibold",
+                                          it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
+                                        ].join(" ")}
+                                    >
+                                      실행 {formatSecondsToMMSS(getDisplayedExecutionSeconds(it))}
+                                    </span>
                                 ) : null}
                               </div>
                             </div>
@@ -1225,7 +1754,48 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         {!isDatePickerOpen ? (
             <div className="fixed inset-x-0 bottom-0 z-30">
               <div className="mx-auto w-full max-w-md px-4 pb-4 pt-2">
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                  <button
+                      type="button"
+                      aria-label="반복 내용 관리 열기"
+                      onClick={() => {
+                        setIsDatePickerOpen(false);
+                        setIsTemplatesOpen(true);
+                      }}
+                      className={[
+                        "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0",
+                        "text-slate-900 shadow-md ring-1 ring-black/[0.06]",
+                        "active:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500/20",
+                      ].join(" ")}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[20px] w-[20px]">
+                      <path
+                          fill="currentColor"
+                          d="M4 7.5C4 6.67 4.67 6 5.5 6h8C14.33 6 15 6.67 15 7.5v8c0 .83-.67 1.5-1.5 1.5h-8C4.67 17 4 16.33 4 15.5zm5-3C9 3.67 9.67 3 10.5 3h8c.83 0 1.5.67 1.5 1.5v8c0 .83-.67 1.5-1.5 1.5H17v-6.5C17 5.57 15.43 4 13.5 4H9z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                      type="button"
+                      aria-label="월간 통계 열기"
+                      onClick={() => {
+                        setIsDatePickerOpen(false);
+                        setStatsMonthYmd(selectedDate);
+                        setIsStatsOpen(true);
+                      }}
+                      className={[
+                        "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-slate-900 p-0",
+                        "text-white shadow-md",
+                        "active:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500/30",
+                      ].join(" ")}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[20px] w-[20px]">
+                      <path
+                          fill="currentColor"
+                          d="M5 19V9h3v10zm5 0V5h3v14zm5 0v-7h3v7z"
+                      />
+                    </svg>
+                  </button>
                   <button
                       type="button"
                       aria-label="일정 리포트 열기"
@@ -1251,12 +1821,338 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             </div>
         ) : null}
 
+        {isTemplatesOpen ? (
+            <div
+                className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[1px]"
+                onClick={closeTemplatesModal}
+            >
+              <div
+                  className="mx-auto flex h-full min-h-0 w-full max-w-md items-stretch justify-center px-0 pb-0 pt-0"
+                  style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+              >
+                <section
+                    className="flex h-full w-full flex-col overflow-hidden bg-white"
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchStart={handleTemplatesModalTouchStart}
+                    onTouchEnd={handleTemplatesModalTouchEnd}
+                    onTouchCancel={() => {
+                      statsSwipeRef.current = {
+                        startX: 0,
+                        startY: 0,
+                        tracking: false,
+                      };
+                    }}
+                    style={{ touchAction: "pan-y" }}
+                >
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-snug text-slate-700">반복 내용</p>
+                      <p className="mt-0.5 text-[12px] text-slate-400">자주 쓰는 타임블록 내용을 저장해두고 빠르게 불러오세요</p>
+                    </div>
+                    <button
+                        type="button"
+                        aria-label="반복 내용 모달 닫기"
+                        onClick={closeTemplatesModal}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]">
+                    <div className="space-y-5">
+                      <section>
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="min-w-0 flex-1">
+                              <ComposerContentInput
+                                  value={templateDraftContent}
+                                  placeholder="예: 데일리 체크인, 메일 확인, 운동"
+                                  onChange={setTemplateDraftContent}
+                              />
+                            </div>
+                            <div className="w-[56px]">
+                              {editingTemplateId ? (
+                                  isEditingTemplateChanged ? (
+                                      <button
+                                          type="button"
+                                          aria-label="저장"
+                                          disabled={!templateDraftCanSave}
+                                          onClick={saveRepeatingTemplate}
+                                          className={[
+                                            "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
+                                            "text-orange-700 active:opacity-60",
+                                            "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                                            "disabled:cursor-not-allowed disabled:opacity-40",
+                                          ].join(" ")}
+                                      >
+                                        ✓
+                                      </button>
+                                  ) : (
+                                      <button
+                                          type="button"
+                                          aria-label="취소"
+                                          onClick={resetTemplateDraft}
+                                          className={[
+                                            "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
+                                            "text-orange-700 active:opacity-60",
+                                            "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                                          ].join(" ")}
+                                      >
+                                        ✕
+                                      </button>
+                                  )
+                              ) : (
+                                  <button
+                                      type="button"
+                                      aria-label="추가"
+                                      disabled={!templateDraftCanSave}
+                                      onClick={saveRepeatingTemplate}
+                                      className={[
+                                        "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
+                                        "text-orange-700 active:opacity-60",
+                                        "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                                        "disabled:cursor-not-allowed disabled:opacity-40",
+                                      ].join(" ")}
+                                  >
+                                    +
+                                  </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+
+                      <section>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[13px] font-semibold text-slate-500">저장된 반복 내용</h3>
+                          <span className="text-[11px] text-slate-400">{repeatingTemplates.length}개</span>
+                        </div>
+
+                        {isTemplatesLoading ? (
+                            <div className="mt-4 space-y-3">
+                              {Array.from({ length: 4 }).map((_, idx) => (
+                                  <div key={idx} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
+                              ))}
+                            </div>
+                        ) : repeatingTemplates.length > 0 ? (
+                            <div className="mt-3 space-y-3">
+                              {repeatingTemplates.map((template) => (
+                                  <div
+                                      key={template.id}
+                                      role="button"
+                                      tabIndex={0}
+                                      onClick={() => {
+                                        applyRepeatingTemplate(template);
+                                        startEditingTemplate(template);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                          e.preventDefault();
+                                          startEditingTemplate(template);
+                                        }
+                                      }}
+                                      onTouchStart={(e) => handleTemplateTouchStart(template.id, e)}
+                                      onTouchMove={(e) => handleTemplateTouchMove(template.id, e)}
+                                      onTouchEnd={(e) => {
+                                        const moved = handleTemplateTouchEnd(template.id);
+                                        if (moved) {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                        }
+                                      }}
+                                      onTouchCancel={() => {
+                                        templateSwipeRef.current = {
+                                          templateId: null,
+                                          startX: 0,
+                                          startY: 0,
+                                          dragging: false,
+                                          horizontalLocked: false,
+                                          didMove: false,
+                                          offsetX: 0,
+                                        };
+                                        setSwipingTemplateId(null);
+                                        setTemplateSwipeOffsetX(0);
+                                      }}
+                                      className={[
+                                        "cursor-pointer rounded-md px-1 py-1 outline-none transition-colors",
+                                        "hover:bg-black/[0.02] focus:bg-black/[0.04]",
+                                      ].join(" ")}
+                                      style={{
+                                        touchAction: "pan-y",
+                                        transform:
+                                            swipingTemplateId === template.id && templateSwipeOffsetX !== 0
+                                                ? `translateX(${templateSwipeOffsetX}px)`
+                                                : "translateX(0)",
+                                        transition:
+                                            swipingTemplateId === template.id
+                                                ? "none"
+                                                : "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+                                      }}
+                                  >
+                                        <div className="flex items-start gap-2">
+                                          <div className="min-w-0 flex-1">
+                                            <div className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-900">
+                                              {template.content}
+                                            </div>
+                                          </div>
+                                        </div>
+                                  </div>
+                              ))}
+                            </div>
+                        ) : (
+                            <p className="mt-4 text-sm text-slate-400">아직 저장된 반복 내용이 없습니다.</p>
+                        )}
+                      </section>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+        ) : null}
+
+        {isStatsOpen ? (
+            <div
+                className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[1px]"
+                onClick={closeStatsModal}
+            >
+              <div
+                  className="mx-auto flex h-full min-h-0 w-full max-w-md items-stretch justify-center px-0 pb-0 pt-0"
+                  style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+              >
+                <section
+                    className="flex h-full w-full flex-col overflow-hidden bg-white"
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchStart={handleStatsTouchStart}
+                    onTouchEnd={handleStatsTouchEnd}
+                    onTouchCancel={() => {
+                      statsSwipeRef.current = {
+                        startX: 0,
+                        startY: 0,
+                        tracking: false,
+                      };
+                    }}
+                    style={{ touchAction: "pan-y" }}
+                >
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-snug text-slate-700">{statsMonthLabel}</p>
+                      <p className="mt-0.5 text-[12px] text-slate-400">추가 대비 실행 현황</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                          type="button"
+                          aria-label="이전 달"
+                          onClick={() => setStatsMonthYmd((prev) => addDaysToYmd(prev.slice(0, 8) + "01", -1))}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                      >
+                        ‹
+                      </button>
+                      <button
+                          type="button"
+                          aria-label="다음 달"
+                          onClick={() =>
+                            setStatsMonthYmd((prev) => {
+                              const [year, month] = prev.split("-").map(Number);
+                              return `${month === 12 ? year + 1 : year}-${String(month === 12 ? 1 : month + 1).padStart(2, "0")}-01`;
+                            })
+                          }
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                      >
+                        ›
+                      </button>
+                      <button
+                          type="button"
+                          aria-label="통계 닫기"
+                          onClick={closeStatsModal}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]">
+                    <div className="space-y-5">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                          <p className="text-[12px] font-medium text-slate-500">추가된 일정</p>
+                          <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-slate-900">
+                            {monthlyStats.totalAdded}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-emerald-50 px-4 py-4">
+                          <p className="text-[12px] font-medium text-emerald-700">실행한 일정</p>
+                          <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-emerald-800">
+                            {monthlyStats.totalDone}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[13px] font-semibold text-slate-500">월간 차트</h3>
+                          <span className="text-[11px] text-slate-400">추가 / 실행</span>
+                        </div>
+
+                        {monthlyStats.loading ? (
+                            <div className="mt-6 flex h-40 items-end justify-between gap-2">
+                              {Array.from({ length: 6 }).map((_, idx) => (
+                                  <div key={idx} className="flex flex-1 flex-col items-center gap-2">
+                                    <div className="flex h-28 items-end gap-1">
+                                      <div className="w-2.5 rounded-full bg-slate-200" style={{ height: `${40 + idx * 8}px` }} />
+                                      <div className="w-2.5 rounded-full bg-emerald-100" style={{ height: `${24 + idx * 6}px` }} />
+                                    </div>
+                                    <div className="h-2 w-5 rounded-full bg-slate-100" />
+                                  </div>
+                              ))}
+                            </div>
+                        ) : monthlyStats.days.length > 0 ? (
+                            <div className="mt-6 flex h-44 items-end justify-between gap-2">
+                              {(() => {
+                                const maxCount = Math.max(
+                                  1,
+                                  ...monthlyStats.days.flatMap((day) => [day.addedCount, day.doneCount])
+                                );
+                                return monthlyStats.days.map((day) => (
+                                    <div key={day.dateYmd} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+                                      <div className="flex h-32 items-end gap-1">
+                                        <div
+                                            className="w-2.5 rounded-full bg-slate-300"
+                                            style={{ height: `${Math.max(8, (day.addedCount / maxCount) * 100)}%` }}
+                                            title={`추가 ${day.addedCount}`}
+                                        />
+                                        <div
+                                            className="w-2.5 rounded-full bg-emerald-500"
+                                            style={{ height: `${Math.max(8, (day.doneCount / maxCount) * 100)}%` }}
+                                            title={`실행 ${day.doneCount}`}
+                                        />
+                                      </div>
+                                      <span className="text-[11px] text-slate-400">{day.label}</span>
+                                    </div>
+                                ));
+                              })()}
+                            </div>
+                        ) : (
+                            <p className="mt-6 text-sm text-slate-400">이번 달에는 집계할 일정이 없습니다.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+        ) : null}
+
         {isReportOpen ? (
             <div
-                className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
+                className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[1px]"
                 onClick={() => setIsReportOpen(false)}
             >
-              <div className="mx-auto flex h-full min-h-0 w-full max-w-md items-stretch justify-center px-0 pb-0 pt-0">
+              <div
+                  className="mx-auto flex h-full min-h-0 w-full max-w-md items-stretch justify-center px-0 pb-0 pt-0"
+                  style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}
+              >
                 <section
                     className="flex h-full w-full flex-col overflow-hidden bg-white"
                     onClick={(e) => e.stopPropagation()}
@@ -1336,7 +2232,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       ].join(" ")}
                                   >
                                     <div className="min-w-[58px] text-[12px] font-semibold text-orange-700">
-                                      {it.time}
+                                      {it.endTime ? `${it.startTime} - ${it.endTime}` : it.startTime}
                                     </div>
                                     <div
                                         className={[
@@ -1346,10 +2242,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     >
                                       {it.content}
                                     </div>
-                                    {it.done ? (
-                                        <span className="inline-flex h-5 min-w-[38px] items-center justify-center rounded-full bg-emerald-100 px-2 text-[11px] font-semibold text-emerald-700">
-                              실행
-                            </span>
+                                    {(it.done || (it.executedSeconds ?? 0) > 0) ? (
+                                        <span
+                                            className={[
+                                              "inline-flex h-5 min-w-[78px] items-center justify-center rounded-full px-2 text-[11px] font-semibold",
+                                              it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
+                                            ].join(" ")}
+                                        >
+                                          실행 {formatSecondsToMMSS(getDisplayedExecutionSeconds(it))}
+                                        </span>
                                     ) : null}
                                   </div>
                               ))}

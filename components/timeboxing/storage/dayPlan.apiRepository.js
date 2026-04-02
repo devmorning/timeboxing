@@ -125,5 +125,32 @@ export function createApiDayPlanRepository() {
       );
       return Array.isArray(data?.dates) ? data.dates : [];
     },
+
+    async listRepeatingTemplates() {
+      const data = await requestJson("/api/repeating-templates", { method: "GET" });
+      return Array.isArray(data?.templates) ? data.templates : [];
+    },
+
+    async createRepeatingTemplate(input) {
+      const data = await requestJson("/api/repeating-templates", {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+      return data?.template ?? null;
+    },
+
+    async updateRepeatingTemplate(templateId, input) {
+      const data = await requestJson(`/api/repeating-templates/${templateId}`, {
+        method: "PUT",
+        body: JSON.stringify(input),
+      });
+      return data?.template ?? null;
+    },
+
+    async deleteRepeatingTemplate(templateId) {
+      await requestJson(`/api/repeating-templates/${templateId}`, {
+        method: "DELETE",
+      });
+    },
   };
 }

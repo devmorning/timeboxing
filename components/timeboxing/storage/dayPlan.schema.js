@@ -24,9 +24,21 @@ export function normalizeDayPlan(input) {
         .filter((it) => it && typeof it === "object")
         .map((it) => ({
           id: typeof it.id === "string" ? it.id : `${Date.now()}_${Math.random().toString(16).slice(2)}`,
-          time: typeof it.time === "string" ? it.time : "09:00",
+          startTime:
+            typeof it.startTime === "string"
+              ? it.startTime
+              : typeof it.time === "string"
+                ? it.time
+                : "09:00",
+          endTime: typeof it.endTime === "string" ? it.endTime : "",
           content: typeof it.content === "string" ? it.content : "",
           done: typeof it.done === "boolean" ? it.done : false,
+          executedSeconds:
+            typeof it.executedSeconds === "number" && Number.isFinite(it.executedSeconds)
+              ? Math.max(0, Math.floor(it.executedSeconds))
+              : typeof it.executionSeconds === "number" && Number.isFinite(it.executionSeconds)
+                ? Math.max(0, Math.floor(it.executionSeconds))
+                : 0,
         }))
         .filter((it) => it.content.trim().length > 0)
     : base.items;
