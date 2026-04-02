@@ -39,4 +39,15 @@ describe("인라인 캘린더 열기", () => {
       expect(panel.className).toContain("max-h-[calc(100dvh-4rem)]");
     });
   });
+
+  it("통계 버튼 클릭 시 일자별 통계 모달이 열린다", async () => {
+    render(<PageClient {...initialProps} />);
+
+    fireEvent.click(screen.getByLabelText("일자별 통계 열기"));
+
+    await waitFor(() => {
+      expect(screen.getByText("계획(종료−시작) 대비 실행 시간 달성률")).toBeInTheDocument();
+    });
+    expect(screen.getByRole("heading", { name: "일정별 달성" })).toBeInTheDocument();
+  });
 });
