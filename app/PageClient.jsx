@@ -72,7 +72,8 @@ function isDayPlanItemUuid(id) {
   );
 }
 
-const MODAL_TRANSITION_MS = 320;
+/** 닫힘 타이머 — modalBackdropClass / modalPanelClass 의 duration-[480ms] 와 동일해야 함 */
+const MODAL_TRANSITION_MS = 480;
 
 /** 인라인 캘린더 패널과 유사한 이징으로 모달 열림·닫힘 */
 function useModalOpenAnimation(isOpen, onFullyClosed) {
@@ -89,6 +90,7 @@ function useModalOpenAnimation(isOpen, onFullyClosed) {
     }
     setClosing(false);
     setEntered(false);
+    /** 한 프레임만 쓰면 첫 페인트와 트랜지션 시작이 맞물려 깜빡일 수 있어 이중 rAF 유지 */
     const id = requestAnimationFrame(() => {
       requestAnimationFrame(() => setEntered(true));
     });
@@ -117,8 +119,9 @@ function useModalOpenAnimation(isOpen, onFullyClosed) {
 
 function modalBackdropClass(showOverlay) {
   return [
-    "fixed inset-0 z-[60] bg-black/40 backdrop-blur-[1px]",
-    "transition-[opacity] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+    "fixed inset-0 z-[60] isolate bg-black/40 backdrop-blur-[1px]",
+    "will-change-[opacity]",
+    "transition-[opacity] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]",
     showOverlay ? "opacity-100" : "opacity-0",
   ].join(" ");
 }
@@ -126,8 +129,9 @@ function modalBackdropClass(showOverlay) {
 function modalPanelClass(showOverlay) {
   return [
     "flex h-full w-full flex-col overflow-hidden bg-white",
-    "transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
-    showOverlay ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
+    "will-change-[opacity,transform] transform-gpu",
+    "transition-[opacity,transform] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]",
+    showOverlay ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
   ].join(" ");
 }
 
