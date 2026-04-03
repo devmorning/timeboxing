@@ -795,13 +795,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     if (!gesture.horizontalLocked) {
       if (Math.abs(dx) < 8) return;
-      if (Math.abs(dx) <= Math.abs(dy)) {
-        gesture.tracking = false;
-        return;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        gesture.horizontalLocked = true;
       }
-      gesture.horizontalLocked = true;
     }
-    if (Math.abs(dx) > 12) {
+    if (gesture.horizontalLocked && Math.abs(dx) > 12) {
       gesture.moved = true;
     }
   };
@@ -812,7 +810,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!touch || !gesture.tracking) return;
 
     const dx = touch.clientX - gesture.startX;
-    const isHorizontal = gesture.horizontalLocked || Math.abs(dx) > 24;
+    const dy = touch.clientY - gesture.startY;
 
     reportSwipeRef.current = {
       startX: 0,
@@ -821,6 +819,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       horizontalLocked: false,
       moved: false,
     };
+
+    /** 통계·반복 모달과 동일: 아래로 충분히 밀면 닫기 */
+    if (dy >= 96 && Math.abs(dy) > Math.abs(dx)) {
+      closeReportModal();
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    const isHorizontal = gesture.horizontalLocked || Math.abs(dx) > 24;
 
     if (!isHorizontal) return;
 
