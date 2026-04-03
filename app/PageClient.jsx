@@ -23,6 +23,22 @@ import {
 import { hasDayPlanContent, normalizeDayPlan } from "../components/timeboxing/storage/dayPlan.schema.js";
 
 const SECONDS_PER_DAY = 86400;
+const THIRTY_MIN_SECONDS = 1800;
+
+function secondsToHHMM(totalSeconds) {
+  const s = ((Math.floor(totalSeconds) % SECONDS_PER_DAY) + SECONDS_PER_DAY) % SECONDS_PER_DAY;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function resolveEndTimeOrDefault(startTime, endTime) {
+  const et = (endTime || "").trim();
+  if (et) return et;
+  const stSec = parseHHMMToSecondsFromMidnight(startTime);
+  if (stSec == null) return "";
+  return secondsToHHMM(stSec + THIRTY_MIN_SECONDS);
+}
 
 function parseHHMMToSecondsFromMidnight(s) {
   if (!s || typeof s !== "string") return null;
@@ -427,13 +443,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
             ? crypto.randomUUID()
             : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const resolvedEndTime = resolveEndTimeOrDefault(newStartTime, newEndTime);
     setItems((prev) =>
         sortItemsByTimeAsc([
           ...prev,
           {
             id,
             startTime: newStartTime,
-            endTime: newEndTime,
+            endTime: resolvedEndTime,
             content: newContent.trim(),
             done: false,
             executedSeconds: 0,
@@ -487,6 +504,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!editingId) return;
     const nextContent = newContent.trim();
     if (!nextContent) return;
+    const resolvedEndTime = resolveEndTimeOrDefault(newStartTime, newEndTime);
 
     setItems((prev) =>
         sortItemsByTimeAsc(
@@ -495,7 +513,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     ? {
                       ...it,
                       startTime: newStartTime,
-                      endTime: newEndTime,
+                      endTime: resolvedEndTime,
                       content: nextContent,
                     }
                     : it
