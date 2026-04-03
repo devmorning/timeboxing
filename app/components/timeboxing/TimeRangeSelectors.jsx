@@ -77,29 +77,17 @@ export default function TimeRangeSelectors({
       <div className="w-[120px] flex-none">
         <label className="block">
           <span className="sr-only">종료 시간 선택</span>
-          <div className="flex items-end gap-1">
-            <input
-              type="time"
-              step={STEP_SECONDS}
-              value={endValue}
-              disabled={disabled}
-              onChange={(e) => {
-                const v = e.target.value;
-                onChangeEndTime?.(v && v.length >= 4 ? v.slice(0, 5) : "");
-              }}
-              className={[inputClass, "flex-1"].join(" ")}
-            />
-            {endValue ? (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={() => onChangeEndTime?.("")}
-                className="mb-2 shrink-0 select-none text-[11px] text-slate-500 underline underline-offset-2 active:opacity-60 disabled:opacity-40"
-              >
-                없음
-              </button>
-            ) : null}
-          </div>
+          <input
+            type="time"
+            step={STEP_SECONDS}
+            value={endValue}
+            disabled={disabled}
+            onChange={(e) => {
+              const v = e.target.value;
+              onChangeEndTime?.(v && v.length >= 4 ? v.slice(0, 5) : "");
+            }}
+            className={inputClass}
+          />
         </label>
       </div>
     </>
