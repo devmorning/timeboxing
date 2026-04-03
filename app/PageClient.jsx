@@ -72,6 +72,65 @@ function isDayPlanItemUuid(id) {
   );
 }
 
+const MODAL_TRANSITION_MS = 320;
+
+/** 인라인 캘린더 패널과 유사한 이징으로 모달 열림·닫힘 */
+function useModalOpenAnimation(isOpen, onFullyClosed) {
+  const [closing, setClosing] = useState(false);
+  const [entered, setEntered] = useState(false);
+  const onClosedRef = useRef(onFullyClosed);
+  onClosedRef.current = onFullyClosed;
+
+  useEffect(() => {
+    if (!isOpen) {
+      setEntered(false);
+      setClosing(false);
+      return;
+    }
+    setClosing(false);
+    setEntered(false);
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEntered(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!closing) return;
+    const t = window.setTimeout(() => {
+      setClosing(false);
+      setEntered(false);
+      onClosedRef.current();
+    }, MODAL_TRANSITION_MS);
+    return () => clearTimeout(t);
+  }, [closing]);
+
+  const requestClose = useCallback(() => {
+    if (!isOpen) return;
+    setClosing(true);
+  }, [isOpen]);
+
+  const showOverlay = entered && !closing;
+
+  return { requestClose, showOverlay };
+}
+
+function modalBackdropClass(showOverlay) {
+  return [
+    "fixed inset-0 z-[60] bg-black/40 backdrop-blur-[1px]",
+    "transition-[opacity] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+    showOverlay ? "opacity-100" : "opacity-0",
+  ].join(" ");
+}
+
+function modalPanelClass(showOverlay) {
+  return [
+    "flex h-full w-full flex-col overflow-hidden bg-white",
+    "transition-[opacity,transform] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+    showOverlay ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
+  ].join(" ");
+}
+
 export default function PageClient({ initialAuthUser = null, initialSelectedDate = null, initialPlan = null }) {
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
   const saveTimerRef = useRef(null);
@@ -310,6 +369,27 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     setEditingTemplateId(null);
     setTemplateDraftContent("");
   }, []);
+
+  const finalizeReportClose = useCallback(() => {
+    setIsReportOpen(false);
+  }, []);
+
+  const finalizeStatsClose = useCallback(() => {
+    setIsStatsOpen(false);
+  }, []);
+
+  const finalizeTemplatesClose = useCallback(() => {
+    setIsTemplatesOpen(false);
+    resetTemplateDraft();
+  }, [resetTemplateDraft]);
+
+  const reportModalAnim = useModalOpenAnimation(isReportOpen, finalizeReportClose);
+  const statsModalAnim = useModalOpenAnimation(isStatsOpen, finalizeStatsClose);
+  const templatesModalAnim = useModalOpenAnimation(isTemplatesOpen, finalizeTemplatesClose);
+
+  const closeReportModal = reportModalAnim.requestClose;
+  const closeStatsModal = statsModalAnim.requestClose;
+  const closeTemplatesModal = templatesModalAnim.requestClose;
 
   const saveEditItem = () => {
     if (!editingId) return;
@@ -664,15 +744,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       event.stopPropagation();
     }
   };
-
-  const closeStatsModal = useCallback(() => {
-    setIsStatsOpen(false);
-  }, []);
-
-  const closeTemplatesModal = useCallback(() => {
-    setIsTemplatesOpen(false);
-    resetTemplateDraft();
-  }, [resetTemplateDraft]);
 
   const handleStatsTouchStart = useCallback((event) => {
     const touch = event.touches?.[0];
@@ -1975,12 +2046,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         {isTemplatesOpen ? (
             <div
-                className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[1px]"
+                className={modalBackdropClass(templatesModalAnim.showOverlay)}
                 onClick={closeTemplatesModal}
             >
               <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
                 <section
-                    className="flex h-full w-full flex-col overflow-hidden bg-white"
+                    className={modalPanelClass(templatesModalAnim.showOverlay)}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleTemplatesModalTouchStart}
                     onTouchEnd={handleTemplatesModalTouchEnd}
@@ -2162,12 +2233,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         {isStatsOpen ? (
             <div
-                className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[1px]"
+                className={modalBackdropClass(statsModalAnim.showOverlay)}
                 onClick={closeStatsModal}
             >
               <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
                 <section
-                    className="flex h-full w-full flex-col overflow-hidden bg-white"
+                    className={modalPanelClass(statsModalAnim.showOverlay)}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleStatsTouchStart}
                     onTouchEnd={handleStatsTouchEnd}
@@ -2412,12 +2483,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         {isReportOpen ? (
             <div
-                className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-[1px]"
-                onClick={() => setIsReportOpen(false)}
+                className={modalBackdropClass(reportModalAnim.showOverlay)}
+                onClick={closeReportModal}
             >
               <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
                 <section
-                    className="flex h-full w-full flex-col overflow-hidden bg-white"
+                    className={modalPanelClass(reportModalAnim.showOverlay)}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleReportTouchStart}
                     onTouchMove={handleReportTouchMove}
@@ -2443,7 +2514,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     <button
                         type="button"
                         aria-label="리포트 닫기"
-                        onClick={() => setIsReportOpen(false)}
+                        onClick={closeReportModal}
                         className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
                     >
                       ✕
