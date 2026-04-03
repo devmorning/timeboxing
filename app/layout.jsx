@@ -1,4 +1,5 @@
 import "./globals.css";
+import PwaRegister from "./PwaRegister";
 
 export const metadata = {
   title: {
@@ -21,8 +22,13 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="ko">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#EA580C" />
+      </head>
       <body className="min-h-screen bg-[#F2F2F7] text-slate-900 antialiased">
         {children}
+        <PwaRegister />
       </body>
     </html>
   );
