@@ -111,6 +111,22 @@ export function createApiDayPlanRepository() {
       });
     },
 
+    async startExecution(dateYmd, itemId) {
+      const data = await requestJson(
+        `/api/day-plans/${dateYmd}/items/${encodeURIComponent(itemId)}/execution/start`,
+        { method: "POST" }
+      );
+      return data?.item ?? null;
+    },
+
+    async stopExecution(dateYmd, itemId) {
+      const data = await requestJson(
+        `/api/day-plans/${dateYmd}/items/${encodeURIComponent(itemId)}/execution/stop`,
+        { method: "POST" }
+      );
+      return data?.item ?? null;
+    },
+
     async listMarkedDatesInMonth(year, month) {
       const data = await requestJson(`/api/day-plans/marked/month?year=${year}&month=${month}`, {
         method: "GET",

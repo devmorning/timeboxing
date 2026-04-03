@@ -39,6 +39,10 @@ export function normalizeDayPlan(input) {
               : typeof it.executionSeconds === "number" && Number.isFinite(it.executionSeconds)
                 ? Math.max(0, Math.floor(it.executionSeconds))
                 : 0,
+          executionStartedAt:
+            typeof it.executionStartedAt === "string" && it.executionStartedAt.length > 0
+              ? it.executionStartedAt
+              : null,
         }))
         .filter((it) => it.content.trim().length > 0)
     : base.items;

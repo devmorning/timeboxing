@@ -52,6 +52,13 @@ function formatSecondsAsDurationKo(sec) {
   return `${m}분`;
 }
 
+function isDayPlanItemUuid(id) {
+  return (
+      typeof id === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+  );
+}
+
 export default function PageClient({ initialAuthUser = null, initialSelectedDate = null, initialPlan = null }) {
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
   const saveTimerRef = useRef(null);
@@ -252,7 +259,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const addItem = () => {
     if (!canAdd) return;
-    const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const id =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     setItems((prev) =>
         sortItemsByTimeAsc([
           ...prev,
@@ -399,25 +409,90 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       [activeExecutionItemId, activeExecutionStartedAtMs, resetExecutionState]
   );
 
+  const mergeExecutionItemIntoState = useCallback(
+      (updated) => {
+        if (!updated || typeof updated.id !== "string") return;
+        setItems((prev) => {
+          const next = sortItemsByTimeAsc(
+              prev.map((it) => (it.id === updated.id ? { ...it, ...updated } : it))
+          );
+          dayPlanCacheRef.current.set(
+              selectedDate,
+              normalizeDayPlan({ important3, brainDump, items: next })
+          );
+          return next;
+        });
+      },
+      [brainDump, important3, selectedDate, sortItemsByTimeAsc]
+  );
+
   const toggleExecutionBySwipe = useCallback(
-      (id) => {
+      async (id) => {
         const target = items.find((it) => it.id === id);
         if (!target) return;
 
-        // done=false(멈춤) -> done=true(시작)
-        // done=true(시작) -> done=false(정지)
-        if (!target.done) {
+        const running =
+            Boolean(target.executionStartedAt) || Boolean(target.done);
+
+        if (isDayPlanItemUuid(id) && typeof dayPlanRepository.startExecution === "function") {
+          try {
+            if (!running) {
+              try {
+                const updated = await dayPlanRepository.startExecution(selectedDate, id);
+                if (updated) mergeExecutionItemIntoState(updated);
+              } catch (err) {
+                if (err?.status === 404) {
+                  await dayPlanRepository.saveByDate(
+                      selectedDate,
+                      normalizeDayPlan({ important3, brainDump, items })
+                  );
+                  lastSavedPlanRef.current = serializePlan({ important3, brainDump, items });
+                  const updated = await dayPlanRepository.startExecution(selectedDate, id);
+                  if (updated) mergeExecutionItemIntoState(updated);
+                } else {
+                  throw err;
+                }
+              }
+            } else if (target.executionStartedAt) {
+              const updated = await dayPlanRepository.stopExecution(selectedDate, id);
+              if (updated) mergeExecutionItemIntoState(updated);
+            } else {
+              stopExecution(id, Date.now());
+            }
+          } catch (error) {
+            console.error("Execution API failed", error);
+          }
+          return;
+        }
+
+        if (!running) {
           startExecution(id, Date.now());
         } else {
           stopExecution(id, Date.now());
         }
       },
-      [items, startExecution, stopExecution]
+      [
+        items,
+        selectedDate,
+        dayPlanRepository,
+        mergeExecutionItemIntoState,
+        startExecution,
+        stopExecution,
+        important3,
+        brainDump,
+        serializePlan,
+      ]
   );
 
   const getDisplayedExecutionSeconds = useCallback(
       (item) => {
         const base = typeof item.executedSeconds === "number" ? Math.max(0, Math.floor(item.executedSeconds)) : 0;
+        if (item.executionStartedAt) {
+          const ms = Date.parse(item.executionStartedAt);
+          if (Number.isFinite(ms)) {
+            return base + Math.max(0, Math.floor((executionNowMs - ms) / 1000));
+          }
+        }
         if (activeExecutionItemId === item.id && activeExecutionStartedAtMs) {
           return base + Math.max(0, Math.floor((executionNowMs - activeExecutionStartedAtMs) / 1000));
         }
@@ -434,10 +509,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   useEffect(() => {
-    if (!activeExecutionItemId || !activeExecutionStartedAtMs) return;
+    const serverRunning = items.some((it) => Boolean(it.executionStartedAt));
+    if (!serverRunning && (!activeExecutionItemId || !activeExecutionStartedAtMs)) return;
     const intervalId = window.setInterval(() => setExecutionNowMs(Date.now()), 1000);
     return () => window.clearInterval(intervalId);
-  }, [activeExecutionItemId, activeExecutionStartedAtMs]);
+  }, [items, activeExecutionItemId, activeExecutionStartedAtMs]);
 
   useEffect(() => {
     // 날짜 전환 시에는 실행(가상 타이머) 상태를 끊어준다.

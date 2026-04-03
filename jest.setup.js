@@ -57,6 +57,40 @@ global.fetch = jest.fn(async (input, init = {}) => {
     };
   }
 
+  if (url.includes("/execution/start")) {
+    const m = url.match(/\/items\/([^/]+)\/execution\/start/);
+    const itemId = m ? decodeURIComponent(m[1]) : "test-item";
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        item: {
+          id: itemId,
+          executedSeconds: 0,
+          executionStartedAt: new Date().toISOString(),
+          done: true,
+        },
+      }),
+    };
+  }
+
+  if (url.includes("/execution/stop")) {
+    const m = url.match(/\/items\/([^/]+)\/execution\/stop/);
+    const itemId = m ? decodeURIComponent(m[1]) : "test-item";
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        item: {
+          id: itemId,
+          executedSeconds: 60,
+          executionStartedAt: null,
+          done: false,
+        },
+      }),
+    };
+  }
+
   if (url.includes("/api/day-plans/")) {
     return {
       ok: true,
