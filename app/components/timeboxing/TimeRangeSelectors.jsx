@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 function parseHHMM(s) {
   if (!s || typeof s !== "string") return null;
   const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
@@ -26,6 +28,11 @@ function secondsFromMidnight(h, m) {
   return h * 3600 + m * 60;
 }
 
+function secondsFromMidnightParsed(p) {
+  if (!p) return 0;
+  return secondsFromMidnight(p.h, p.m);
+}
+
 /** 종료 시각이 같은 날만 보면 시작보다 이르면 다음날까지 이어진 구간 */
 function endsNextDay(startTime, endTime) {
   const a = parseHHMM(startTime);
@@ -34,6 +41,14 @@ function endsNextDay(startTime, endTime) {
   return secondsFromMidnight(b.h, b.m) < secondsFromMidnight(a.h, a.m);
 }
 
+const SECONDS_PER_DAY = 86400;
+
+/** select에 표시할 구간(분) — 고정 목록 */
+const ALLOWED_DURATIONS = [5, 10, 15, 20, 25, 30, 40, 50, 60];
+const DEFAULT_DURATION_MIN = 30;
+const MIN_DURATION_MIN = 1;
+const MAX_DURATION_MIN = 24 * 60;
+
 const inputClass = [
   "block w-full min-w-0 border-0 border-b border-slate-200 bg-transparent px-0 py-2.5 text-[15px] text-slate-900",
   "[color-scheme:light]",
@@ -41,8 +56,79 @@ const inputClass = [
   "disabled:cursor-not-allowed disabled:text-slate-400",
 ].join(" ");
 
-/** step: 초 단위. 60 = 1분 단위로 시·분을 고르는 네이티브 시간 선택 UI */
-const STEP_SECONDS = 60;
+/** 시작·종료 time input과 동일: 밑줄만, 투명 배경 (구간은 라벨이 길어서 약간 좁게·글자만 살짝 축소) */
+const selectClass = [
+  "block w-full min-w-[4.25rem] max-w-[5.25rem] shrink-0 cursor-pointer appearance-none",
+  "border-0 border-b border-slate-200 bg-transparent py-2.5 pl-0 pr-5 text-left text-[14px] text-slate-900",
+  "bg-[length:0.75rem] bg-[position:right_0.0625rem_center] bg-no-repeat",
+  "[background-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2394a3b8%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]",
+  "[color-scheme:light]",
+  "focus:border-orange-500 focus:outline-none focus:ring-0",
+  "disabled:cursor-not-allowed disabled:text-slate-400",
+].join(" ");
+
+/** 모달 닫기 등과 동일 계열: 투명 배경 + 슬레이트 아이콘 */
+const iconBtnClass = [
+  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-transparent text-slate-500",
+  "active:opacity-60 disabled:cursor-not-allowed disabled:opacity-40",
+  "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+].join(" ");
+
+/** step: 초 단위. 300 = 5분 단위 */
+const STEP_SECONDS = 300;
+
+/** 시작·종료(HH:MM)로 구간 길이(분). 자정 넘김이면 익일까지 합산 */
+function durationMinutesFromStartEnd(startTime, endTime) {
+  const st = parseHHMM(startTime) || { h: 9, m: 0 };
+  const et = parseHHMM(endTime);
+  if (!et) return null;
+  const a = secondsFromMidnightParsed(st);
+  const b = secondsFromMidnightParsed(et);
+  let diffSec = b - a;
+  if (diffSec <= 0) diffSec += SECONDS_PER_DAY;
+  return Math.round(diffSec / 60);
+}
+
+function clampDurationMinutes(minutes) {
+  const rounded = Math.round(minutes);
+  return Math.min(MAX_DURATION_MIN, Math.max(MIN_DURATION_MIN, rounded));
+}
+
+/** 시작 시각 + 구간(분) → 종료 HH:MM (자정 넘김은 익일 시각으로 표현) */
+function endTimeFromStartAndDurationMinutes(startTime, durationMin) {
+  const st = parseHHMM(startTime) || { h: 9, m: 0 };
+  const a = secondsFromMidnightParsed(st);
+  const d = clampDurationMinutes(durationMin);
+  const addSec = d * 60;
+  const endSec = (a + addSec) % SECONDS_PER_DAY;
+  const h = Math.floor(endSec / 3600);
+  const min = Math.floor((endSec % 3600) / 60);
+  return toHHMM(h, min);
+}
+
+function formatDurationOptionLabel(totalMin) {
+  if (totalMin < 60) return `${totalMin}분`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (m === 0) return `${h}시간`;
+  return `${h}시간 ${m}분`;
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function ChevronUpIcon() {
+  return (
+    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M18 15l-6-6-6 6" />
+    </svg>
+  );
+}
 
 export default function TimeRangeSelectors({
   showTimeControls = true,
@@ -56,23 +142,93 @@ export default function TimeRangeSelectors({
   const endValue = toTimeInputValue(endTime);
   const showNextDayHint = Boolean(endValue) && endsNextDay(startValue, endValue);
 
+  const [durationMin, setDurationMin] = useState(() => {
+    const d = durationMinutesFromStartEnd(startTime || "09:00", endTime);
+    return d != null ? clampDurationMinutes(d) : DEFAULT_DURATION_MIN;
+  });
+
+  const durationMinRef = useRef(durationMin);
+  durationMinRef.current = durationMin;
+
+  const skipStartEffectRef = useRef(true);
+
+  /** 부모에서 start/end가 바뀌면 구간(분) 동기화 */
+  useEffect(() => {
+    const st = startTime || "09:00";
+    const et = typeof endTime === "string" ? endTime.trim() : "";
+    if (!et) return;
+    const d = durationMinutesFromStartEnd(st, et);
+    if (d == null) return;
+    const clamped = clampDurationMinutes(d);
+    setDurationMin(clamped);
+    const snapped = endTimeFromStartAndDurationMinutes(st, clamped);
+    if (snapped !== toTimeInputValue(et)) {
+      onChangeEndTime?.(snapped);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- start/end만 동기화
+  }, [startTime, endTime]);
+
+  /** 시작 시각만 바뀌면 같은 구간 길이로 종료 시각 재계산 */
+  useEffect(() => {
+    if (skipStartEffectRef.current) {
+      skipStartEffectRef.current = false;
+      return;
+    }
+    const nextEnd = endTimeFromStartAndDurationMinutes(startTime || "09:00", durationMinRef.current);
+    onChangeEndTime?.(nextEnd);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 시작 변경 시에만 종료 재계산
+  }, [startTime]);
+
+  const applyDuration = (nextDur) => {
+    const d = clampDurationMinutes(nextDur);
+    setDurationMin(d);
+    const nextEnd = endTimeFromStartAndDurationMinutes(startTime || "09:00", d);
+    onChangeEndTime?.(nextEnd);
+  };
+
+  const onSelectDuration = (e) => {
+    const raw = e.target.value;
+    if (raw === "") return;
+    const v = Number(raw);
+    if (!Number.isFinite(v)) return;
+    applyDuration(v);
+  };
+
+  /** 증감: 1분 단위 */
+  const bumpDuration = (deltaMinutes) => {
+    setDurationMin((prev) => {
+      const next = clampDurationMinutes(prev + deltaMinutes);
+      const nextEnd = endTimeFromStartAndDurationMinutes(startTime || "09:00", next);
+      onChangeEndTime?.(nextEnd);
+      return next;
+    });
+  };
+
   if (!showTimeControls) {
     return (
-      <>
-        <div className="w-[120px] flex-none" aria-hidden="true">
+      <div
+        className="flex min-w-0 flex-nowrap items-end gap-2 overflow-x-auto pb-0.5 sm:gap-3"
+        aria-hidden="true"
+      >
+        <div className="w-[104px] shrink-0">
           <div className="block h-10 w-full border-b border-slate-200" />
         </div>
-        <div className="w-[120px] flex-none" aria-hidden="true">
+        <div className="w-[104px] shrink-0">
           <div className="block h-10 w-full border-b border-slate-200" />
         </div>
-      </>
+        <div className="flex shrink-0 items-end gap-0.5">
+          <div className="h-8 w-8 rounded-md bg-slate-50" />
+          <div className="h-10 min-w-[4.25rem] shrink-0 border-b border-slate-200 bg-transparent" />
+          <div className="h-8 w-8 rounded-md bg-slate-50" />
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-[120px] flex-none">
+      <div className="flex min-w-0 flex-nowrap items-end gap-2 overflow-x-auto pb-0.5 sm:gap-3">
+        <div className="w-[104px] shrink-0">
           <label className="block">
             <span className="sr-only">시작 시간 선택</span>
             <input
@@ -88,7 +244,7 @@ export default function TimeRangeSelectors({
             />
           </label>
         </div>
-        <div className="w-[120px] flex-none">
+        <div className="w-[104px] shrink-0">
           <label className="block">
             <span className="sr-only">종료 시간 선택</span>
             <input
@@ -98,11 +254,53 @@ export default function TimeRangeSelectors({
               disabled={disabled}
               onChange={(e) => {
                 const v = e.target.value;
-                onChangeEndTime?.(v && v.length >= 4 ? v.slice(0, 5) : "");
+                const next = v && v.length >= 4 ? v.slice(0, 5) : "";
+                onChangeEndTime?.(next);
               }}
               className={inputClass}
             />
           </label>
+        </div>
+        <div className="flex shrink-0 items-end gap-0.5">
+          <button
+            type="button"
+            aria-label="구간 1분 줄이기"
+            title="1분 줄이기"
+            disabled={disabled || durationMin <= MIN_DURATION_MIN}
+            onClick={() => bumpDuration(-1)}
+            className={iconBtnClass}
+          >
+            <ChevronDownIcon />
+          </button>
+          <label className="sr-only" htmlFor="time-range-duration-select">
+            시작부터 종료까지 구간 길이
+          </label>
+          <select
+            id="time-range-duration-select"
+            className={selectClass}
+            disabled={disabled}
+            value={ALLOWED_DURATIONS.includes(durationMin) ? String(durationMin) : ""}
+            onChange={onSelectDuration}
+          >
+            {!ALLOWED_DURATIONS.includes(durationMin) ? (
+              <option value="">{durationMin}분</option>
+            ) : null}
+            {ALLOWED_DURATIONS.map((m) => (
+              <option key={m} value={m}>
+                {formatDurationOptionLabel(m)}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            aria-label="구간 1분 늘리기"
+            title="1분 늘리기"
+            disabled={disabled || durationMin >= MAX_DURATION_MIN}
+            onClick={() => bumpDuration(1)}
+            className={iconBtnClass}
+          >
+            <ChevronUpIcon />
+          </button>
         </div>
       </div>
       {showNextDayHint ? (

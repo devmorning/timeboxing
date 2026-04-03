@@ -1,5 +1,4 @@
 import "./globals.css";
-import PwaRegister from "./PwaRegister";
 
 export const metadata = {
   title: {
@@ -28,7 +27,6 @@ export default function RootLayout({ children }) {
       </head>
       <body className="min-h-screen bg-[#F2F2F7] text-slate-900 antialiased">
         {children}
-        <PwaRegister />
       </body>
     </html>
   );
