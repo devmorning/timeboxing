@@ -325,6 +325,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     startY: 0,
     tracking: false,
   });
+  const statsScrollRef = useRef(null);
+  const reportScrollRef = useRef(null);
+  const templatesScrollRef = useRef(null);
 
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
@@ -840,6 +843,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     /** 통계·반복 모달과 동일: 아래로 충분히 밀면 닫기 */
     if (dy >= 96 && Math.abs(dy) > Math.abs(dx)) {
+      // 스크롤 컨테이너가 최상단일 때만 닫기: 내용 스크롤 중 오동작 방지
+      const scrollTop = reportScrollRef.current?.scrollTop ?? 0;
+      const canClose = scrollTop <= 0;
+      if (!canClose) return;
       closeReportModal();
       event.preventDefault();
       event.stopPropagation();
@@ -889,6 +896,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         const dy = touch.clientY - gesture.startY;
 
         if (dy >= 96 && Math.abs(dy) > Math.abs(dx)) {
+          // 스크롤 컨테이너가 최상단일 때만 닫기: 내용 스크롤 중 오동작 방지
+          const scrollTop = statsScrollRef.current?.scrollTop ?? 0;
+          const canClose = scrollTop <= 0;
+          if (!canClose) return;
           closeStatsModal();
           event.preventDefault();
           event.stopPropagation();
@@ -1007,6 +1018,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         const dy = touch.clientY - gesture.startY;
 
         if (dy >= 96 && Math.abs(dy) > Math.abs(dx)) {
+          // 스크롤 컨테이너가 최상단일 때만 닫기: 내용 스크롤 중 오동작 방지
+          const scrollTop = templatesScrollRef.current?.scrollTop ?? 0;
+          const canClose = scrollTop <= 0;
+          if (!canClose) return;
           closeTemplatesModal();
           event.preventDefault();
           event.stopPropagation();
@@ -2210,7 +2225,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     </button>
                   </div>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]">
+                  <div
+                      ref={templatesScrollRef}
+                      className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]"
+                  >
                     <div className="space-y-5">
                       <section>
                         <div className="space-y-4">
@@ -2415,7 +2433,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     </div>
                   </div>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]">
+                  <div
+                      ref={statsScrollRef}
+                      className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]"
+                  >
                     <div className="space-y-5">
                       <div className="grid grid-cols-2 gap-3">
                         <div className="rounded-2xl bg-slate-50 px-4 py-4">
@@ -2667,7 +2688,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     </button>
                   </div>
 
-                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]">
+                  <div
+                      ref={reportScrollRef}
+                      className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]"
+                  >
                     <div className="space-y-4">
                       <div>
                         <h3 className="text-[13px] font-semibold text-slate-500">가장 중요한 3가지</h3>
