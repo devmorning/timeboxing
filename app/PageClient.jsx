@@ -72,8 +72,8 @@ function isDayPlanItemUuid(id) {
   );
 }
 
-/** 닫힘 타이머 — modalBackdropClass / modalPanelClass 의 duration-[480ms] 와 동일해야 함 */
-const MODAL_TRANSITION_MS = 480;
+/** 닫힘 완료 타이머 — modalBackdropClass / modalPanelClass 의 닫힘 duration 과 동일 */
+const MODAL_CLOSE_MS = 560;
 
 /** 인라인 캘린더 패널과 유사한 이징으로 모달 열림·닫힘 */
 function useModalOpenAnimation(isOpen, onFullyClosed) {
@@ -103,7 +103,7 @@ function useModalOpenAnimation(isOpen, onFullyClosed) {
       setClosing(false);
       setEntered(false);
       onClosedRef.current();
-    }, MODAL_TRANSITION_MS);
+    }, MODAL_CLOSE_MS);
     return () => clearTimeout(t);
   }, [closing]);
 
@@ -114,24 +114,39 @@ function useModalOpenAnimation(isOpen, onFullyClosed) {
 
   const showOverlay = entered && !closing;
 
-  return { requestClose, showOverlay };
+  return { requestClose, showOverlay, closing };
 }
 
-function modalBackdropClass(showOverlay) {
+function modalBackdropClass(showOverlay, closing) {
+  const transition = closing
+      ? "transition-[opacity] duration-[560ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+      : "transition-[opacity] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
   return [
     "fixed inset-0 z-[60] isolate bg-black/40 backdrop-blur-[1px]",
     "will-change-[opacity]",
-    "transition-[opacity] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]",
+    transition,
     showOverlay ? "opacity-100" : "opacity-0",
   ].join(" ");
 }
 
-function modalPanelClass(showOverlay) {
+function modalPanelClass(showOverlay, closing) {
+  const transition = closing
+      ? "transition-[opacity,transform] duration-[560ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+      : "transition-[opacity,transform] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
+  let motion;
+  if (showOverlay) {
+    motion = "translate-y-0 scale-100 opacity-100";
+  } else if (closing) {
+    /** 닫힐 때는 열릴 때보다 조금 더 아래·살짝 축소해 ‘내려가며 사라짐’ 느낌 */
+    motion = "translate-y-5 scale-[0.98] opacity-0 sm:translate-y-4";
+  } else {
+    motion = "translate-y-2 scale-100 opacity-0";
+  }
   return [
     "flex h-full w-full flex-col overflow-hidden bg-white",
     "will-change-[opacity,transform] transform-gpu",
-    "transition-[opacity,transform] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]",
-    showOverlay ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
+    transition,
+    motion,
   ].join(" ");
 }
 
@@ -2050,12 +2065,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         {isTemplatesOpen ? (
             <div
-                className={modalBackdropClass(templatesModalAnim.showOverlay)}
+                className={modalBackdropClass(templatesModalAnim.showOverlay, templatesModalAnim.closing)}
                 onClick={closeTemplatesModal}
             >
               <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
                 <section
-                    className={modalPanelClass(templatesModalAnim.showOverlay)}
+                    className={modalPanelClass(templatesModalAnim.showOverlay, templatesModalAnim.closing)}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleTemplatesModalTouchStart}
                     onTouchEnd={handleTemplatesModalTouchEnd}
@@ -2237,12 +2252,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         {isStatsOpen ? (
             <div
-                className={modalBackdropClass(statsModalAnim.showOverlay)}
+                className={modalBackdropClass(statsModalAnim.showOverlay, statsModalAnim.closing)}
                 onClick={closeStatsModal}
             >
               <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
                 <section
-                    className={modalPanelClass(statsModalAnim.showOverlay)}
+                    className={modalPanelClass(statsModalAnim.showOverlay, statsModalAnim.closing)}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleStatsTouchStart}
                     onTouchEnd={handleStatsTouchEnd}
@@ -2487,12 +2502,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         {isReportOpen ? (
             <div
-                className={modalBackdropClass(reportModalAnim.showOverlay)}
+                className={modalBackdropClass(reportModalAnim.showOverlay, reportModalAnim.closing)}
                 onClick={closeReportModal}
             >
               <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
                 <section
-                    className={modalPanelClass(reportModalAnim.showOverlay)}
+                    className={modalPanelClass(reportModalAnim.showOverlay, reportModalAnim.closing)}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleReportTouchStart}
                     onTouchMove={handleReportTouchMove}
