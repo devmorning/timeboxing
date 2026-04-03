@@ -108,6 +108,13 @@ function getPlannedIntervalOnCalendarDay(startTime, endTime) {
   return { start: a, end: b };
 }
 
+/** 해당 캘린더일에만 속하는 계획 초(자정 넘김이면 그날 자정까지만). */
+function getPlannedSecondsOnCalendarDay(startTime, endTime) {
+  const iv = getPlannedIntervalOnCalendarDay(startTime, endTime);
+  if (!iv || iv.end <= iv.start) return null;
+  return iv.end - iv.start;
+}
+
 function mergeIntervalsSeconds(intervals) {
   const sorted = intervals
       .filter((iv) => iv.end > iv.start)
@@ -126,6 +133,45 @@ function mergeIntervalsSeconds(intervals) {
 
 function unionIntervalsLengthSeconds(intervals) {
   return mergeIntervalsSeconds(intervals).reduce((s, iv) => s + (iv.end - iv.start), 0);
+}
+
+/**
+ * 전날 시작한 자정 넘김 일정이 '다음날' 캘린더일에 덮는 새벽 구간 [0, end) (초).
+ * (getPlannedIntervalOnCalendarDay는 시작일 쪽만 자정까지 자르므로, 익일 아침은 여기로 합친다.)
+ */
+function getOvernightMorningIntervalOnFollowingDay(startTime, endTime) {
+  const st = typeof startTime === "string" ? startTime : "09:00";
+  const et = typeof endTime === "string" ? endTime.trim() : "";
+  if (!et) return null;
+  if (!spansMidnight(st, et)) return null;
+  const b = parseHHMMToSecondsFromMidnight(et);
+  if (b == null) return null;
+  return { start: 0, end: b };
+}
+
+function buildCarryOverDisplayItem(raw, prevYmd) {
+  const st = raw.startTime || raw.time || "09:00";
+  const et = raw.endTime || "";
+  if (!et || !spansMidnight(st, et)) return null;
+  const morningSec = parseHHMMToSecondsFromMidnight(et);
+  if (morningSec == null) return null;
+  const totalPlanned = getPlannedDurationSeconds(st, et);
+  const executed = Math.max(0, Math.floor(raw.executedSeconds ?? 0));
+  const executedMorning =
+      totalPlanned != null && totalPlanned > 0 ? Math.round((executed * morningSec) / totalPlanned) : 0;
+  return {
+    ...raw,
+    _isCarryover: true,
+    _carryFromYmd: prevYmd,
+    _displayStartSec: 0,
+    _executedMorningSeconds: executedMorning,
+  };
+}
+
+function formatCarryOverSegmentForDay(endTime) {
+  const et = typeof endTime === "string" ? endTime.trim() : "";
+  if (!et) return "00:00 –";
+  return `00:00 – ${et}`;
 }
 
 const DAY_TIMELINE_PALETTE = [
@@ -269,6 +315,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [newEndTime, setNewEndTime] = useState("");
   const [newContent, setNewContent] = useState("");
   const [items, setItems] = useState(initialPlan?.items ?? []);
+  /** 전날 플랜에서 자정 넘김(수면 등)으로 오늘 새벽에 이어지는 구간 — 표시·통계용 */
+  const [carryOverItems, setCarryOverItems] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [activeExecutionItemId, setActiveExecutionItemId] = useState(null);
   const [activeExecutionStartedAtMs, setActiveExecutionStartedAtMs] = useState(null);
@@ -352,6 +400,30 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       return aStart < bStart ? -1 : 1;
     });
   }, []);
+
+  /** 당일 목록·리포트: 전날 이어짐 + 당일 일정 (시간순) */
+  const displayItemsMerged = useMemo(() => {
+    const from = carryOverItems.map((x) => ({ ...x, _isCarryover: true }));
+    const fromDay = items.map((it) => ({ ...it, _isCarryover: false }));
+    const all = [...from, ...fromDay];
+    all.sort((a, b) => {
+      const sa = a._isCarryover
+        ? 0
+        : (parseHHMMToSecondsFromMidnight(a.startTime || a.time || "09:00") ?? 0);
+      const sb = b._isCarryover
+        ? 0
+        : (parseHHMMToSecondsFromMidnight(b.startTime || b.time || "09:00") ?? 0);
+      if (sa !== sb) return sa - sb;
+      if (a._isCarryover && b._isCarryover) {
+        const ea = parseHHMMToSecondsFromMidnight(a.endTime || "") ?? 0;
+        const eb = parseHHMMToSecondsFromMidnight(b.endTime || "") ?? 0;
+        return ea - eb;
+      }
+      if (a._isCarryover !== b._isCarryover) return a._isCarryover ? -1 : 1;
+      return 0;
+    });
+    return all;
+  }, [carryOverItems, items]);
 
   const serializePlan = useCallback(
       (plan) =>
@@ -1206,6 +1278,46 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     serializePlan,
   ]);
 
+  /** 전날 플랜에서 자정 넘김(수면 등) 항목만 추려 오늘 새벽 구간으로 표시 */
+  useEffect(() => {
+    if (!authReady || !authUser?.id) return;
+
+    let cancelled = false;
+    const prevYmd = addDaysToYmd(selectedDate, -1);
+
+    const loadCarryOver = async () => {
+      try {
+        let plan;
+        if (dayPlanCacheRef.current.has(prevYmd)) {
+          plan = normalizeDayPlan(dayPlanCacheRef.current.get(prevYmd));
+        } else {
+          plan = await dayPlanRepository.getByDate(prevYmd);
+          if (!cancelled) {
+            dayPlanCacheRef.current.set(prevYmd, plan);
+          }
+        }
+        if (cancelled) return;
+        const list = sortItemsByTimeAsc(normalizeDayPlan(plan).items);
+        const next = [];
+        for (const raw of list) {
+          const built = buildCarryOverDisplayItem(raw, prevYmd);
+          if (built) next.push(built);
+        }
+        if (!cancelled) setCarryOverItems(next);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Failed to load carry-over day plan", error);
+          setCarryOverItems([]);
+        }
+      }
+    };
+
+    loadCarryOver();
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, authUser?.id, selectedDate, dayPlanRepository, sortItemsByTimeAsc]);
+
   useEffect(() => {
     if (!authUser?.id) return;
     if (readyDate !== selectedDate) return;
@@ -1397,31 +1509,88 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           dayPlanCacheRef.current.set(dateYmd, plan);
         }
 
+        const prevYmd = addDaysToYmd(dateYmd, -1);
+        let prevPlan;
+        if (dayPlanCacheRef.current.has(prevYmd)) {
+          prevPlan = normalizeDayPlan(dayPlanCacheRef.current.get(prevYmd));
+        } else {
+          prevPlan = await dayPlanRepository.getByDate(prevYmd);
+          dayPlanCacheRef.current.set(prevYmd, prevPlan);
+        }
+
         if (cancelled) return;
 
         const rawItems = sortItemsByTimeAsc(normalizeDayPlan(plan).items);
-        const items = rawItems.map((it) => {
+        const dayRows = rawItems.map((it) => {
           const startTime = it.startTime || it.time || "09:00";
-          const planned = getPlannedDurationSeconds(startTime, it.endTime);
-          const executed = Math.max(0, Math.floor(it.executedSeconds ?? 0));
+          const endTime = it.endTime || "";
+          const fullPlanned = getPlannedDurationSeconds(startTime, endTime);
+          const plannedOnDay = getPlannedSecondsOnCalendarDay(startTime, endTime);
+          const executedFull = Math.max(0, Math.floor(it.executedSeconds ?? 0));
+          const executedOnDay =
+              fullPlanned != null && fullPlanned > 0 && plannedOnDay != null && plannedOnDay > 0
+                ? Math.round((executedFull * plannedOnDay) / fullPlanned)
+                : plannedOnDay != null && plannedOnDay > 0
+                  ? executedFull
+                  : 0;
           let achievementPercent = null;
-          if (planned != null && planned > 0) {
-            achievementPercent = Math.min(100, (executed / planned) * 100);
+          if (plannedOnDay != null && plannedOnDay > 0) {
+            achievementPercent = Math.min(100, (executedOnDay / plannedOnDay) * 100);
           }
           const startSec = parseHHMMToSecondsFromMidnight(startTime);
           const daySharePercent =
-              planned != null && planned > 0 ? (planned / SECONDS_PER_DAY) * 100 : null;
+              plannedOnDay != null && plannedOnDay > 0 ? (plannedOnDay / SECONDS_PER_DAY) * 100 : null;
           return {
             id: it.id,
             content: it.content,
             startTime,
-            endTime: it.endTime || "",
-            plannedSeconds: planned,
-            executedSeconds: executed,
+            endTime,
+            plannedSeconds: plannedOnDay,
+            executedSeconds: executedOnDay,
             achievementPercent,
             startSecondsFromMidnight: startSec ?? 0,
             daySharePercent,
+            _carryFromYmd: null,
           };
+        });
+
+        const carryRows = [];
+        const prevRaw = sortItemsByTimeAsc(normalizeDayPlan(prevPlan).items);
+        for (const it of prevRaw) {
+          const startTime = it.startTime || it.time || "09:00";
+          const endTime = it.endTime || "";
+          const morningIv = getOvernightMorningIntervalOnFollowingDay(startTime, endTime);
+          if (!morningIv || morningIv.end <= morningIv.start) continue;
+          const morningPlanned = morningIv.end - morningIv.start;
+          const fullPlanned = getPlannedDurationSeconds(startTime, endTime);
+          const executedFull = Math.max(0, Math.floor(it.executedSeconds ?? 0));
+          const executedMorning =
+              fullPlanned != null && fullPlanned > 0
+                ? Math.round((executedFull * morningPlanned) / fullPlanned)
+                : 0;
+          let achievementPercent = null;
+          if (morningPlanned > 0) {
+            achievementPercent = Math.min(100, (executedMorning / morningPlanned) * 100);
+          }
+          carryRows.push({
+            id: `carry_${prevYmd}_${it.id}`,
+            content: it.content,
+            startTime: "00:00",
+            endTime,
+            plannedSeconds: morningPlanned,
+            executedSeconds: executedMorning,
+            achievementPercent,
+            startSecondsFromMidnight: 0,
+            daySharePercent: (morningPlanned / SECONDS_PER_DAY) * 100,
+            _carryFromYmd: prevYmd,
+          });
+        }
+
+        const items = [...carryRows, ...dayRows].sort((a, b) => {
+          if (a.startSecondsFromMidnight !== b.startSecondsFromMidnight) {
+            return a.startSecondsFromMidnight - b.startSecondsFromMidnight;
+          }
+          return String(a.id).localeCompare(String(b.id));
         });
 
         let totalPlannedSeconds = 0;
@@ -1439,7 +1608,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             weightedPlanned > 0 ? Math.min(100, (weightedExecuted / weightedPlanned) * 100) : null;
 
         const dayIntervals = [];
-        for (const row of items) {
+        /** carryRows는 이미 당일 00:00~종료로 정규화됨 — spansMidnight가 아니므로 getOvernight… 대신 당일 구간으로 합산 */
+        for (const row of carryRows) {
+          const iv = getPlannedIntervalOnCalendarDay(row.startTime, row.endTime);
+          if (iv) dayIntervals.push(iv);
+        }
+        for (const row of dayRows) {
           const iv = getPlannedIntervalOnCalendarDay(row.startTime, row.endTime);
           if (iv) dayIntervals.push(iv);
         }
@@ -2035,81 +2209,116 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     </div>
                   </div>
 
-                  {/* 추가된 항목 목록 */}
-                  {items.length > 0 ? (
+                  {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
+                  {displayItemsMerged.length > 0 ? (
                       <div className="space-y-3">
-                        {items.map((it) => (
-                            <div
-                                key={it.id}
-                                role="button"
-                                tabIndex={0}
-                                onClick={() => {
-                                  if (swipingItemId === it.id && swipeOffsetX !== 0) return;
-                                  startEditItem(it);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
+                        {displayItemsMerged.map((it) => {
+                          const isCarry = Boolean(it._isCarryover);
+                          const rowKey = isCarry ? `carry_${it._carryFromYmd}_${it.id}` : it.id;
+                          const execSec = isCarry
+                            ? Math.max(0, Math.floor(it._executedMorningSeconds ?? 0))
+                            : getDisplayedExecutionSeconds(it);
+                          return (
+                              <div
+                                  key={rowKey}
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={() => {
+                                    if (isCarry) {
+                                      setSelectedDate(it._carryFromYmd);
+                                      return;
+                                    }
+                                    if (swipingItemId === it.id && swipeOffsetX !== 0) return;
                                     startEditItem(it);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (isCarry) {
+                                      if (e.key === "Enter" || e.key === " ") {
+                                        e.preventDefault();
+                                        setSelectedDate(it._carryFromYmd);
+                                      }
+                                      return;
+                                    }
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      startEditItem(it);
+                                    }
+                                  }}
+                                  onTouchStart={!isCarry ? (e) => handleItemTouchStart(it.id, e) : undefined}
+                                  onTouchMove={!isCarry ? (e) => handleItemTouchMove(it.id, e) : undefined}
+                                  onTouchEnd={
+                                    !isCarry
+                                      ? (e) => {
+                                          const moved = handleItemTouchEnd(it.id);
+                                          if (moved) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                          }
+                                        }
+                                      : undefined
                                   }
-                                }}
-                                onTouchStart={(e) => handleItemTouchStart(it.id, e)}
-                                onTouchMove={(e) => handleItemTouchMove(it.id, e)}
-                                onTouchEnd={(e) => {
-                                  const moved = handleItemTouchEnd(it.id);
-                                  if (moved) {
-                                    e.preventDefault();
-                                    e.stopPropagation();
+                                  onTouchCancel={!isCarry ? () => handleItemTouchEnd(it.id) : undefined}
+                                  className={[
+                                    "rounded-md px-1 py-1 outline-none transition-colors",
+                                    isCarry
+                                      ? "cursor-pointer border border-dashed border-orange-200/80 bg-orange-50/40 hover:bg-orange-50/70 focus:bg-orange-50/80"
+                                      : "cursor-pointer",
+                                    !isCarry && it.done ? "bg-emerald-50/70" : "",
+                                    !isCarry && !it.done ? "hover:bg-black/[0.02] focus:bg-black/[0.04]" : "",
+                                  ].join(" ")}
+                                  style={
+                                    isCarry
+                                      ? undefined
+                                      : {
+                                          touchAction: "pan-y",
+                                          transform:
+                                              swipingItemId === it.id && swipeOffsetX !== 0
+                                                ? `translateX(${swipeOffsetX}px)`
+                                                : "translateX(0)",
+                                          transition:
+                                              swipingItemId === it.id
+                                                ? "none"
+                                                : "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
+                                        }
                                   }
-                                }}
-                                onTouchCancel={() => {
-                                  handleItemTouchEnd(it.id);
-                                }}
-                                className={[
-                                  "cursor-pointer rounded-md px-1 py-1 outline-none transition-colors",
-                                  it.done ? "bg-emerald-50/70" : "hover:bg-black/[0.02] focus:bg-black/[0.04]",
-                                ].join(" ")}
-                                style={{
-                                  touchAction: "pan-y",
-                                  transform:
-                                      swipingItemId === it.id && swipeOffsetX !== 0
-                                          ? `translateX(${swipeOffsetX}px)`
-                                          : "translateX(0)",
-                                  transition:
-                                      swipingItemId === it.id
-                                          ? "none"
-                                          : "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
-                                }}
-                            >
-                              <div className="flex items-start gap-2">
-                                <div className="w-min max-w-full shrink-0 whitespace-nowrap select-none text-[13px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
-                                  {it.endTime
-                                      ? formatItemTimeRange(it.startTime || it.time || "09:00", it.endTime)
-                                      : it.startTime || it.time || "09:00"}
-                                </div>
-                                <div className="min-w-0 flex-1 basis-0">
-                                  <div
-                                      className={[
-                                        "whitespace-pre-wrap break-words text-sm leading-snug",
-                                        it.done ? "text-slate-500 line-through" : "text-slate-900",
-                                      ].join(" ")}
-                                  >
-                                    {it.content}
+                              >
+                                <div className="flex items-start gap-2">
+                                  <div className="w-min max-w-full shrink-0 whitespace-nowrap select-none text-[13px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
+                                    {isCarry
+                                      ? formatCarryOverSegmentForDay(it.endTime)
+                                      : it.endTime
+                                        ? formatItemTimeRange(it.startTime || it.time || "09:00", it.endTime)
+                                        : it.startTime || it.time || "09:00"}
                                   </div>
-                                </div>
-                                {(it.done || (it.executedSeconds ?? 0) > 0) ? (
-                                    <span
+                                  <div className="min-w-0 flex-1 basis-0">
+                                    {isCarry ? (
+                                        <p className="mb-0.5 text-[11px] font-medium text-orange-600/90">
+                                          전날 일정 · 이 날은 새벽 구간만 표시
+                                        </p>
+                                    ) : null}
+                                    <div
                                         className={[
-                                          "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
-                                          it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
+                                          "whitespace-pre-wrap break-words text-sm leading-snug",
+                                          it.done ? "text-slate-500 line-through" : "text-slate-900",
                                         ].join(" ")}
                                     >
-                                      실행 {formatSecondsToMMSS(getDisplayedExecutionSeconds(it))}
-                                    </span>
-                                ) : null}
+                                      {it.content}
+                                    </div>
+                                  </div>
+                                  {(isCarry ? execSec > 0 : it.done || execSec > 0) ? (
+                                      <span
+                                          className={[
+                                            "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
+                                            it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
+                                          ].join(" ")}
+                                      >
+                                        실행 {formatSecondsToMMSS(execSec)}
+                                      </span>
+                                  ) : null}
+                                </div>
                               </div>
-                            </div>
-                        ))}
+                          );
+                        })}
                       </div>
                   ) : (
                       <p className="text-center text-xs text-slate-500">아직 추가된 시간이 없어요.</p>
@@ -2446,7 +2655,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               ? "…"
                               : formatSecondsAsDurationKo(dailyStats.totalPlannedSeconds)}
                           </p>
-                          <p className="mt-1 text-[11px] text-slate-400">종료 시간이 있는 일정만 합산</p>
+                          <p className="mt-1 text-[11px] text-slate-400">
+                            종료 시간이 있는 일정만 합산합니다. 자정을 넘기는 일정은 그날 24:00 이전 구간만 포함하고, 다음날 새벽은 해당 날짜 통계에 포함됩니다.
+                          </p>
                         </div>
                         <div className="rounded-2xl bg-emerald-50 px-4 py-4">
                           <p className="text-[12px] font-medium text-emerald-700">실행 기록 합</p>
@@ -2470,7 +2681,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           {dailyStats.loading ? "…" : formatSecondsAsDurationKo(dailyStats.unplannedSeconds)}
                         </p>
                         <p className="mt-1 text-[11px] leading-snug text-slate-400">
-                          00:00~24:00 중 일정(시작~종료)으로 덮이지 않은 비율입니다. 겹치는 일정은 한 번만 계산하고, 자정을 넘기는 일정은 그날 자정까지만 반영합니다.
+                          00:00~24:00 중 일정(시작~종료)으로 덮이지 않은 비율입니다. 겹치는 일정은 한 번만 계산합니다. 당일에 시작한 자정 넘김 일정은 그날 자정까지만 반영하고, 전날에 시작해 오늘 새벽까지 이어지는 구간(예: 수면)은 오늘 00:00~종료까지 포함합니다.
                         </p>
                       </div>
 
@@ -2555,6 +2766,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                             aria-hidden
                                         />
                                         <div className="min-w-0 flex-1">
+                                          {row._carryFromYmd ? (
+                                              <p className="mb-0.5 text-[11px] font-medium text-orange-600/90">
+                                                전날에서 이어짐
+                                              </p>
+                                          ) : null}
                                           <p className="font-medium text-slate-900">
                                             {row.daySharePercent != null ? row.daySharePercent.toFixed(1) : "0.0"}%
                                             <span className="ml-1.5 text-[12px] font-normal text-slate-500">
@@ -2596,6 +2812,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   <li key={row.id} className="rounded-xl border border-slate-100 bg-white px-3 py-3">
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="min-w-0 flex-1">
+                                        {row._carryFromYmd ? (
+                                            <p className="text-[11px] font-medium text-orange-600/90">
+                                              전날({row._carryFromYmd})에서 이어진 새벽 구간
+                                            </p>
+                                        ) : null}
                                         <p className="text-[12px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
                                           {row.endTime
                                               ? formatItemTimeRange(row.startTime, row.endTime)
@@ -2725,41 +2946,73 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       <div>
                         <h3 className="text-[13px] font-semibold text-slate-500">시간 + 내용</h3>
-                        {items.length > 0 ? (
+                        {displayItemsMerged.length > 0 ? (
                             <div className="mt-2 space-y-2.5">
-                              {items.map((it) => (
-                                  <div
-                                      key={it.id}
-                                      className={[
-                                        "flex items-center gap-3 rounded-md px-2 py-1",
-                                        it.done ? "bg-emerald-50/70" : "",
-                                      ].join(" ")}
-                                  >
-                                    <div className="w-min max-w-full shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
-                                      {it.endTime
-                                      ? formatItemTimeRange(it.startTime || it.time || "09:00", it.endTime)
-                                      : it.startTime || it.time || "09:00"}
-                                    </div>
+                              {displayItemsMerged.map((it) => {
+                                const isCarry = Boolean(it._isCarryover);
+                                const rowKey = isCarry ? `carry_${it._carryFromYmd}_${it.id}` : it.id;
+                                const execSec = isCarry
+                                  ? Math.max(0, Math.floor(it._executedMorningSeconds ?? 0))
+                                  : getDisplayedExecutionSeconds(it);
+                                return (
                                     <div
+                                        key={rowKey}
+                                        role={isCarry ? "button" : undefined}
+                                        tabIndex={isCarry ? 0 : undefined}
+                                        onClick={isCarry ? () => setSelectedDate(it._carryFromYmd) : undefined}
+                                        onKeyDown={
+                                          isCarry
+                                            ? (e) => {
+                                                if (e.key === "Enter" || e.key === " ") {
+                                                  e.preventDefault();
+                                                  setSelectedDate(it._carryFromYmd);
+                                                }
+                                              }
+                                            : undefined
+                                        }
                                         className={[
-                                          "min-w-0 flex-1 basis-0 break-words text-sm leading-snug",
-                                          it.done ? "text-slate-500 line-through" : "text-slate-900",
+                                          "flex items-center gap-3 rounded-md px-2 py-1",
+                                          isCarry
+                                            ? "cursor-pointer border border-dashed border-orange-200/80 bg-orange-50/40"
+                                            : "",
+                                          !isCarry && it.done ? "bg-emerald-50/70" : "",
                                         ].join(" ")}
                                     >
-                                      {it.content}
-                                    </div>
-                                    {(it.done || (it.executedSeconds ?? 0) > 0) ? (
-                                        <span
+                                      <div className="w-min max-w-full shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
+                                        {isCarry
+                                          ? formatCarryOverSegmentForDay(it.endTime)
+                                          : it.endTime
+                                            ? formatItemTimeRange(it.startTime || it.time || "09:00", it.endTime)
+                                            : it.startTime || it.time || "09:00"}
+                                      </div>
+                                      <div className="min-w-0 flex-1 basis-0">
+                                        {isCarry ? (
+                                            <p className="mb-0.5 text-[11px] text-orange-600/90">
+                                              전날 일정 · 탭하면 해당 날짜로 이동
+                                            </p>
+                                        ) : null}
+                                        <div
                                             className={[
-                                              "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
-                                              it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
+                                              "break-words text-sm leading-snug",
+                                              it.done ? "text-slate-500 line-through" : "text-slate-900",
                                             ].join(" ")}
                                         >
-                                          실행 {formatSecondsToMMSS(getDisplayedExecutionSeconds(it))}
-                                        </span>
-                                    ) : null}
-                                  </div>
-                              ))}
+                                          {it.content}
+                                        </div>
+                                      </div>
+                                      {(isCarry ? execSec > 0 : it.done || execSec > 0) ? (
+                                          <span
+                                              className={[
+                                                "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
+                                                it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
+                                              ].join(" ")}
+                                          >
+                                            실행 {formatSecondsToMMSS(execSec)}
+                                          </span>
+                                      ) : null}
+                                    </div>
+                                );
+                              })}
                             </div>
                         ) : (
                             <p className="mt-2 text-sm text-slate-400">추가된 일정이 없습니다.</p>
