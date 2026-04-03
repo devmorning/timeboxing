@@ -2707,11 +2707,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   <div
                                       key={it.id}
                                       className={[
-                                        "flex items-start gap-3 rounded-md px-2 py-1",
+                                        "flex items-center gap-3 rounded-md px-2 py-1",
                                         it.done ? "bg-emerald-50/70" : "",
                                       ].join(" ")}
                                   >
-                                    <div className="w-min max-w-full shrink-0 whitespace-nowrap text-[12px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
+                                    <div className="w-min max-w-full shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
                                       {it.endTime
                                       ? formatItemTimeRange(it.startTime || it.time || "09:00", it.endTime)
                                       : it.startTime || it.time || "09:00"}
