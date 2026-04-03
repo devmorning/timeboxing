@@ -67,13 +67,6 @@ const selectClass = [
   "disabled:cursor-not-allowed disabled:text-slate-400",
 ].join(" ");
 
-/** 모달 닫기 등과 동일 계열: 투명 배경 + 슬레이트 아이콘 */
-const iconBtnClass = [
-  "inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-transparent text-slate-500",
-  "active:opacity-60 disabled:cursor-not-allowed disabled:opacity-40",
-  "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-].join(" ");
-
 /** step: 초 단위. 300 = 5분 단위 */
 const STEP_SECONDS = 300;
 
@@ -112,22 +105,6 @@ function formatDurationOptionLabel(totalMin) {
   const m = totalMin % 60;
   if (m === 0) return `${h}시간`;
   return `${h}시간 ${m}분`;
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
-
-function ChevronUpIcon() {
-  return (
-    <svg aria-hidden className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M18 15l-6-6-6 6" />
-    </svg>
-  );
 }
 
 export default function TimeRangeSelectors({
@@ -194,16 +171,6 @@ export default function TimeRangeSelectors({
     applyDuration(v);
   };
 
-  /** 증감: 1분 단위 */
-  const bumpDuration = (deltaMinutes) => {
-    setDurationMin((prev) => {
-      const next = clampDurationMinutes(prev + deltaMinutes);
-      const nextEnd = endTimeFromStartAndDurationMinutes(startTime || "09:00", next);
-      onChangeEndTime?.(nextEnd);
-      return next;
-    });
-  };
-
   if (!showTimeControls) {
     return (
       <div
@@ -216,11 +183,7 @@ export default function TimeRangeSelectors({
         <div className="w-[104px] shrink-0">
           <div className="block h-10 w-full border-b border-slate-200" />
         </div>
-        <div className="flex shrink-0 items-end gap-0.5">
-          <div className="h-8 w-8 rounded-md bg-slate-50" />
-          <div className="h-10 min-w-[4.25rem] shrink-0 border-b border-slate-200 bg-transparent" />
-          <div className="h-8 w-8 rounded-md bg-slate-50" />
-        </div>
+        <div className="h-10 min-w-[4.25rem] shrink-0 border-b border-slate-200 bg-transparent" />
       </div>
     );
   }
@@ -261,17 +224,7 @@ export default function TimeRangeSelectors({
             />
           </label>
         </div>
-        <div className="flex shrink-0 items-end gap-0.5">
-          <button
-            type="button"
-            aria-label="구간 1분 줄이기"
-            title="1분 줄이기"
-            disabled={disabled || durationMin <= MIN_DURATION_MIN}
-            onClick={() => bumpDuration(-1)}
-            className={iconBtnClass}
-          >
-            <ChevronDownIcon />
-          </button>
+        <div className="shrink-0">
           <label className="sr-only" htmlFor="time-range-duration-select">
             시작부터 종료까지 구간 길이
           </label>
@@ -291,16 +244,6 @@ export default function TimeRangeSelectors({
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            aria-label="구간 1분 늘리기"
-            title="1분 늘리기"
-            disabled={disabled || durationMin >= MAX_DURATION_MIN}
-            onClick={() => bumpDuration(1)}
-            className={iconBtnClass}
-          >
-            <ChevronUpIcon />
-          </button>
         </div>
       </div>
       {showNextDayHint ? (
