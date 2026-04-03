@@ -73,6 +73,45 @@ function formatItemTimeRange(startTime, endTime) {
   return `${st} – ${et}`;
 }
 
+/**
+ * 이 날짜의 00:00~24:00 한 줄에서만 덮는 구간 [start, end) (초).
+ * 자정 넘김 일정은 그날 자정까지만 포함(익일 새벽은 해당 날짜 플랜에서 다룸).
+ */
+function getPlannedIntervalOnCalendarDay(startTime, endTime) {
+  const st = typeof startTime === "string" ? startTime : "09:00";
+  const et = typeof endTime === "string" ? endTime.trim() : "";
+  if (!et) return null;
+  const a = parseHHMMToSecondsFromMidnight(st);
+  const b = parseHHMMToSecondsFromMidnight(et);
+  if (a == null || b == null) return null;
+  if (spansMidnight(st, et)) {
+    if (a >= SECONDS_PER_DAY) return null;
+    return { start: a, end: SECONDS_PER_DAY };
+  }
+  if (b <= a) return null;
+  return { start: a, end: b };
+}
+
+function mergeIntervalsSeconds(intervals) {
+  const sorted = intervals
+      .filter((iv) => iv.end > iv.start)
+      .sort((x, y) => x.start - y.start);
+  const out = [];
+  for (const iv of sorted) {
+    const last = out[out.length - 1];
+    if (!last || iv.start > last.end) {
+      out.push({ start: iv.start, end: iv.end });
+    } else {
+      last.end = Math.max(last.end, iv.end);
+    }
+  }
+  return out;
+}
+
+function unionIntervalsLengthSeconds(intervals) {
+  return mergeIntervalsSeconds(intervals).reduce((s, iv) => s + (iv.end - iv.start), 0);
+}
+
 const DAY_TIMELINE_PALETTE = [
   "bg-orange-500/85",
   "bg-sky-500/85",
@@ -340,6 +379,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     totalPlannedSeconds: 0,
     totalExecutedSeconds: 0,
     dayAchievementPercent: null,
+    unplannedSeconds: SECONDS_PER_DAY,
+    unplannedDayPercent: 100,
   });
 
   const statsDayLabel = useMemo(() => {
@@ -1356,6 +1397,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         const dayAchievementPercent =
             weightedPlanned > 0 ? Math.min(100, (weightedExecuted / weightedPlanned) * 100) : null;
 
+        const dayIntervals = [];
+        for (const row of items) {
+          const iv = getPlannedIntervalOnCalendarDay(row.startTime, row.endTime);
+          if (iv) dayIntervals.push(iv);
+        }
+        const plannedUnionSeconds = Math.min(SECONDS_PER_DAY, unionIntervalsLengthSeconds(dayIntervals));
+        const unplannedSeconds = Math.max(0, SECONDS_PER_DAY - plannedUnionSeconds);
+        const unplannedDayPercent = (unplannedSeconds / SECONDS_PER_DAY) * 100;
+
         setDailyStats({
           loading: false,
           dateYmd,
@@ -1363,6 +1413,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           totalPlannedSeconds,
           totalExecutedSeconds,
           dayAchievementPercent,
+          unplannedSeconds,
+          unplannedDayPercent,
         });
       } catch (error) {
         if (cancelled) return;
@@ -1374,6 +1426,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           totalPlannedSeconds: 0,
           totalExecutedSeconds: 0,
           dayAchievementPercent: null,
+          unplannedSeconds: SECONDS_PER_DAY,
+          unplannedDayPercent: 100,
         });
       }
     };
@@ -2356,6 +2410,21 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           </p>
                           <p className="mt-1 text-[11px] text-emerald-600/80">스와이프로 누적한 실행 시간</p>
                         </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-200/90 bg-white px-4 py-4">
+                        <p className="text-[12px] font-medium text-slate-600">계획되지 않은 시간 비중</p>
+                        <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-slate-900">
+                          {dailyStats.loading
+                              ? "…"
+                              : `${dailyStats.unplannedDayPercent.toFixed(1)}%`}
+                        </p>
+                        <p className="mt-1 text-[13px] text-slate-700">
+                          {dailyStats.loading ? "…" : formatSecondsAsDurationKo(dailyStats.unplannedSeconds)}
+                        </p>
+                        <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                          00:00~24:00 중 일정(시작~종료)으로 덮이지 않은 비율입니다. 겹치는 일정은 한 번만 계산하고, 자정을 넘기는 일정은 그날 자정까지만 반영합니다.
+                        </p>
                       </div>
 
                       <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-4">
