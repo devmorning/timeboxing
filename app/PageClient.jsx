@@ -122,31 +122,29 @@ function modalBackdropClass(showOverlay, closing) {
       ? "transition-[opacity] duration-[560ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
       : "transition-[opacity] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
   return [
-    "fixed inset-0 z-[60] isolate bg-black/40 backdrop-blur-[1px]",
+    "fixed inset-0 z-[60] isolate bg-black/45 backdrop-blur-[2px]",
     "will-change-[opacity]",
     transition,
     showOverlay ? "opacity-100" : "opacity-0",
   ].join(" ");
 }
 
+/**
+ * 패널은 opacity로 흐리게 지우지 않고 clip-path로 아래에서 말아 올려,
+ * 닫힐 때 상단이 비며 뒤 컨텐츠가 비쳐 보이는 현상을 막음 (겹 덮개 → 말려 들어감).
+ */
 function modalPanelClass(showOverlay, closing) {
   const transition = closing
-      ? "transition-[opacity,transform] duration-[560ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-      : "transition-[opacity,transform] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
-  let motion;
-  if (showOverlay) {
-    motion = "translate-y-0 scale-100 opacity-100";
-  } else if (closing) {
-    /** 닫힐 때는 열릴 때보다 조금 더 아래·살짝 축소해 ‘내려가며 사라짐’ 느낌 */
-    motion = "translate-y-5 scale-[0.98] opacity-0 sm:translate-y-4";
-  } else {
-    motion = "translate-y-2 scale-100 opacity-0";
-  }
+      ? "transition-[clip-path] duration-[560ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+      : "transition-[clip-path] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
+  const clipClosed = "clip-path-[inset(0_0_100%_0)]";
+  const clipOpen = "clip-path-[inset(0_0_0_0)]";
+  const clip = showOverlay ? clipOpen : clipClosed;
   return [
     "flex h-full w-full flex-col overflow-hidden bg-white",
-    "will-change-[opacity,transform] transform-gpu",
+    "will-change-[clip-path]",
     transition,
-    motion,
+    clip,
   ].join(" ");
 }
 
