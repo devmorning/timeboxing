@@ -72,8 +72,8 @@ function isDayPlanItemUuid(id) {
   );
 }
 
-/** 닫힘 완료 타이머 — modalBackdropClass / modalPanelClass 의 닫힘 duration 과 동일 */
-const MODAL_CLOSE_MS = 560;
+/** 닫힘 완료 타이머 — modalBackdropClass / modalPanelClass 의 closing `duration-[480ms]` 와 동일 (열림은 400ms) */
+const MODAL_CLOSE_MS = 480;
 
 /** 인라인 캘린더 패널과 유사한 이징으로 모달 열림·닫힘 */
 function useModalOpenAnimation(isOpen, onFullyClosed) {
@@ -119,8 +119,8 @@ function useModalOpenAnimation(isOpen, onFullyClosed) {
 
 function modalBackdropClass(showOverlay, closing) {
   const transition = closing
-      ? "transition-[opacity] duration-[560ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-      : "transition-[opacity] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
+      ? "transition-[opacity] duration-[480ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+      : "transition-[opacity] duration-[400ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
   return [
     "fixed inset-0 z-[60] isolate bg-black/45 backdrop-blur-[2px]",
     "will-change-[opacity]",
@@ -135,8 +135,8 @@ function modalBackdropClass(showOverlay, closing) {
  */
 function modalPanelClass(showOverlay, closing) {
   const transition = closing
-      ? "transition-[clip-path] duration-[560ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-      : "transition-[clip-path] duration-[480ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
+      ? "transition-[clip-path] duration-[480ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+      : "transition-[clip-path] duration-[400ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
   const clipClosed = "clip-path-[inset(0_0_100%_0)]";
   const clipOpen = "clip-path-[inset(0_0_0_0)]";
   const clip = showOverlay ? clipOpen : clipClosed;
