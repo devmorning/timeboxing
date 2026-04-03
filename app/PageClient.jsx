@@ -43,6 +43,19 @@ function getPlannedDurationSeconds(startTime, endTime) {
   return Math.max(0, b - a);
 }
 
+const SECONDS_PER_DAY = 86400;
+
+const DAY_TIMELINE_PALETTE = [
+  "bg-orange-500/85",
+  "bg-sky-500/85",
+  "bg-emerald-500/85",
+  "bg-violet-500/85",
+  "bg-amber-500/85",
+  "bg-rose-500/85",
+  "bg-cyan-500/85",
+  "bg-indigo-500/85",
+];
+
 function formatSecondsAsDurationKo(sec) {
   const n = Math.max(0, Math.floor(sec));
   if (n <= 0) return "0분";
@@ -1184,20 +1197,26 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         const rawItems = sortItemsByTimeAsc(normalizeDayPlan(plan).items);
         const items = rawItems.map((it) => {
-          const planned = getPlannedDurationSeconds(it.startTime || it.time, it.endTime);
+          const startTime = it.startTime || it.time || "09:00";
+          const planned = getPlannedDurationSeconds(startTime, it.endTime);
           const executed = Math.max(0, Math.floor(it.executedSeconds ?? 0));
           let achievementPercent = null;
           if (planned != null && planned > 0) {
             achievementPercent = Math.min(100, (executed / planned) * 100);
           }
+          const startSec = parseHHMMToSecondsFromMidnight(startTime);
+          const daySharePercent =
+              planned != null && planned > 0 ? (planned / SECONDS_PER_DAY) * 100 : null;
           return {
             id: it.id,
             content: it.content,
-            startTime: it.startTime || it.time || "09:00",
+            startTime,
             endTime: it.endTime || "",
             plannedSeconds: planned,
             executedSeconds: executed,
             achievementPercent,
+            startSecondsFromMidnight: startSec ?? 0,
+            daySharePercent,
           };
         });
 
@@ -2229,6 +2248,96 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         <p className="mt-1 text-[11px] text-slate-400">
                           종료 시간이 있는 항목만, 실행 ÷ 계획 시간으로 가중 평균
                         </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-[13px] font-semibold text-slate-500">24시간 대비 계획 비중</h3>
+                          <span className="text-[11px] text-slate-400">하루 86400초 기준</span>
+                        </div>
+                        <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                          시작·종료로 잡힌 계획 시간이 전체 하루에서 차지하는 비율입니다. 시간대가 겹치면 막대가 겹쳐 보일 수 있고, 비중 합계가 100%를 넘을 수 있습니다.
+                        </p>
+
+                        {dailyStats.loading ? (
+                            <div className="mt-4 h-24 animate-pulse rounded-xl bg-slate-100" />
+                        ) : (() => {
+                          const planRows = dailyStats.items.filter(
+                              (r) => r.plannedSeconds != null && r.plannedSeconds > 0
+                          );
+                          return planRows.length > 0 ? (
+                              <>
+                                <div className="relative mt-4 h-16 w-full overflow-hidden rounded-xl bg-slate-100 ring-1 ring-slate-200/80">
+                                  {[0, 6, 12, 18].map((h) => (
+                                      <div
+                                          key={`tick_${h}`}
+                                          className="pointer-events-none absolute bottom-0 top-0 z-0 border-l border-slate-200/90"
+                                          style={{ left: `${(h / 24) * 100}%` }}
+                                          aria-hidden
+                                      />
+                                  ))}
+                                  {planRows.map((row, idx) => {
+                                    const leftPct = (row.startSecondsFromMidnight / SECONDS_PER_DAY) * 100;
+                                    const widthPct = (row.plannedSeconds / SECONDS_PER_DAY) * 100;
+                                    const w = Math.max(widthPct, 0.2);
+                                    return (
+                                        <div
+                                            key={`tl_${row.id}`}
+                                            className={[
+                                              "absolute bottom-2 top-2 z-[1] min-h-[28px] rounded-sm ring-1 ring-white/50",
+                                              DAY_TIMELINE_PALETTE[idx % DAY_TIMELINE_PALETTE.length],
+                                            ].join(" ")}
+                                            style={{
+                                              left: `${leftPct}%`,
+                                              width: `${Math.min(100 - leftPct, w)}%`,
+                                            }}
+                                            title={`${row.content}\n${row.startTime}–${row.endTime}\n하루의 ${row.daySharePercent?.toFixed(1)}%`}
+                                        />
+                                    );
+                                  })}
+                                </div>
+                                <div className="mt-1.5 flex justify-between text-[10px] tabular-nums text-slate-400">
+                                  <span>0:00</span>
+                                  <span>6:00</span>
+                                  <span>12:00</span>
+                                  <span>18:00</span>
+                                  <span>24:00</span>
+                                </div>
+                                <ul className="mt-4 space-y-2.5">
+                                  {planRows.map((row, idx) => (
+                                      <li key={`dsp_${row.id}`} className="flex items-start gap-2 text-sm">
+                                        <span
+                                            className={[
+                                              "mt-1.5 h-2.5 w-2.5 shrink-0 rounded-sm",
+                                              DAY_TIMELINE_PALETTE[idx % DAY_TIMELINE_PALETTE.length].replace(
+                                                  "/85",
+                                                  ""
+                                              ),
+                                            ].join(" ")}
+                                            aria-hidden
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                          <p className="font-medium text-slate-900">
+                                            {row.daySharePercent != null ? row.daySharePercent.toFixed(1) : "0.0"}%
+                                            <span className="ml-1.5 text-[12px] font-normal text-slate-500">
+                                              ({formatSecondsAsDurationKo(row.plannedSeconds ?? 0)} / 24시간)
+                                            </span>
+                                          </p>
+                                          <p className="mt-0.5 line-clamp-2 text-[13px] text-slate-600">{row.content}</p>
+                                          <p className="mt-0.5 text-[11px] text-slate-400">
+                                            {row.startTime} – {row.endTime}
+                                          </p>
+                                        </div>
+                                      </li>
+                                  ))}
+                                </ul>
+                              </>
+                          ) : (
+                              <p className="mt-4 text-sm text-slate-400">
+                                종료 시간이 설정된 일정이 없어 24시간 비중을 계산할 수 없습니다.
+                              </p>
+                          );
+                        })()}
                       </div>
 
                       <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
