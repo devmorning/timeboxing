@@ -1867,13 +1867,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                 }}
                             >
                               <div className="flex items-start gap-2">
-                                <div className="min-w-0">
-                                  <div className="text-[13px] font-semibold text-orange-700">
-                                    {it.endTime ? `${it.startTime} - ${it.endTime}` : it.startTime}
-                                  </div>
+                                <div className="w-min max-w-full shrink-0 whitespace-nowrap select-none text-[13px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
+                                  {it.endTime ? `${it.startTime} - ${it.endTime}` : it.startTime}
+                                </div>
+                                <div className="min-w-0 flex-1 basis-0">
                                   <div
                                       className={[
-                                        "mt-1 whitespace-pre-wrap break-words text-sm",
+                                        "whitespace-pre-wrap break-words text-sm leading-snug",
                                         it.done ? "text-slate-500 line-through" : "text-slate-900",
                                       ].join(" ")}
                                   >
@@ -1883,7 +1883,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                 {(it.done || (it.executedSeconds ?? 0) > 0) ? (
                                     <span
                                         className={[
-                                          "mt-0.5 inline-flex h-5 min-w-[78px] items-center justify-center rounded-full px-2 text-[11px] font-semibold",
+                                          "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
                                           it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
                                         ].join(" ")}
                                     >
@@ -2358,12 +2358,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   <li key={row.id} className="rounded-xl border border-slate-100 bg-white px-3 py-3">
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="min-w-0 flex-1">
-                                        <p className="text-[12px] font-semibold text-orange-700">
+                                        <p className="text-[12px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
                                           {row.endTime
                                               ? `${row.startTime} – ${row.endTime}`
                                               : row.startTime}
                                         </p>
-                                        <p className="mt-1 line-clamp-2 text-sm text-slate-900">{row.content}</p>
+                                        <p className="mt-1 line-clamp-2 text-sm leading-snug text-slate-900">{row.content}</p>
                                       </div>
                                       <div className="shrink-0 text-right">
                                         {row.achievementPercent != null ? (
@@ -2494,12 +2494,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                         it.done ? "bg-emerald-50/70" : "",
                                       ].join(" ")}
                                   >
-                                    <div className="min-w-[58px] text-[12px] font-semibold text-orange-700">
+                                    <div className="w-min max-w-full shrink-0 whitespace-nowrap text-[12px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
                                       {it.endTime ? `${it.startTime} - ${it.endTime}` : it.startTime}
                                     </div>
                                     <div
                                         className={[
-                                          "flex-1 break-words text-sm",
+                                          "min-w-0 flex-1 basis-0 break-words text-sm leading-snug",
                                           it.done ? "text-slate-500 line-through" : "text-slate-900",
                                         ].join(" ")}
                                     >
@@ -2508,7 +2508,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     {(it.done || (it.executedSeconds ?? 0) > 0) ? (
                                         <span
                                             className={[
-                                              "inline-flex h-5 min-w-[78px] items-center justify-center rounded-full px-2 text-[11px] font-semibold",
+                                              "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
                                               it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
                                             ].join(" ")}
                                         >
