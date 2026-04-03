@@ -22,6 +22,18 @@ function toTimeInputValue(s) {
   return toHHMM(p.h, p.m);
 }
 
+function secondsFromMidnight(h, m) {
+  return h * 3600 + m * 60;
+}
+
+/** 종료 시각이 같은 날만 보면 시작보다 이르면 다음날까지 이어진 구간 */
+function endsNextDay(startTime, endTime) {
+  const a = parseHHMM(startTime);
+  const b = parseHHMM(endTime);
+  if (!a || !b) return false;
+  return secondsFromMidnight(b.h, b.m) < secondsFromMidnight(a.h, a.m);
+}
+
 const inputClass = [
   "block w-full min-w-0 border-0 border-b border-slate-200 bg-transparent px-0 py-2.5 text-[15px] text-slate-900",
   "[color-scheme:light]",
@@ -42,6 +54,7 @@ export default function TimeRangeSelectors({
 }) {
   const startValue = toTimeInputValue(startTime) || "09:00";
   const endValue = toTimeInputValue(endTime);
+  const showNextDayHint = Boolean(endValue) && endsNextDay(startValue, endValue);
 
   if (!showTimeControls) {
     return (
@@ -58,38 +71,45 @@ export default function TimeRangeSelectors({
 
   return (
     <>
-      <div className="w-[120px] flex-none">
-        <label className="block">
-          <span className="sr-only">시작 시간 선택</span>
-          <input
-            type="time"
-            step={STEP_SECONDS}
-            value={startValue}
-            disabled={disabled}
-            onChange={(e) => {
-              const v = e.target.value;
-              onChangeStartTime?.(v && v.length >= 4 ? v.slice(0, 5) : "09:00");
-            }}
-            className={inputClass}
-          />
-        </label>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-[120px] flex-none">
+          <label className="block">
+            <span className="sr-only">시작 시간 선택</span>
+            <input
+              type="time"
+              step={STEP_SECONDS}
+              value={startValue}
+              disabled={disabled}
+              onChange={(e) => {
+                const v = e.target.value;
+                onChangeStartTime?.(v && v.length >= 4 ? v.slice(0, 5) : "09:00");
+              }}
+              className={inputClass}
+            />
+          </label>
+        </div>
+        <div className="w-[120px] flex-none">
+          <label className="block">
+            <span className="sr-only">종료 시간 선택</span>
+            <input
+              type="time"
+              step={STEP_SECONDS}
+              value={endValue}
+              disabled={disabled}
+              onChange={(e) => {
+                const v = e.target.value;
+                onChangeEndTime?.(v && v.length >= 4 ? v.slice(0, 5) : "");
+              }}
+              className={inputClass}
+            />
+          </label>
+        </div>
       </div>
-      <div className="w-[120px] flex-none">
-        <label className="block">
-          <span className="sr-only">종료 시간 선택</span>
-          <input
-            type="time"
-            step={STEP_SECONDS}
-            value={endValue}
-            disabled={disabled}
-            onChange={(e) => {
-              const v = e.target.value;
-              onChangeEndTime?.(v && v.length >= 4 ? v.slice(0, 5) : "");
-            }}
-            className={inputClass}
-          />
-        </label>
-      </div>
+      {showNextDayHint ? (
+        <p className="w-full max-w-[min(100%,20rem)] pt-0.5 text-[11px] leading-snug text-slate-400">
+          종료가 시작보다 이르면 다음날까지로 계산됩니다 (예: 수면 23:00~08:00)
+        </p>
+      ) : null}
     </>
   );
 }

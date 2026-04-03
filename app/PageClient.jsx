@@ -22,6 +22,8 @@ import {
 } from "../components/timeboxing/storage/dayPlan.apiRepository.js";
 import { hasDayPlanContent, normalizeDayPlan } from "../components/timeboxing/storage/dayPlan.schema.js";
 
+const SECONDS_PER_DAY = 86400;
+
 function parseHHMMToSecondsFromMidnight(s) {
   if (!s || typeof s !== "string") return null;
   const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
@@ -32,7 +34,21 @@ function parseHHMMToSecondsFromMidnight(s) {
   return h * 3600 + min * 60;
 }
 
-/** 종료 시간이 있을 때만 (종료 − 시작) 초. 없으면 null */
+/**
+ * 같은 날만 보면 종료 ≤ 시작인 경우(예: 23:00~08:00) 다음날까지 이어진 구간으로 본다.
+ * 시각이 같으면 0분 구간이므로 자정 넘김으로 보지 않는다.
+ */
+function spansMidnight(startTime, endTime) {
+  const st = typeof startTime === "string" ? startTime : "09:00";
+  const et = typeof endTime === "string" ? endTime.trim() : "";
+  if (!et) return false;
+  const a = parseHHMMToSecondsFromMidnight(st);
+  const b = parseHHMMToSecondsFromMidnight(et);
+  if (a == null || b == null) return false;
+  return b < a;
+}
+
+/** 종료 시간이 있을 때만 구간 길이(초). 자정 넘김이면 (24h − 시작) + 종료 */
 function getPlannedDurationSeconds(startTime, endTime) {
   const st = typeof startTime === "string" ? startTime : "09:00";
   const et = typeof endTime === "string" ? endTime.trim() : "";
@@ -40,10 +56,22 @@ function getPlannedDurationSeconds(startTime, endTime) {
   const a = parseHHMMToSecondsFromMidnight(st);
   const b = parseHHMMToSecondsFromMidnight(et);
   if (a == null || b == null) return null;
+  if (b < a) {
+    return SECONDS_PER_DAY - a + b;
+  }
   return Math.max(0, b - a);
 }
 
-const SECONDS_PER_DAY = 86400;
+/** 목록·리포트용: 자정 넘김이면 익일 종료임을 표시 */
+function formatItemTimeRange(startTime, endTime) {
+  const st = typeof startTime === "string" ? startTime : "09:00";
+  const et = typeof endTime === "string" ? endTime.trim() : "";
+  if (!et) return st;
+  if (spansMidnight(st, et)) {
+    return `${st} – 익일 ${et}`;
+  }
+  return `${st} – ${et}`;
+}
 
 const DAY_TIMELINE_PALETTE = [
   "bg-orange-500/85",
@@ -251,9 +279,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return [...list].sort((a, b) => {
       const aStart = a.startTime || a.time || "09:00";
       const bStart = b.startTime || b.time || "09:00";
+      const aEnd = a.endTime || "";
+      const bEnd = b.endTime || "";
+      const aSpan = spansMidnight(aStart, aEnd);
+      const bSpan = spansMidnight(bStart, bEnd);
+      /** 같은 날 일정은 먼저, 자정 넘김(수면 등)은 뒤로 — 타임라인상 “밤~익일”을 하루 끝에 두기 위함 */
+      if (aSpan !== bSpan) {
+        return aSpan ? 1 : -1;
+      }
       if (aStart === bStart) {
-        const aEnd = a.endTime || "";
-        const bEnd = b.endTime || "";
         if (aEnd === bEnd) return 0;
         return aEnd < bEnd ? -1 : 1;
       }
@@ -1839,15 +1873,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               <section>
                 <div className="space-y-4">
                   <div className="space-y-3">
-                    <div className="flex flex-wrap items-end gap-3">
-                      <TimeRangeSelectors
-                          startTime={newStartTime}
-                          endTime={newEndTime}
-                          onChangeStartTime={setNewStartTime}
-                          onChangeEndTime={setNewEndTime}
-                          disabled={isDatePickerOpen}
-                      />
-                    </div>
+                    <TimeRangeSelectors
+                        startTime={newStartTime}
+                        endTime={newEndTime}
+                        onChangeStartTime={setNewStartTime}
+                        onChangeEndTime={setNewEndTime}
+                        disabled={isDatePickerOpen}
+                    />
                     <div className="flex items-end gap-3">
                       <div className="min-w-0 flex-1">
                         <ComposerContentInput
@@ -1956,7 +1988,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             >
                               <div className="flex items-start gap-2">
                                 <div className="w-min max-w-full shrink-0 whitespace-nowrap select-none text-[13px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
-                                  {it.endTime ? `${it.startTime} - ${it.endTime}` : it.startTime}
+                                  {it.endTime
+                                      ? formatItemTimeRange(it.startTime || it.time || "09:00", it.endTime)
+                                      : it.startTime || it.time || "09:00"}
                                 </div>
                                 <div className="min-w-0 flex-1 basis-0">
                                   <div
@@ -2379,7 +2413,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                               left: `${leftPct}%`,
                                               width: `${Math.min(100 - leftPct, w)}%`,
                                             }}
-                                            title={`${row.content}\n${row.startTime}–${row.endTime}\n하루의 ${row.daySharePercent?.toFixed(1)}%`}
+                                            title={`${row.content}\n${formatItemTimeRange(row.startTime, row.endTime)}\n하루의 ${row.daySharePercent?.toFixed(1)}%`}
                                         />
                                     );
                                   })}
@@ -2413,7 +2447,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                           </p>
                                           <p className="mt-0.5 line-clamp-2 text-[13px] text-slate-600">{row.content}</p>
                                           <p className="mt-0.5 text-[11px] text-slate-400">
-                                            {row.startTime} – {row.endTime}
+                                            {formatItemTimeRange(row.startTime, row.endTime)}
                                           </p>
                                         </div>
                                       </li>
@@ -2448,7 +2482,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       <div className="min-w-0 flex-1">
                                         <p className="text-[12px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
                                           {row.endTime
-                                              ? `${row.startTime} – ${row.endTime}`
+                                              ? formatItemTimeRange(row.startTime, row.endTime)
                                               : row.startTime}
                                         </p>
                                         <p className="mt-1 line-clamp-2 text-sm leading-snug text-slate-900">{row.content}</p>
@@ -2583,7 +2617,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       ].join(" ")}
                                   >
                                     <div className="w-min max-w-full shrink-0 whitespace-nowrap text-[12px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
-                                      {it.endTime ? `${it.startTime} - ${it.endTime}` : it.startTime}
+                                      {it.endTime
+                                      ? formatItemTimeRange(it.startTime || it.time || "09:00", it.endTime)
+                                      : it.startTime || it.time || "09:00"}
                                     </div>
                                     <div
                                         className={[
