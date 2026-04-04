@@ -754,7 +754,43 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               const updated = await dayPlanRepository.stopExecution(selectedDate, id);
               if (updated) mergeExecutionItemIntoState(updated);
             } catch (error) {
-              console.error("Execution API failed", error);
+              /** 서버에 이미 종료됐거나 행이 없을 때 — 로컬 표시·타이머만 정리 */
+              if (error?.status === 409) {
+                setItems((prev) => {
+                  const cur = prev.find((x) => x.id === id);
+                  if (!cur) return prev;
+                  const startedMs = cur.executionStartedAt
+                    ? Date.parse(cur.executionStartedAt)
+                    : NaN;
+                  const extraSec =
+                      Number.isFinite(startedMs)
+                        ? Math.max(0, Math.floor((Date.now() - startedMs) / 1000))
+                        : 0;
+                  const next = sortItemsByTimeAsc(
+                      prev.map((it) =>
+                          it.id === id
+                            ? {
+                                ...it,
+                                done: false,
+                                executionStartedAt: null,
+                                executedSeconds: (it.executedSeconds ?? 0) + extraSec,
+                              }
+                            : it
+                      )
+                  );
+                  dayPlanCacheRef.current.set(
+                      selectedDate,
+                      normalizeDayPlan({ important3, brainDump, items: next })
+                  );
+                  return next;
+                });
+                if (activeExecutionItemId === id) {
+                  resetExecutionState();
+                }
+                setExecutionNowMs(Date.now());
+              } else {
+                console.error("Execution API failed", error);
+              }
             } finally {
               executionFetchInFlightRef.current = false;
               setExecutionSync(null);
@@ -782,6 +818,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         important3,
         brainDump,
         serializePlan,
+        activeExecutionItemId,
+        resetExecutionState,
       ]
   );
 
