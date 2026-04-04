@@ -321,6 +321,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [activeExecutionItemId, setActiveExecutionItemId] = useState(null);
   const [activeExecutionStartedAtMs, setActiveExecutionStartedAtMs] = useState(null);
   const [executionNowMs, setExecutionNowMs] = useState(Date.now());
+  /** 실행 시작/중지 API 중복 호출 방지 (ref는 동기 가드, state는 로딩 UI) */
+  const executionFetchInFlightRef = useRef(false);
+  const [executionSync, setExecutionSync] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
@@ -713,8 +716,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             Boolean(target.executionStartedAt) || Boolean(target.done);
 
         if (isDayPlanItemUuid(id) && typeof dayPlanRepository.startExecution === "function") {
-          try {
-            if (!running) {
+          if (executionFetchInFlightRef.current) return;
+
+          if (!running) {
+            executionFetchInFlightRef.current = true;
+            setExecutionSync({ itemId: id, action: "start" });
+            try {
               try {
                 const updated = await dayPlanRepository.startExecution(selectedDate, id);
                 if (updated) mergeExecutionItemIntoState(updated);
@@ -731,15 +738,31 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   throw err;
                 }
               }
-            } else if (target.executionStartedAt) {
+            } catch (error) {
+              console.error("Execution API failed", error);
+            } finally {
+              executionFetchInFlightRef.current = false;
+              setExecutionSync(null);
+            }
+            return;
+          }
+
+          if (target.executionStartedAt) {
+            executionFetchInFlightRef.current = true;
+            setExecutionSync({ itemId: id, action: "stop" });
+            try {
               const updated = await dayPlanRepository.stopExecution(selectedDate, id);
               if (updated) mergeExecutionItemIntoState(updated);
-            } else {
-              stopExecution(id, Date.now());
+            } catch (error) {
+              console.error("Execution API failed", error);
+            } finally {
+              executionFetchInFlightRef.current = false;
+              setExecutionSync(null);
             }
-          } catch (error) {
-            console.error("Execution API failed", error);
+            return;
           }
+
+          stopExecution(id, Date.now());
           return;
         }
 
@@ -2218,11 +2241,21 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           const execSec = isCarry
                             ? Math.max(0, Math.floor(it._executedMorningSeconds ?? 0))
                             : getDisplayedExecutionSeconds(it);
+                          const isExecutionSyncing =
+                              !isCarry && executionSync?.itemId === it.id;
                           return (
                               <div
                                   key={rowKey}
                                   role="button"
                                   tabIndex={0}
+                                  aria-busy={isExecutionSyncing}
+                                  aria-label={
+                                    isExecutionSyncing
+                                      ? executionSync.action === "start"
+                                        ? "실행 시작 요청 중"
+                                        : "실행 종료 요청 중"
+                                      : undefined
+                                  }
                                   onClick={() => {
                                     if (isCarry) {
                                       setSelectedDate(it._carryFromYmd);
@@ -2294,6 +2327,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     {isCarry ? (
                                         <p className="mb-0.5 text-[11px] font-medium text-orange-600/90">
                                           전날 일정 · 이 날은 새벽 구간만 표시
+                                        </p>
+                                    ) : null}
+                                    {isExecutionSyncing ? (
+                                        <p className="mb-0.5 text-[11px] font-medium text-slate-500 animate-pulse">
+                                          {executionSync.action === "start"
+                                            ? "실행 시작 요청 중…"
+                                            : "실행 종료 요청 중…"}
                                         </p>
                                     ) : null}
                                     <div
