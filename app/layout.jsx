@@ -16,6 +16,8 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1.0,
+  /** PWA·모바일 브라우저 상단 영역 — body `bg-[#F2F2F7]` 와 동일 */
+  themeColor: "#F2F2F7",
 };
 
 export default function RootLayout({ children }) {
@@ -23,7 +25,6 @@ export default function RootLayout({ children }) {
     <html lang="ko">
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#EA580C" />
       </head>
       <body className="min-h-screen bg-[#F2F2F7] text-slate-900 antialiased">
         {children}
