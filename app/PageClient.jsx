@@ -2281,11 +2281,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             : getDisplayedExecutionSeconds(it);
                           const isExecutionSyncing =
                               !isCarry && executionSync?.itemId === it.id;
+                          const isExecutionRunning =
+                              !isCarry &&
+                              (Boolean(it.executionStartedAt) ||
+                                  (activeExecutionItemId === it.id &&
+                                      activeExecutionStartedAtMs != null));
                           return (
                               <div
                                   key={rowKey}
-                                  role="button"
-                                  tabIndex={0}
+                                  role={isCarry ? undefined : "button"}
+                                  tabIndex={isCarry ? undefined : 0}
                                   aria-busy={isExecutionSyncing}
                                   aria-label={
                                     isExecutionSyncing
@@ -2295,21 +2300,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       : undefined
                                   }
                                   onClick={() => {
-                                    if (isCarry) {
-                                      setSelectedDate(it._carryFromYmd);
-                                      return;
-                                    }
+                                    if (isCarry) return;
                                     if (swipingItemId === it.id && swipeOffsetX !== 0) return;
                                     startEditItem(it);
                                   }}
                                   onKeyDown={(e) => {
-                                    if (isCarry) {
-                                      if (e.key === "Enter" || e.key === " ") {
-                                        e.preventDefault();
-                                        setSelectedDate(it._carryFromYmd);
-                                      }
-                                      return;
-                                    }
+                                    if (isCarry) return;
                                     if (e.key === "Enter" || e.key === " ") {
                                       e.preventDefault();
                                       startEditItem(it);
@@ -2332,10 +2328,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   className={[
                                     "rounded-md px-1 py-1 outline-none transition-colors",
                                     isCarry
-                                      ? "cursor-pointer border border-dashed border-orange-200/80 bg-orange-50/40 hover:bg-orange-50/70 focus:bg-orange-50/80"
-                                      : "cursor-pointer",
-                                    !isCarry && it.done ? "bg-emerald-50/70" : "",
-                                    !isCarry && !it.done ? "hover:bg-black/[0.02] focus:bg-black/[0.04]" : "",
+                                      ? "border border-dashed border-orange-200/80 bg-orange-50/40"
+                                      : "cursor-pointer hover:bg-black/[0.02] focus:bg-black/[0.04]",
                                   ].join(" ")}
                                   style={
                                     isCarry
@@ -2362,11 +2356,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                         : it.startTime || it.time || "09:00"}
                                   </div>
                                   <div className="min-w-0 flex-1 basis-0">
-                                    {isCarry ? (
-                                        <p className="mb-0.5 text-[11px] font-medium text-orange-600/90">
-                                          전날 일정 · 이 날은 새벽 구간만 표시
-                                        </p>
-                                    ) : null}
                                     {isExecutionSyncing ? (
                                         <p className="mb-0.5 text-[11px] font-medium text-slate-500 animate-pulse">
                                           {executionSync.action === "start"
@@ -2374,12 +2363,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                             : "실행 종료 요청 중…"}
                                         </p>
                                     ) : null}
-                                    <div
-                                        className={[
-                                          "whitespace-pre-wrap break-words text-sm leading-snug",
-                                          it.done ? "text-slate-500 line-through" : "text-slate-900",
-                                        ].join(" ")}
-                                    >
+                                    <div className="whitespace-pre-wrap break-words text-sm leading-snug text-slate-900">
                                       {it.content}
                                     </div>
                                   </div>
@@ -2387,7 +2371,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       <span
                                           className={[
                                             "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
-                                            it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
+                                            isExecutionRunning
+                                              ? "bg-emerald-100 text-emerald-700"
+                                              : "bg-slate-100 text-slate-600",
                                           ].join(" ")}
                                       >
                                         실행 {formatSecondsToMMSS(execSec)}
@@ -3029,31 +3015,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               {displayItemsMerged.map((it) => {
                                 const isCarry = Boolean(it._isCarryover);
                                 const rowKey = isCarry ? `carry_${it._carryFromYmd}_${it.id}` : it.id;
-                                const execSec = isCarry
-                                  ? Math.max(0, Math.floor(it._executedMorningSeconds ?? 0))
-                                  : getDisplayedExecutionSeconds(it);
                                 return (
                                     <div
                                         key={rowKey}
-                                        role={isCarry ? "button" : undefined}
-                                        tabIndex={isCarry ? 0 : undefined}
-                                        onClick={isCarry ? () => setSelectedDate(it._carryFromYmd) : undefined}
-                                        onKeyDown={
-                                          isCarry
-                                            ? (e) => {
-                                                if (e.key === "Enter" || e.key === " ") {
-                                                  e.preventDefault();
-                                                  setSelectedDate(it._carryFromYmd);
-                                                }
-                                              }
-                                            : undefined
-                                        }
                                         className={[
-                                          "flex items-center gap-3 rounded-md px-2 py-1",
+                                          "flex items-start gap-3 rounded-md px-2 py-1",
                                           isCarry
-                                            ? "cursor-pointer border border-dashed border-orange-200/80 bg-orange-50/40"
+                                            ? "border border-dashed border-orange-200/80 bg-orange-50/40"
                                             : "",
-                                          !isCarry && it.done ? "bg-emerald-50/70" : "",
                                         ].join(" ")}
                                     >
                                       <div className="w-min max-w-full shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
@@ -3064,30 +3033,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                             : it.startTime || it.time || "09:00"}
                                       </div>
                                       <div className="min-w-0 flex-1 basis-0">
-                                        {isCarry ? (
-                                            <p className="mb-0.5 text-[11px] text-orange-600/90">
-                                              전날 일정 · 탭하면 해당 날짜로 이동
-                                            </p>
-                                        ) : null}
-                                        <div
-                                            className={[
-                                              "break-words text-sm leading-snug",
-                                              it.done ? "text-slate-500 line-through" : "text-slate-900",
-                                            ].join(" ")}
-                                        >
+                                        <div className="break-words text-sm leading-snug text-slate-900">
                                           {it.content}
                                         </div>
                                       </div>
-                                      {(isCarry ? execSec > 0 : it.done || execSec > 0) ? (
-                                          <span
-                                              className={[
-                                                "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
-                                                it.done ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600",
-                                              ].join(" ")}
-                                          >
-                                            실행 {formatSecondsToMMSS(execSec)}
-                                          </span>
-                                      ) : null}
                                     </div>
                                 );
                               })}
