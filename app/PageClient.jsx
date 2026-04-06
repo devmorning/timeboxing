@@ -14,8 +14,9 @@ import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/util
 import { addDaysToYmd, getSundayOfWeekForYmd } from "../components/timeboxing/utils/dateYmd.js";
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
 import ComposerContentInput from "./components/timeboxing/ComposerContentInput.jsx";
-import ExecutionTrendBarChart from "./components/timeboxing/ExecutionTrendBarChart.jsx";
-import ExecutionTrendDayList from "./components/timeboxing/ExecutionTrendDayList.jsx";
+import ExecutionTrendBarChart, {
+  ExecutionTrendDayList,
+} from "./components/timeboxing/ExecutionTrendBarChart.jsx";
 import TimeRangeSelectors from "./components/timeboxing/TimeRangeSelectors.jsx";
 import {
   collectYmdsNeededForMonthTrend,
