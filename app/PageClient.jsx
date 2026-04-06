@@ -11,10 +11,18 @@ import {
 import TextInput from "../components/textinput/TextInput.jsx";
 import { InlineCalendarMonth } from "../components/timeboxing/InlineCalendarMonth.jsx";
 import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/utils/calendarMonth.js";
-import { addDaysToYmd } from "../components/timeboxing/utils/dateYmd.js";
+import { addDaysToYmd, getSundayOfWeekForYmd } from "../components/timeboxing/utils/dateYmd.js";
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
 import ComposerContentInput from "./components/timeboxing/ComposerContentInput.jsx";
+import ExecutionTrendBarChart from "./components/timeboxing/ExecutionTrendBarChart.jsx";
 import TimeRangeSelectors from "./components/timeboxing/TimeRangeSelectors.jsx";
+import {
+  collectYmdsNeededForMonthTrend,
+  collectYmdsNeededForWeekTrend,
+  listWeekDaysYmd,
+  listYmDaysYmd,
+  sumExecutedSecondsMatchingContentOnCalendarDay,
+} from "../components/timeboxing/utils/executionByContentFilter.js";
 import {
   clearStoredAccessToken,
   getApiAuthUrl,
@@ -327,6 +335,51 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  /** 일정 내용 키워드별 월별 실행 추이 모달 */
+  const [isTrendOpen, setIsTrendOpen] = useState(false);
+  const [trendYm, setTrendYm] = useState(() => {
+    const ymd = typeof initialSelectedDate === "string" ? initialSelectedDate : "";
+    const [y, mo] = ymd.split("-").map(Number);
+    if (Number.isFinite(y) && y > 0 && Number.isFinite(mo) && mo >= 1 && mo <= 12) {
+      return `${y}-${String(mo).padStart(2, "0")}`;
+    }
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [trendKeyword, setTrendKeyword] = useState("");
+  /** `month` | `week` — 실행 추이 기간(월 단위 / 해당 주 일~토) */
+  const [trendPeriod, setTrendPeriod] = useState("month");
+  const [trendWeekStart, setTrendWeekStart] = useState(() => {
+    const ymd = typeof initialSelectedDate === "string" ? initialSelectedDate : "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+      return getSundayOfWeekForYmd(ymd);
+    }
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return getSundayOfWeekForYmd(today);
+  });
+  const [trendSeries, setTrendSeries] = useState({
+    loading: false,
+    error: null,
+    points: [],
+  });
+  const trendYmTitle = useMemo(() => {
+    const [y, m] = trendYm.split("-").map(Number);
+    if (!Number.isFinite(y) || !Number.isFinite(m)) return "";
+    const d = new Date(y, m - 1, 1);
+    return d.toLocaleDateString("ko-KR", { year: "numeric", month: "long" });
+  }, [trendYm]);
+  const trendWeekTitle = useMemo(() => {
+    const mon = trendWeekStart;
+    const end = addDaysToYmd(mon, 6);
+    const [y1, m1, d1] = mon.split("-").map(Number);
+    const [y2, m2, d2] = end.split("-").map(Number);
+    if (!Number.isFinite(y1) || !Number.isFinite(m1) || !Number.isFinite(d1)) return "";
+    if (y1 === y2) {
+      return `${y1}년 ${m1}월 ${d1}일 ~ ${m2}월 ${d2}일`;
+    }
+    return `${y1}년 ${m1}월 ${d1}일 ~ ${y2}년 ${m2}월 ${d2}일`;
+  }, [trendWeekStart]);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [readyDate, setReadyDate] = useState(initialAuthUser && initialSelectedDate ? initialSelectedDate : "");
   const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(Boolean(initialAuthUser));
@@ -378,7 +431,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   });
   const statsScrollRef = useRef(null);
   const reportScrollRef = useRef(null);
+  const trendScrollRef = useRef(null);
   const templatesScrollRef = useRef(null);
+  const trendSwipeRef = useRef({
+    startX: 0,
+    startY: 0,
+    tracking: false,
+  });
 
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
@@ -570,13 +629,123 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     resetTemplateDraft();
   }, [resetTemplateDraft]);
 
+  const finalizeTrendClose = useCallback(() => {
+    setIsTrendOpen(false);
+  }, []);
+
   const reportModalAnim = useModalOpenAnimation(isReportOpen, finalizeReportClose);
   const statsModalAnim = useModalOpenAnimation(isStatsOpen, finalizeStatsClose);
   const templatesModalAnim = useModalOpenAnimation(isTemplatesOpen, finalizeTemplatesClose);
+  const trendModalAnim = useModalOpenAnimation(isTrendOpen, finalizeTrendClose);
 
   const closeReportModal = reportModalAnim.requestClose;
   const closeStatsModal = statsModalAnim.requestClose;
   const closeTemplatesModal = templatesModalAnim.requestClose;
+  const closeTrendModal = trendModalAnim.requestClose;
+
+  const shiftTrendMonth = useCallback((delta) => {
+    setTrendYm((prev) => {
+      const [y, mo] = prev.split("-").map(Number);
+      const d = new Date(y, mo - 1 + delta, 1);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    });
+  }, []);
+
+  const shiftTrendWeek = useCallback((delta) => {
+    setTrendWeekStart((prev) => addDaysToYmd(prev, delta * 7));
+  }, []);
+
+  const handleTrendPeriodChange = useCallback((next) => {
+    if (next !== "month" && next !== "week") return;
+    if (next === trendPeriod) return;
+    if (next === "week") {
+      const [y, m] = trendYm.split("-").map(Number);
+      if (Number.isFinite(y) && Number.isFinite(m)) {
+        setTrendWeekStart(getSundayOfWeekForYmd(`${y}-${String(m).padStart(2, "0")}-15`));
+      }
+    } else {
+      const [y, mo] = trendWeekStart.split("-").map(Number);
+      if (Number.isFinite(y) && Number.isFinite(mo)) {
+        setTrendYm(`${y}-${String(mo).padStart(2, "0")}`);
+      }
+    }
+    setTrendPeriod(next);
+  }, [trendPeriod, trendYm, trendWeekStart]);
+
+  const loadTrendSeries = useCallback(async () => {
+    const kw = trendKeyword.trim();
+    if (!kw) {
+      setTrendSeries({
+        loading: false,
+        error: "일정 내용에 포함된 키워드를 입력하세요.",
+        points: [],
+      });
+      return;
+    }
+    if (!authUser?.id) {
+      setTrendSeries({
+        loading: false,
+        error: "로그인이 필요합니다.",
+        points: [],
+      });
+      return;
+    }
+
+    setTrendSeries((prev) => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const [y, m] = trendYm.split("-").map(Number);
+      const ymdsToFetch =
+          trendPeriod === "week"
+            ? collectYmdsNeededForWeekTrend(trendWeekStart)
+            : collectYmdsNeededForMonthTrend(y, m);
+      const startYmd = ymdsToFetch[0];
+      const endYmd = ymdsToFetch[ymdsToFetch.length - 1];
+
+      const map = new Map();
+      if (typeof dayPlanRepository.getByDateRangeInclusive === "function") {
+        const rangeMap = await dayPlanRepository.getByDateRangeInclusive(startYmd, endYmd);
+        rangeMap.forEach((plan, ymd) => {
+          dayPlanCacheRef.current.set(ymd, plan);
+          map.set(ymd, plan);
+        });
+      } else {
+        for (const ymd of ymdsToFetch) {
+          let plan;
+          if (dayPlanCacheRef.current.has(ymd)) {
+            plan = normalizeDayPlan(dayPlanCacheRef.current.get(ymd));
+          } else {
+            plan = await dayPlanRepository.getByDate(ymd);
+            dayPlanCacheRef.current.set(ymd, plan);
+          }
+          map.set(ymd, plan);
+        }
+      }
+
+      const points = [];
+      const dayList =
+          trendPeriod === "week" ? listWeekDaysYmd(trendWeekStart) : listYmDaysYmd(y, m);
+      for (const ymd of dayList) {
+        const prevYmd = addDaysToYmd(ymd, -1);
+        const sec = sumExecutedSecondsMatchingContentOnCalendarDay(
+            ymd,
+            map.get(ymd),
+            map.get(prevYmd),
+            kw
+        );
+        points.push({ ymd, seconds: sec });
+      }
+
+      setTrendSeries({ loading: false, error: null, points });
+    } catch (error) {
+      console.error("Failed to load execution trend", error);
+      setTrendSeries({
+        loading: false,
+        error: "데이터를 불러오지 못했습니다.",
+        points: [],
+      });
+    }
+  }, [authUser?.id, trendKeyword, trendYm, trendPeriod, trendWeekStart, dayPlanRepository]);
 
   const saveEditItem = () => {
     if (!editingId) return;
@@ -1039,6 +1208,43 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         }
       },
       [closeStatsModal]
+  );
+
+  const handleTrendTouchStart = useCallback((event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    trendSwipeRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      tracking: true,
+    };
+  }, []);
+
+  const handleTrendTouchEnd = useCallback(
+      (event) => {
+        const touch = event.changedTouches?.[0];
+        const gesture = trendSwipeRef.current;
+        trendSwipeRef.current = {
+          startX: 0,
+          startY: 0,
+          tracking: false,
+        };
+
+        if (!touch || !gesture.tracking) return;
+
+        const dx = touch.clientX - gesture.startX;
+        const dy = touch.clientY - gesture.startY;
+
+        if (dy >= 96 && Math.abs(dy) > Math.abs(dx)) {
+          const scrollTop = trendScrollRef.current?.scrollTop ?? 0;
+          const canClose = scrollTop <= 0;
+          if (!canClose) return;
+          closeTrendModal();
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      },
+      [closeTrendModal]
   );
 
   const handleTemplateTouchStart = useCallback((id, event) => {
@@ -1524,7 +1730,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, [isAuthBootstrapDone]);
 
   useEffect(() => {
-    if (!isReportOpen && !isStatsOpen && !isTemplatesOpen) return;
+    if (!isReportOpen && !isStatsOpen && !isTemplatesOpen && !isTrendOpen) return;
 
     const body = document.body;
     const html = document.documentElement;
@@ -1551,7 +1757,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       html.style.overscrollBehavior = previousHtmlOverscroll;
       window.scrollTo(0, scrollY);
     };
-  }, [isReportOpen, isStatsOpen, isTemplatesOpen]);
+  }, [isReportOpen, isStatsOpen, isTemplatesOpen, isTrendOpen]);
 
   useEffect(() => {
     if (!isStatsOpen || !authUser?.id) return;
@@ -1831,6 +2037,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       setIsReportOpen(false);
       setIsStatsOpen(false);
       setIsTemplatesOpen(false);
+      setIsTrendOpen(false);
       setIsDatePickerOpen(false);
     }
   };
@@ -2425,7 +2632,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         {!isDatePickerOpen ? (
             <div className="fixed inset-x-0 bottom-0 z-40">
               <div className="mx-auto w-full max-w-md px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
-                <div className="flex justify-end gap-2">
+                <div className="flex flex-wrap justify-end gap-2">
                   <button
                       type="button"
                       aria-label="일자별 통계 열기"
@@ -2464,6 +2671,37 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       <path
                           fill="currentColor"
                           d="M9 3a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2zm0 2h6v2H9zm-1 6h8v2H8zm0 4h8v2H8z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                      type="button"
+                      aria-label="내용별 실행 추이 열기"
+                      onClick={() => {
+                        setIsDatePickerOpen(false);
+                        const p = selectedDate.split("-");
+                        if (p.length >= 2) {
+                          const y = Number(p[0]);
+                          const mo = Number(p[1]);
+                          if (Number.isFinite(y) && Number.isFinite(mo)) {
+                            setTrendYm(`${y}-${String(mo).padStart(2, "0")}`);
+                          }
+                        }
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) {
+                          setTrendWeekStart(getSundayOfWeekForYmd(selectedDate));
+                        }
+                        setIsTrendOpen(true);
+                      }}
+                      className={[
+                        "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0",
+                        "text-orange-700 shadow-md ring-1 ring-black/[0.08]",
+                        "active:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                      ].join(" ")}
+                  >
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[22px] w-[22px]">
+                      <path
+                          fill="currentColor"
+                          d="M4 19h16v2H4zm2-4h2v2H6zm4 0h2v2h-2zm4 0h2v2h-2zm4 0h2v2h-2zM6 9h2v4H6zm4-2h2v6h-2zm4-3h2v9h-2zm4 1h2v8h-2z"
                       />
                     </svg>
                   </button>
@@ -3054,6 +3292,144 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             <p className="mt-2 text-sm text-slate-400">추가된 일정이 없습니다.</p>
                         )}
                       </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </div>
+        ) : null}
+
+        {isTrendOpen ? (
+            <div
+                className={modalBackdropClass(trendModalAnim.showOverlay, trendModalAnim.closing)}
+                onClick={closeTrendModal}
+            >
+              <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
+                <section
+                    className={modalPanelClass(trendModalAnim.showOverlay, trendModalAnim.closing)}
+                    onClick={(e) => e.stopPropagation()}
+                    onTouchStart={handleTrendTouchStart}
+                    onTouchEnd={handleTrendTouchEnd}
+                    onTouchCancel={() => {
+                      trendSwipeRef.current = {
+                        startX: 0,
+                        startY: 0,
+                        tracking: false,
+                      };
+                    }}
+                    style={{ touchAction: "pan-y" }}
+                >
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold leading-snug text-slate-700">내용별 실행 추이</p>
+                      <p className="mt-0.5 text-[12px] text-slate-400">
+                        일정 내용에 키워드가 포함된 항목만, 해당 날짜에 실행된 시간을 합산합니다. 자정 넘김·전날
+                        이어짐은 일자별 통계와 동일하게 나눕니다.
+                      </p>
+                    </div>
+                    <button
+                        type="button"
+                        aria-label="실행 추이 닫기"
+                        onClick={closeTrendModal}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div
+                      ref={trendScrollRef}
+                      className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex rounded-lg bg-slate-100/80 p-0.5">
+                        <button
+                            type="button"
+                            onClick={() => handleTrendPeriodChange("month")}
+                            className={[
+                              "min-w-0 flex-1 rounded-md px-2 py-1.5 text-xs font-semibold",
+                              trendPeriod === "month"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            ].join(" ")}
+                        >
+                          월
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleTrendPeriodChange("week")}
+                            className={[
+                              "min-w-0 flex-1 rounded-md px-2 py-1.5 text-xs font-semibold",
+                              trendPeriod === "week"
+                                ? "bg-white text-slate-800 shadow-sm"
+                                : "text-slate-500",
+                            ].join(" ")}
+                        >
+                          주
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                            type="button"
+                            aria-label={trendPeriod === "week" ? "이전 주" : "이전 달"}
+                            onClick={() =>
+                              trendPeriod === "week" ? shiftTrendWeek(-1) : shiftTrendMonth(-1)
+                            }
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                        >
+                          ‹
+                        </button>
+                        <p className="min-w-0 flex-1 text-center text-sm font-semibold text-slate-800">
+                          {trendPeriod === "week" ? trendWeekTitle : trendYmTitle}
+                        </p>
+                        <button
+                            type="button"
+                            aria-label={trendPeriod === "week" ? "다음 주" : "다음 달"}
+                            onClick={() =>
+                              trendPeriod === "week" ? shiftTrendWeek(1) : shiftTrendMonth(1)
+                            }
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                        >
+                          ›
+                        </button>
+                      </div>
+
+                      <TextInput
+                          label="내용 키워드"
+                          value={trendKeyword}
+                          onChange={setTrendKeyword}
+                          placeholder="예: 수면"
+                          inputClassName="text-[15px]"
+                      />
+
+                      <button
+                          type="button"
+                          onClick={loadTrendSeries}
+                          disabled={trendSeries.loading}
+                          className={[
+                            "w-full rounded-xl bg-orange-600 px-4 py-3 text-sm font-semibold text-white shadow-sm",
+                            "active:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/30",
+                            trendSeries.loading ? "cursor-wait opacity-70" : "",
+                          ].join(" ")}
+                      >
+                        {trendSeries.loading ? "불러오는 중…" : "보기"}
+                      </button>
+
+                      {trendSeries.error ? (
+                          <p className="text-sm text-rose-600">{trendSeries.error}</p>
+                      ) : null}
+
+                      {!trendSeries.loading && !trendSeries.error && trendSeries.points.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-[13px] font-medium text-slate-600">일별 실행 시간</p>
+                            <ExecutionTrendBarChart
+                                points={trendSeries.points}
+                                formatDuration={formatSecondsAsDurationKo}
+                            />
+                          </div>
+                      ) : null}
+
                     </div>
                   </div>
                 </section>

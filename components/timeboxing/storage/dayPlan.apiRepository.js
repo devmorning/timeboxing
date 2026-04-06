@@ -104,6 +104,23 @@ export function createApiDayPlanRepository() {
       return normalizeDayPlan(data ?? createEmptyDayPlan());
     },
 
+    /**
+     * timeboxing-api `GET /api/day-plans/range` 한 번으로 기간 내 플랜 수신 (Postgres 단일 쿼리).
+     * @returns {Promise<Map<string, ReturnType<normalizeDayPlan>>>}
+     */
+    async getByDateRangeInclusive(startYmd, endYmd) {
+      const data = await requestJson(
+        `/api/day-plans/range?startYmd=${encodeURIComponent(startYmd)}&endYmd=${encodeURIComponent(endYmd)}`,
+        { method: "GET" }
+      );
+      const plans = data?.plans ?? {};
+      const map = new Map();
+      for (const [ymd, plan] of Object.entries(plans)) {
+        map.set(ymd, normalizeDayPlan(plan));
+      }
+      return map;
+    },
+
     async saveByDate(dateYmd, plan) {
       await requestJson(`/api/day-plans/${dateYmd}`, {
         method: "PUT",
