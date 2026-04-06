@@ -1944,7 +1944,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }
 
   return (
-      <main className="min-h-[100dvh] bg-[#F2F2F7] overflow-x-hidden">
+      <main className="min-h-[100dvh] bg-[#F2F2F7]">
+        {/* 하단 fixed FAB가 main overflow에 잘리지 않도록 스크롤 영역만 overflow-x 숨김 */}
+        <div className="overflow-x-hidden">
         <header
             className={[
               "fixed inset-x-0 top-0 z-50 bg-[#F2F2F7]/95 backdrop-blur-sm transition-opacity duration-200",
@@ -2134,10 +2136,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   </section>
                   <section>
                     <div className="space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-[120px] rounded-md bg-slate-200/70" />
-                        <div className="h-10 flex-1 rounded-md bg-slate-200/70" />
+                      <div className="flex items-end gap-3">
+                        <div className="h-10 min-h-[40px] flex-1 rounded-md bg-slate-200/70" />
                         <div className="h-10 w-[56px] rounded-md bg-slate-200/70" />
+                        <div className="h-10 w-10 shrink-0 rounded-md bg-slate-200/70" />
                       </div>
                       <div className="space-y-3">
                         <div className="h-14 rounded-md bg-slate-200/60" />
@@ -2210,7 +2212,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         onChangeEndTime={setNewEndTime}
                         disabled={isDatePickerOpen}
                     />
-                    <div className="flex items-end gap-3">
+                    <div className="flex items-end gap-2 sm:gap-3">
                       <div className="min-w-0 flex-1">
                         <ComposerContentInput
                             value={newContent}
@@ -2267,6 +2269,32 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             </button>
                         )}
                       </div>
+                      <button
+                          type="button"
+                          aria-label="반복 내용 관리 열기"
+                          disabled={isDatePickerOpen}
+                          onClick={() => {
+                            setIsDatePickerOpen(false);
+                            setIsTemplatesOpen(true);
+                          }}
+                          className={[
+                            "flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-md bg-transparent p-0",
+                            "text-orange-700 active:opacity-60",
+                            "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                            "disabled:cursor-not-allowed disabled:opacity-40",
+                          ].join(" ")}
+                      >
+                        <svg
+                            aria-hidden="true"
+                            viewBox="0 0 24 24"
+                            className="block h-[18px] w-[18px] shrink-0 translate-y-px"
+                        >
+                          <path
+                              fill="currentColor"
+                              d="M4 7.5C4 6.67 4.67 6 5.5 6h8C14.33 6 15 6.67 15 7.5v8c0 .83-.67 1.5-1.5 1.5h-8C4.67 17 4 16.33 4 15.5zm5-3C9 3.67 9.67 3 10.5 3h8c.83 0 1.5.67 1.5 1.5v8c0 .83-.67 1.5-1.5 1.5H17v-6.5C17 5.57 15.43 4 13.5 4H9z"
+                          />
+                        </svg>
+                      </button>
                     </div>
                   </div>
 
@@ -2392,31 +2420,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             </div>
           </div>
         </div>
+        </div>
 
         {!isDatePickerOpen ? (
-            <div className="fixed inset-x-0 bottom-0 z-30">
-              <div className="mx-auto w-full max-w-md px-4 pb-4 pt-2">
+            <div className="fixed inset-x-0 bottom-0 z-40">
+              <div className="mx-auto w-full max-w-md px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2">
                 <div className="flex justify-end gap-2">
-                  <button
-                      type="button"
-                      aria-label="반복 내용 관리 열기"
-                      onClick={() => {
-                        setIsDatePickerOpen(false);
-                        setIsTemplatesOpen(true);
-                      }}
-                      className={[
-                        "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white p-0",
-                        "text-slate-900 shadow-md ring-1 ring-black/[0.06]",
-                        "active:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500/20",
-                      ].join(" ")}
-                  >
-                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[20px] w-[20px]">
-                      <path
-                          fill="currentColor"
-                          d="M4 7.5C4 6.67 4.67 6 5.5 6h8C14.33 6 15 6.67 15 7.5v8c0 .83-.67 1.5-1.5 1.5h-8C4.67 17 4 16.33 4 15.5zm5-3C9 3.67 9.67 3 10.5 3h8c.83 0 1.5.67 1.5 1.5v8c0 .83-.67 1.5-1.5 1.5H17v-6.5C17 5.57 15.43 4 13.5 4H9z"
-                      />
-                    </svg>
-                  </button>
                   <button
                       type="button"
                       aria-label="일자별 통계 열기"

@@ -43,11 +43,28 @@ describe("인라인 캘린더 열기", () => {
   it("통계 버튼 클릭 시 일자별 통계 모달이 열린다", async () => {
     render(<PageClient {...initialProps} />);
 
-    fireEvent.click(screen.getByLabelText("일자별 통계 열기"));
+    const statsBtn = screen.getByLabelText("일자별 통계 열기");
+    expect(statsBtn).toBeVisible();
+
+    fireEvent.click(statsBtn);
 
     await waitFor(() => {
       expect(screen.getByText("계획(종료−시작) 대비 실행 시간 달성률")).toBeInTheDocument();
     });
     expect(screen.getByRole("heading", { name: "일정별 달성" })).toBeInTheDocument();
+  });
+
+  it("하단 통계·리포트 FAB가 표시되고 리포트 모달을 연다", async () => {
+    render(<PageClient {...initialProps} />);
+
+    const reportBtn = screen.getByLabelText("일정 리포트 열기");
+    expect(screen.getByLabelText("일자별 통계 열기")).toBeVisible();
+    expect(reportBtn).toBeVisible();
+
+    fireEvent.click(reportBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText("시간 + 내용")).toBeInTheDocument();
+    });
   });
 });
