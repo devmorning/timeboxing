@@ -272,7 +272,10 @@ function modalBackdropClass(showOverlay, closing) {
  * 패널은 opacity로 흐리게 지우지 않고 clip-path로 아래에서 말아 올려,
  * 닫힐 때 상단이 비며 뒤 컨텐츠가 비쳐 보이는 현상을 막음 (겹 덮개 → 말려 들어감).
  */
-function modalPanelClass(showOverlay, closing) {
+/** @param {{ surface?: 'white' | 'app' }} [options] — `app`: body와 동일 #F2F2F7 캔버스(카드 대비) */
+function modalPanelClass(showOverlay, closing, options = {}) {
+  const surface = options.surface === "app" ? "app" : "white";
+  const bgClass = surface === "app" ? "bg-[#F2F2F7]" : "bg-white";
   const transition = closing
       ? "transition-[clip-path] duration-[480ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
       : "transition-[clip-path] duration-[400ms] ease-[cubic-bezier(0.33,1,0.68,1)]";
@@ -280,7 +283,8 @@ function modalPanelClass(showOverlay, closing) {
   const clipOpen = "clip-path-[inset(0_0_0_0)]";
   const clip = showOverlay ? clipOpen : clipClosed;
   return [
-    "flex h-full w-full flex-col overflow-hidden bg-white",
+    "flex h-full w-full flex-col overflow-hidden",
+    bgClass,
     "will-change-[clip-path]",
     transition,
     clip,
@@ -2909,7 +2913,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             >
               <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
                 <section
-                    className={modalPanelClass(statsModalAnim.showOverlay, statsModalAnim.closing)}
+                    className={modalPanelClass(statsModalAnim.showOverlay, statsModalAnim.closing, {
+                      surface: "app",
+                    })}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleStatsTouchStart}
                     onTouchEnd={handleStatsTouchEnd}
@@ -2922,7 +2928,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     }}
                     style={{ touchAction: "pan-y" }}
                 >
-                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] bg-white/90 px-5 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-[6px]">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold leading-snug text-slate-700">{statsDayLabel}</p>
                       <p className="mt-0.5 text-[12px] text-slate-400">계획(종료−시작) 대비 실행 시간 달성률</p>
@@ -2961,7 +2967,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   >
                     <div className="space-y-5">
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-2xl bg-slate-50 px-4 py-4">
+                        <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-black/[0.05]">
                           <p className="text-[12px] font-medium text-slate-500">계획 시간 합</p>
                           <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-slate-900">
                             {dailyStats.loading
@@ -2972,7 +2978,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             종료 시간이 있는 일정만 합산합니다. 자정을 넘기는 일정은 그날 24:00 이전 구간만 포함하고, 다음날 새벽은 해당 날짜 통계에 포함됩니다.
                           </p>
                         </div>
-                        <div className="rounded-2xl bg-emerald-50 px-4 py-4">
+                        <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-emerald-100">
                           <p className="text-[12px] font-medium text-emerald-700">실행 기록 합</p>
                           <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-emerald-800">
                             {dailyStats.loading
@@ -2983,7 +2989,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-200/90 bg-white px-4 py-4">
+                      <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-black/[0.05]">
                         <p className="text-[12px] font-medium text-slate-600">계획되지 않은 시간 비중</p>
                         <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-slate-900">
                           {dailyStats.loading
@@ -2998,7 +3004,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-4">
+                      <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-black/[0.05]">
                         <p className="text-[12px] font-medium text-slate-500">이 날짜 하루 달성률</p>
                         <p className="mt-1 text-[32px] font-semibold tabular-nums tracking-[-0.04em] text-slate-900">
                           {dailyStats.loading
@@ -3012,7 +3018,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </p>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
+                      <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-black/[0.05]">
                         <div className="flex items-center justify-between gap-2">
                           <h3 className="text-[13px] font-semibold text-slate-500">24시간 대비 계획 비중</h3>
                           <span className="text-[11px] text-slate-400">하루 86400초 기준</span>
@@ -3107,7 +3113,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         })()}
                       </div>
 
-                      <div className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
+                      <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-black/[0.05]">
                         <div className="flex items-center justify-between">
                           <h3 className="text-[13px] font-semibold text-slate-500">일정별 달성</h3>
                           <span className="text-[11px] text-slate-400">실행 / 계획</span>
@@ -3122,7 +3128,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         ) : dailyStats.items.length > 0 ? (
                             <ul className="mt-4 space-y-4">
                               {dailyStats.items.map((row) => (
-                                  <li key={row.id} className="rounded-xl border border-slate-100 bg-white px-3 py-3">
+                                  <li
+                                      key={row.id}
+                                      className="rounded-xl bg-[#FAFAFA] px-3 py-3 ring-1 ring-black/[0.04]"
+                                  >
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="min-w-0 flex-1">
                                         {row._carryFromYmd ? (
