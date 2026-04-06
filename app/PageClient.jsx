@@ -15,6 +15,7 @@ import { addDaysToYmd, getSundayOfWeekForYmd } from "../components/timeboxing/ut
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
 import ComposerContentInput from "./components/timeboxing/ComposerContentInput.jsx";
 import ExecutionTrendBarChart from "./components/timeboxing/ExecutionTrendBarChart.jsx";
+import ExecutionTrendDayList from "./components/timeboxing/ExecutionTrendDayList.jsx";
 import TimeRangeSelectors from "./components/timeboxing/TimeRangeSelectors.jsx";
 import {
   collectYmdsNeededForMonthTrend,
@@ -3421,9 +3422,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       ) : null}
 
                       {!trendSeries.loading && !trendSeries.error && trendSeries.points.length > 0 ? (
-                          <div className="space-y-2">
+                          <div className="space-y-3">
                             <p className="text-[13px] font-medium text-slate-600">일별 실행 시간</p>
                             <ExecutionTrendBarChart
+                                points={trendSeries.points}
+                                formatDuration={formatSecondsAsDurationKo}
+                            />
+                            <ExecutionTrendDayList
                                 points={trendSeries.points}
                                 formatDuration={formatSecondsAsDurationKo}
                             />
