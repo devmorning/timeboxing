@@ -3346,14 +3346,19 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       </div>
                     ) : null}
 
-                    <div className="space-y-8">
+                    <div
+                        className={[
+                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 pr-1",
+                          !prefersReducedMotion ? "scroll-smooth" : "",
+                        ].join(" ")}
+                    >
                       <section
                           aria-label="가장 중요한 3가지"
                           data-story-idx="0"
                           ref={(el) => {
                             storyChapterRefs.current[0] = el;
                           }}
-                          className="relative min-h-[min(72vh,640px)] scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
@@ -3460,7 +3465,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[1] = el;
                           }}
-                          className="relative min-h-[min(72vh,640px)] scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
@@ -3524,7 +3529,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[2] = el;
                           }}
-                          className="relative min-h-[min(72vh,640px)] scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
