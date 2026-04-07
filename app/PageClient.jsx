@@ -3356,7 +3356,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             selectedDate={selectedDate}
             onDismiss={() => setEmptyDayLockDismissedDate(selectedDate)}
             onStartPlan={() => {
-              setEmptyDayLockDismissedDate(selectedDate);
               setIsScheduleComposerModalOpen(true);
             }}
             onTouchStart={handleDaySwipeTouchStart}
