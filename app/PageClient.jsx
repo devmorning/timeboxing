@@ -3334,14 +3334,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             className={[
                               "sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2",
                               "shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl",
-                              !prefersReducedMotion
-                                  ? "transition-[transform,opacity] duration-420 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                                  : "",
-                              !prefersReducedMotion && activeStoryChapterIdx === 0
-                                  ? "translate-y-0 opacity-100"
-                                  : !prefersReducedMotion
-                                      ? "translate-y-[2px] opacity-[0.92]"
-                                      : "",
                             ].join(" ")}
                         >
                           <div className="min-w-0">
@@ -3353,14 +3345,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         <div
                             className={[
                               UI_CANVAS_INSET,
-                              !prefersReducedMotion
-                                  ? "transition-[transform,filter] duration-420 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                                  : "",
-                              !prefersReducedMotion && activeStoryChapterIdx === 0
-                                  ? "translate-y-0"
-                                  : !prefersReducedMotion
-                                      ? "translate-y-[2px]"
-                                      : "",
                             ].join(" ")}
                         >
                           <div className="divide-y divide-stone-200/70 px-3 py-2.5">
