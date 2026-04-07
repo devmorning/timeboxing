@@ -756,6 +756,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [important3, setImportant3] = useState(initialPlan?.important3 ?? ["", "", ""]);
   const [brainDump, setBrainDump] = useState(initialPlan?.brainDump ?? "");
   const brainDumpTextareaRef = useRef(null);
+  const storyScrollRef = useRef(null);
   const storyChapterRefs = useRef([]);
   const [activeStoryChapterIdx, setActiveStoryChapterIdx] = useState(0);
   const [storyParallax, setStoryParallax] = useState([0, 0, 0]);
@@ -1101,6 +1102,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (typeof IntersectionObserver !== "function") return;
     const targets = storyChapterRefs.current.filter(Boolean);
     if (targets.length === 0) return;
+    const rootEl = storyScrollRef.current ?? null;
 
     const io = new IntersectionObserver(
         (entries) => {
@@ -1113,7 +1115,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           const idx = Number(best.target.getAttribute("data-story-idx") ?? "0");
           if (Number.isFinite(idx)) setActiveStoryChapterIdx(idx);
         },
-        { root: null, threshold: [0.25, 0.45, 0.6, 0.75] }
+        { root: rootEl, threshold: [0.25, 0.45, 0.6, 0.75] }
     );
 
     targets.forEach((el) => io.observe(el));
@@ -1126,16 +1128,19 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       return;
     }
     if (typeof window === "undefined") return;
+    const scroller = storyScrollRef.current;
+    if (!scroller) return;
     let rafId = 0;
     const compute = () => {
       rafId = 0;
-      const vh = window.innerHeight || 1;
+      const scrollerRect = scroller.getBoundingClientRect();
+      const vh = scroller.clientHeight || 1;
       const next = [0, 0, 0];
       for (let i = 0; i < 3; i += 1) {
         const el = storyChapterRefs.current[i];
         if (!el) continue;
         const rect = el.getBoundingClientRect();
-        const centerDelta = rect.top + rect.height / 2 - vh / 2;
+        const centerDelta = rect.top - scrollerRect.top + rect.height / 2 - vh / 2;
         const normalized = Math.max(-1, Math.min(1, centerDelta / (vh * 0.7)));
         next[i] = normalized;
       }
@@ -1148,14 +1153,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       rafId = window.requestAnimationFrame(compute);
     };
     requestCompute();
-    window.addEventListener("scroll", requestCompute, { passive: true });
+    scroller.addEventListener("scroll", requestCompute, { passive: true });
     window.addEventListener("resize", requestCompute);
     return () => {
-      window.removeEventListener("scroll", requestCompute);
+      scroller.removeEventListener("scroll", requestCompute);
       window.removeEventListener("resize", requestCompute);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
-  }, [prefersReducedMotion]);
+  }, [prefersReducedMotion, activeStoryChapterIdx]);
 
   useLayoutEffect(() => {
     if (!isScheduleComposerModalOpen) return;
@@ -3347,8 +3352,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     ) : null}
 
                     <div
+                        ref={storyScrollRef}
                         className={[
-                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 pr-1",
+                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-proximity space-y-8 pr-1",
                           !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
