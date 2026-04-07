@@ -1036,6 +1036,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   });
   const daySwipeViewportRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
+  const mainChapterScrollRef = useRef(null);
+  const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
@@ -2489,6 +2491,24 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     setDaySwipePullX(rubberDaySwipeDx(dx, maxPull));
   }, []);
 
+  const captureVisibleMainChapterIdx = useCallback(() => {
+    const root = mainChapterScrollRef.current;
+    if (!root) return null;
+    const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
+    if (!chapters.length) return null;
+    const probeY = root.scrollTop + root.clientHeight * 0.38;
+    let nearestIdx = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+    chapters.forEach((el, idx) => {
+      const distance = Math.abs(el.offsetTop - probeY);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIdx = idx;
+      }
+    });
+    return nearestIdx;
+  }, []);
+
   const handleDaySwipeTouchEnd = useCallback(
       (event) => {
         const touch = event.changedTouches?.[0];
@@ -2530,6 +2550,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               : 400;
 
         if (dx <= -72) {
+          pendingChapterIdxAfterDaySwipeRef.current = captureVisibleMainChapterIdx();
           setDaySwipeTransition(true);
           setDaySwipePullX(-w);
           if (daySwipeCommitTimerRef.current != null) {
@@ -2546,6 +2567,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           return;
         }
         if (dx >= 72) {
+          pendingChapterIdxAfterDaySwipeRef.current = captureVisibleMainChapterIdx();
           setDaySwipeTransition(true);
           setDaySwipePullX(w);
           if (daySwipeCommitTimerRef.current != null) {
@@ -2566,7 +2588,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         setDaySwipePullX(0);
         window.setTimeout(() => setDaySwipeTransition(false), 280);
       },
-      [setSelectedDate]
+      [captureVisibleMainChapterIdx, setSelectedDate]
   );
 
   const handleDaySwipeTouchCancel = useCallback(() => {
@@ -2596,6 +2618,24 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     setDaySwipePullX(0);
     setDaySwipeTransition(false);
   }, [selectedDate]);
+
+  useLayoutEffect(() => {
+    if (!showDayPlanContent) return;
+    const chapterIdx = pendingChapterIdxAfterDaySwipeRef.current;
+    if (chapterIdx == null) return;
+    const root = mainChapterScrollRef.current;
+    if (!root) return;
+    const chapters = root.querySelectorAll("[data-main-chapter]");
+    const target = chapters[chapterIdx];
+    if (!(target instanceof HTMLElement)) {
+      pendingChapterIdxAfterDaySwipeRef.current = null;
+      return;
+    }
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ block: "start", behavior: "auto" });
+      pendingChapterIdxAfterDaySwipeRef.current = null;
+    });
+  }, [selectedDate, showDayPlanContent]);
 
   useEffect(() => {
     if (!authUser?.id) {
@@ -3369,6 +3409,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 >
                   <div className="relative">
                     <div
+                        ref={mainChapterScrollRef}
                         className={[
                           "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 scrollbar-none",
                           !prefersReducedMotion ? "scroll-smooth" : "",
@@ -3376,6 +3417,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     >
                       <section
                           aria-label="가장 중요한 3가지"
+                          data-main-chapter
                           className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24"
                       >
                         <div
@@ -3450,6 +3492,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       <section
                           aria-label="브레인 덤프"
+                          data-main-chapter
                           className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24"
                       >
                         <div
@@ -3497,6 +3540,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       <section
                           aria-label="일정 목록"
+                          data-main-chapter
                           className="relative min-h-0 snap-start scroll-mt-24"
                       >
                         <div
