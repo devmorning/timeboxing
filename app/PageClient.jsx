@@ -758,6 +758,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const brainDumpTextareaRef = useRef(null);
   const storyChapterRefs = useRef([]);
   const [activeStoryChapterIdx, setActiveStoryChapterIdx] = useState(0);
+  const [storyParallax, setStoryParallax] = useState([0, 0, 0]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const adjustBrainDumpHeight = useCallback(() => {
@@ -1117,6 +1118,43 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     targets.forEach((el) => io.observe(el));
     return () => io.disconnect();
+  }, [prefersReducedMotion]);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setStoryParallax([0, 0, 0]);
+      return;
+    }
+    if (typeof window === "undefined") return;
+    let rafId = 0;
+    const compute = () => {
+      rafId = 0;
+      const vh = window.innerHeight || 1;
+      const next = [0, 0, 0];
+      for (let i = 0; i < 3; i += 1) {
+        const el = storyChapterRefs.current[i];
+        if (!el) continue;
+        const rect = el.getBoundingClientRect();
+        const centerDelta = rect.top + rect.height / 2 - vh / 2;
+        const normalized = Math.max(-1, Math.min(1, centerDelta / (vh * 0.7)));
+        next[i] = normalized;
+      }
+      setStoryParallax((prev) =>
+          prev.every((v, idx) => Math.abs(v - next[idx]) < 0.01) ? prev : next
+      );
+    };
+    const requestCompute = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(compute);
+    };
+    requestCompute();
+    window.addEventListener("scroll", requestCompute, { passive: true });
+    window.addEventListener("resize", requestCompute);
+    return () => {
+      window.removeEventListener("scroll", requestCompute);
+      window.removeEventListener("resize", requestCompute);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
   }, [prefersReducedMotion]);
 
   useLayoutEffect(() => {
@@ -3316,6 +3354,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             storyChapterRefs.current[0] = el;
                           }}
                           className="relative min-h-[min(72vh,640px)] scroll-mt-24"
+                          style={
+                            prefersReducedMotion
+                              ? undefined
+                              : { transform: `translate3d(0, ${storyParallax[0] * -5}px, 0)` }
+                          }
                       >
                         <div
                             aria-hidden
@@ -3323,6 +3366,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 30% 20%, rgba(251,146,60,0.22), transparent 58%), radial-gradient(ellipse 70% 60% at 70% 40%, rgba(255,255,255,0.55), transparent 62%)",
+                              transform: prefersReducedMotion
+                                  ? undefined
+                                  : `translate3d(0, ${storyParallax[0] * -10}px, 0)`,
                             }}
                         />
                         <div
@@ -3357,6 +3403,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       ? "translate-y-[2px]"
                                       : "",
                             ].join(" ")}
+                            style={
+                              prefersReducedMotion
+                                ? undefined
+                                : { transform: `translate3d(0, ${storyParallax[0] * -4}px, 0)` }
+                            }
                         >
                           <div className="divide-y divide-stone-200/70 px-3 py-2.5">
                             {important3.map((v, idx) => (
@@ -3410,6 +3461,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             storyChapterRefs.current[1] = el;
                           }}
                           className="relative min-h-[min(72vh,640px)] scroll-mt-24"
+                          style={
+                            prefersReducedMotion
+                              ? undefined
+                              : { transform: `translate3d(0, ${storyParallax[1] * -5}px, 0)` }
+                          }
                       >
                         <div
                             aria-hidden
@@ -3417,6 +3473,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 40% 30%, rgba(255,255,255,0.6), transparent 60%), radial-gradient(ellipse 70% 60% at 70% 45%, rgba(120,113,108,0.16), transparent 62%)",
+                              transform: prefersReducedMotion
+                                  ? undefined
+                                  : `translate3d(0, ${storyParallax[1] * -10}px, 0)`,
                             }}
                         />
                         <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
@@ -3426,7 +3485,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           </div>
                           <span className="text-[12px] font-semibold text-stone-500">메모</span>
                         </div>
-                        <div className={UI_CANVAS_INSET}>
+                        <div
+                            className={UI_CANVAS_INSET}
+                            style={
+                              prefersReducedMotion
+                                ? undefined
+                                : { transform: `translate3d(0, ${storyParallax[1] * -4}px, 0)` }
+                            }
+                        >
                           <div className="px-3 py-3">
                             <textarea
                                 ref={brainDumpTextareaRef}
@@ -3459,6 +3525,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             storyChapterRefs.current[2] = el;
                           }}
                           className="relative min-h-[min(72vh,640px)] scroll-mt-24"
+                          style={
+                            prefersReducedMotion
+                              ? undefined
+                              : { transform: `translate3d(0, ${storyParallax[2] * -5}px, 0)` }
+                          }
                       >
                         <div
                             aria-hidden
@@ -3466,6 +3537,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 55% 25%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(ellipse 70% 60% at 20% 55%, rgba(255,255,255,0.55), transparent 62%)",
+                              transform: prefersReducedMotion
+                                  ? undefined
+                                  : `translate3d(0, ${storyParallax[2] * -10}px, 0)`,
                             }}
                         />
                         <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
@@ -3475,7 +3549,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           </div>
                           <span className="text-[12px] font-semibold text-orange-700/70">탭바에서 추가</span>
                         </div>
-                        <div className={UI_CANVAS_INSET}>
+                        <div
+                            className={UI_CANVAS_INSET}
+                            style={
+                              prefersReducedMotion
+                                ? undefined
+                                : { transform: `translate3d(0, ${storyParallax[2] * -4}px, 0)` }
+                            }
+                        >
                           <div className="px-3 py-3">
                             {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
                             {displayItemsMerged.length > 0 ? (
