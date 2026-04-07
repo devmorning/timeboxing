@@ -403,11 +403,26 @@ function EmptyDayLockScreen({
     };
   }, [selectedDate]);
   const [isDateMorphing, setIsDateMorphing] = useState(false);
+  const [overlayEntered, setOverlayEntered] = useState(prefersReducedMotion);
   const overlayTouchGestureRef = useRef({
     startX: 0,
     startY: 0,
     moved: false,
   });
+
+  useEffect(() => {
+    if (!visible) return;
+    if (prefersReducedMotion) {
+      setOverlayEntered(true);
+      return;
+    }
+    setOverlayEntered(false);
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setOverlayEntered(true));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [visible, prefersReducedMotion, selectedDate]);
+
   useEffect(() => {
     if (!visible || prefersReducedMotion) return;
     setIsDateMorphing(true);
@@ -422,6 +437,9 @@ function EmptyDayLockScreen({
         className={[
           "fixed inset-0 z-[39] flex cursor-default flex-col items-center justify-center overflow-hidden px-6",
           "pb-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom)))] pt-[max(3.5rem,env(safe-area-inset-top)+2.25rem)]",
+          !prefersReducedMotion
+            ? "transition-[opacity,backdrop-filter] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            : "",
         ].join(" ")}
         role="dialog"
         aria-modal="true"
@@ -462,6 +480,8 @@ function EmptyDayLockScreen({
           transition: !prefersReducedMotion && swipeTransition
             ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1)"
             : "none",
+          opacity: overlayEntered ? 1 : 0,
+          backdropFilter: overlayEntered ? "blur(1.2px)" : "blur(0px)",
           willChange:
             !prefersReducedMotion && (swipePullX !== 0 || swipeTransition)
               ? "transform"
@@ -476,7 +496,13 @@ function EmptyDayLockScreen({
     >
       <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.4] mix-blend-overlay"
+          className={[
+            "pointer-events-none absolute inset-0 mix-blend-overlay",
+            !prefersReducedMotion
+              ? "transition-opacity duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+              : "",
+            overlayEntered ? "opacity-[0.4]" : "opacity-0",
+          ].join(" ")}
           style={{
             backgroundImage:
                 "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 42%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 38%)",
@@ -496,8 +522,8 @@ function EmptyDayLockScreen({
             style={
               !prefersReducedMotion
                 ? {
-                    transform: `translate3d(${swipePullX * 0.18}px, 0, 0) scale(${Math.max(
-                      0.996,
+                    transform: `translate3d(${swipePullX * 0.18}px, ${overlayEntered ? "0px" : "10px"}, 0) scale(${Math.max(
+                      overlayEntered ? 0.996 : 0.985,
                       1 - Math.min(0.004, Math.abs(swipePullX) / 7600)
                     )})`,
                     opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(swipePullX) / 420)),
