@@ -349,18 +349,26 @@ function modalPanelClass(showOverlay, closing, options = {}) {
  */
 function modalBottomSheetPanelClass(showOverlay, closing, options = {}) {
   const surface = options.surface === "app" ? "app" : "white";
+  const intensity = options.intensity === "strong" ? "strong" : "normal";
   const bgClass = surface === "app" ? "bg-stone-200" : "bg-white";
   const transition = closing
-      ? "transition-[transform] duration-[480ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
-      : "transition-[transform] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)]";
-  const transformY = showOverlay ? "translate-y-0" : "translate-y-full";
+      ? "transition-[transform,opacity,filter] duration-[480ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+      : intensity === "strong"
+        ? "transition-[transform,opacity,filter] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+        : "transition-[transform,opacity,filter] duration-[400ms] ease-[cubic-bezier(0.32,0.72,0,1)]";
+  const transformY =
+      showOverlay
+        ? "translate-y-0 scale-100 opacity-100 blur-0"
+        : intensity === "strong"
+          ? "translate-y-[105%] scale-[0.955] opacity-90 blur-[2px]"
+          : "translate-y-full scale-[0.985] opacity-95 blur-[1px]";
   return [
     "flex w-full max-w-lg flex-col overflow-hidden",
     "mx-auto max-h-[min(92vh,920px)] min-h-0",
     "rounded-t-[1.25rem] shadow-[0_-8px_40px_rgba(15,23,42,0.14)]",
     "pb-[max(0px,env(safe-area-inset-bottom))]",
     bgClass,
-    "will-change-[transform]",
+    "will-change-[transform,opacity,filter]",
     transition,
     transformY,
   ].join(" ");
@@ -3967,7 +3975,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <section
                     className={modalBottomSheetPanelClass(
                         scheduleComposerModalAnim.showOverlay,
-                        scheduleComposerModalAnim.closing
+                        scheduleComposerModalAnim.closing,
+                        { intensity: "strong" }
                     )}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleScheduleComposerTouchStart}
