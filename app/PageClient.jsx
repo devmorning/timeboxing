@@ -497,11 +497,12 @@ function EmptyDayLockScreen({
               !prefersReducedMotion
                 ? {
                     transform: `translate3d(${swipePullX * 0.18}px, 0, 0) scale(${Math.max(
-                      0.986,
-                      1 - Math.min(0.018, Math.abs(swipePullX) / 4300)
+                      0.996,
+                      1 - Math.min(0.004, Math.abs(swipePullX) / 7600)
                     )})`,
-                    opacity: Math.max(0.76, 1 - Math.min(0.24, Math.abs(swipePullX) / 360)),
-                    filter: `blur(${Math.min(1.8, Math.abs(swipePullX) / 260)}px)`,
+                    opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(swipePullX) / 420)),
+                    filter: `blur(${Math.min(0.6, Math.abs(swipePullX) / 700)}px)`,
+                    transformOrigin: "center top",
                     transition: swipeTransition
                       ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1), opacity 0.24s ease-out, filter 0.24s ease-out"
                       : "none",
@@ -3372,11 +3373,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 !prefersReducedMotion
                   ? {
                       transform: `translate3d(${daySwipePullX * 0.18}px, 0, 0) scale(${Math.max(
-                        0.985,
-                        1 - Math.min(0.02, Math.abs(daySwipePullX) / 4200)
+                        0.996,
+                        1 - Math.min(0.004, Math.abs(daySwipePullX) / 7600)
                       )})`,
-                      opacity: Math.max(0.72, 1 - Math.min(0.28, Math.abs(daySwipePullX) / 380)),
-                      filter: `blur(${Math.min(1.6, Math.abs(daySwipePullX) / 320)}px)`,
+                      opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(daySwipePullX) / 430)),
+                      filter: `blur(${Math.min(0.55, Math.abs(daySwipePullX) / 760)}px)`,
+                      transformOrigin: "center top",
                       transition: daySwipeTransition
                         ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1), opacity 0.24s ease-out, filter 0.24s ease-out"
                         : "none",
