@@ -3255,7 +3255,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     >
                       <section
                           aria-label="가장 중요한 3가지"
-                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
+                          className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24"
                       >
                         <div
                             aria-hidden
@@ -3267,7 +3267,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         />
                         <div
                             className={[
-                              "sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2",
+                              "sticky top-2 z-10 mb-2.5 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-2.5 py-1.5",
                               "shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl",
                             ].join(" ")}
                         >
@@ -3282,11 +3282,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               UI_CANVAS_INSET,
                             ].join(" ")}
                         >
-                          <div className="divide-y divide-stone-200/35 px-3 py-2.5">
+                          <div className="divide-y divide-stone-200/35 px-2.5 py-2">
                             {important3.map((v, idx) => (
                                 <div
                                     key={idx}
-                                    className="group flex items-center gap-3 rounded-xl px-1 py-2.5 transition-colors first:pt-0 last:pb-0 focus-within:bg-white/55"
+                                    className="group flex items-center gap-3 rounded-xl px-1 py-2 transition-colors first:pt-0 last:pb-0 focus-within:bg-white/55"
                                 >
                                   <span
                                       className={[
@@ -3329,7 +3329,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       <section
                           aria-label="브레인 덤프"
-                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
+                          className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24"
                       >
                         <div
                             aria-hidden
@@ -3339,7 +3339,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   "radial-gradient(ellipse 70% 60% at 40% 30%, rgba(255,255,255,0.6), transparent 60%), radial-gradient(ellipse 70% 60% at 70% 45%, rgba(120,113,108,0.16), transparent 62%)",
                             }}
                         />
-                        <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
+                        <div className="sticky top-2 z-10 mb-2.5 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-2.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
                           <div className="min-w-0">
                             <p className="text-[11px] font-semibold tracking-[0.14em] text-stone-500/90">CHAPTER 02</p>
                             <p className="mt-1 text-base font-semibold tracking-tight text-stone-800">브레인 덤프</p>
@@ -3349,7 +3349,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         <div
                             className={UI_CANVAS_INSET}
                         >
-                          <div className="px-3 py-3">
+                          <div className="px-2.5 py-2.5">
                             <textarea
                                 ref={brainDumpTextareaRef}
                                 id="brain_dump"
