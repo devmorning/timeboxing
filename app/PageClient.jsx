@@ -3282,11 +3282,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               UI_CANVAS_INSET,
                             ].join(" ")}
                         >
-                          <div className="divide-y divide-stone-200/70 px-3 py-2.5">
+                          <div className="divide-y divide-stone-200/35 px-3 py-2.5">
                             {important3.map((v, idx) => (
                                 <div
                                     key={idx}
-                                    className="group flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                                    className="group flex items-center gap-3 rounded-xl px-1 py-2.5 transition-colors first:pt-0 last:pb-0 focus-within:bg-white/55"
                                 >
                                   <span
                                       className={[
