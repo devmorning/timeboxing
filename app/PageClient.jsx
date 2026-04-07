@@ -3614,7 +3614,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             <p className="text-[11px] font-semibold tracking-[0.14em] text-orange-700/70">CHAPTER 03</p>
                             <p className="mt-1 text-base font-semibold tracking-tight text-stone-800">내용</p>
                           </div>
-                          <span className="text-[12px] font-semibold text-orange-700/70">탭바에서 추가</span>
                         </div>
                         <div
                             className={UI_CANVAS_INSET}
