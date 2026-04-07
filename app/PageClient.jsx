@@ -680,7 +680,7 @@ function EmptyScheduleListBlock({ variant = "interactive" }) {
 function AdjacentDayStaticColumn({
   plan,
   displayRows,
-  previewScrollTop = 0,
+  activeChapterIdx = 0,
   daySwipePullX = 0,
   prefersReducedMotion = false,
 }) {
@@ -727,8 +727,22 @@ function AdjacentDayStaticColumn({
 
   const rows = displayRows ?? [];
 
+  const chapterRefs = [useRef(null), useRef(null), useRef(null)];
+  const [chapterAlignedOffsetY, setChapterAlignedOffsetY] = useState(0);
+
+  useLayoutEffect(() => {
+    if (prefersReducedMotion) {
+      setChapterAlignedOffsetY(0);
+      return;
+    }
+    const idx = Math.max(0, Math.min(2, activeChapterIdx ?? 0));
+    const target = chapterRefs[idx]?.current;
+    if (!(target instanceof HTMLElement)) return;
+    setChapterAlignedOffsetY(-target.offsetTop);
+  }, [activeChapterIdx, prefersReducedMotion]);
+
   const previewTranslateY = !prefersReducedMotion
-    ? -Math.min(Math.max(0, previewScrollTop) * 0.22, 220) + daySwipePullX * 0.03
+    ? chapterAlignedOffsetY + daySwipePullX * 0.03
     : 0;
 
   return (
@@ -745,6 +759,7 @@ function AdjacentDayStaticColumn({
         }
     >
       <section aria-label="가장 중요한 3가지">
+        <div ref={chapterRefs[0]} />
         <div className={UI_SURFACE_P4}>
           <div className="divide-y divide-stone-200/80">
             {important3.map((v, idx) => (
@@ -774,6 +789,7 @@ function AdjacentDayStaticColumn({
       </section>
 
       <section>
+        <div ref={chapterRefs[1]} />
         <div className={UI_SURFACE_P4}>
           <div
               className={[
@@ -787,6 +803,7 @@ function AdjacentDayStaticColumn({
       </section>
 
       <section aria-label="일정 목록">
+        <div ref={chapterRefs[2]} />
         <div className={UI_SURFACE_P4}>
           <div className="space-y-4">
             {rows.length > 0 ? (
@@ -1059,7 +1076,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const daySwipeCommitTimerRef = useRef(null);
   const mainChapterScrollRef = useRef(null);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
-  const [mainChapterScrollTop, setMainChapterScrollTop] = useState(0);
+  const [activeMainChapterIdx, setActiveMainChapterIdx] = useState(0);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
@@ -2667,7 +2684,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       if (rafId) return;
       rafId = window.requestAnimationFrame(() => {
         rafId = 0;
-        setMainChapterScrollTop(root.scrollTop);
+        const idx = captureVisibleMainChapterIdx();
+        if (idx != null) setActiveMainChapterIdx(idx);
       });
     };
     update();
@@ -3363,7 +3381,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <AdjacentDayStaticColumn
                     plan={peekPrevPlan}
                     displayRows={peekPrevDisplayRows}
-                    previewScrollTop={mainChapterScrollTop}
+                    activeChapterIdx={activeMainChapterIdx}
                     daySwipePullX={daySwipePullX}
                     prefersReducedMotion={prefersReducedMotion}
                 />
@@ -3744,7 +3762,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <AdjacentDayStaticColumn
                     plan={peekNextPlan}
                     displayRows={peekNextDisplayRows}
-                    previewScrollTop={mainChapterScrollTop}
+                    activeChapterIdx={activeMainChapterIdx}
                     daySwipePullX={daySwipePullX}
                     prefersReducedMotion={prefersReducedMotion}
                 />
