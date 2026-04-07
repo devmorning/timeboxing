@@ -1077,7 +1077,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const daySwipeViewportRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   const mainChapterScrollRef = useRef(null);
-  const pendingScrollTopAfterDaySwipeRef = useRef(null);
+  const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
@@ -2531,6 +2531,20 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     setDaySwipePullX(rubberDaySwipeDx(dx, maxPull));
   }, []);
 
+  const captureCurrentChapterIdx = useCallback(() => {
+    const root = mainChapterScrollRef.current;
+    if (!root) return 0;
+    const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
+    if (!chapters.length) return 0;
+    const top = root.scrollTop + 12;
+    let idx = 0;
+    for (let i = 0; i < chapters.length; i += 1) {
+      const el = chapters[i];
+      if (el instanceof HTMLElement && el.offsetTop <= top) idx = i;
+    }
+    return idx;
+  }, []);
+
   const handleDaySwipeTouchEnd = useCallback(
       (event) => {
         const touch = event.changedTouches?.[0];
@@ -2572,7 +2586,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               : 400;
 
         if (dx <= -72) {
-          pendingScrollTopAfterDaySwipeRef.current = mainChapterScrollRef.current?.scrollTop ?? 0;
+          pendingChapterIdxAfterDaySwipeRef.current = captureCurrentChapterIdx();
           setDaySwipeTransition(true);
           setDaySwipePullX(-w);
           if (daySwipeCommitTimerRef.current != null) {
@@ -2589,7 +2603,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           return;
         }
         if (dx >= 72) {
-          pendingScrollTopAfterDaySwipeRef.current = mainChapterScrollRef.current?.scrollTop ?? 0;
+          pendingChapterIdxAfterDaySwipeRef.current = captureCurrentChapterIdx();
           setDaySwipeTransition(true);
           setDaySwipePullX(w);
           if (daySwipeCommitTimerRef.current != null) {
@@ -2610,7 +2624,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         setDaySwipePullX(0);
         window.setTimeout(() => setDaySwipeTransition(false), 280);
       },
-      [setSelectedDate]
+      [captureCurrentChapterIdx, setSelectedDate]
   );
 
   const handleDaySwipeTouchCancel = useCallback(() => {
@@ -2643,15 +2657,21 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   useLayoutEffect(() => {
     if (!showDayPlanContent) return;
-    const pendingScrollTop = pendingScrollTopAfterDaySwipeRef.current;
-    if (pendingScrollTop == null) return;
+    const pendingChapterIdx = pendingChapterIdxAfterDaySwipeRef.current;
+    if (pendingChapterIdx == null) return;
     const root = mainChapterScrollRef.current;
     if (!root) return;
+    const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
+    const target = chapters[Math.max(0, Math.min(pendingChapterIdx, chapters.length - 1))];
+    if (!(target instanceof HTMLElement)) {
+      pendingChapterIdxAfterDaySwipeRef.current = null;
+      return;
+    }
     requestAnimationFrame(() => {
-      root.scrollTop = pendingScrollTop;
+      root.scrollTop = target.offsetTop;
       requestAnimationFrame(() => {
-        root.scrollTop = pendingScrollTop;
-        pendingScrollTopAfterDaySwipeRef.current = null;
+        root.scrollTop = target.offsetTop;
+        pendingChapterIdxAfterDaySwipeRef.current = null;
       });
     });
   }, [selectedDate, showDayPlanContent]);
