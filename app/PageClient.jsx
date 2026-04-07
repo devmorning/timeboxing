@@ -3241,7 +3241,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             className={[
               "fixed inset-x-0 top-0 z-50 bg-stone-200/90 backdrop-blur-md transition-opacity duration-200",
               isReportOpen ? "pointer-events-none opacity-0" : "opacity-100",
-              !isDatePickerOpen ? "pointer-events-none opacity-0" : "",
+              !isDatePickerOpen ? "hidden" : "",
             ].join(" ")}
         >
           <div className="mx-auto w-full max-w-md px-0 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
