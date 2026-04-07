@@ -265,6 +265,8 @@ function isDayPlanItemUuid(id) {
 
 /** 닫힘 완료 타이머 — modalBackdropClass / modalPanelClass 의 closing `duration-[480ms]` 와 동일 (열림은 400ms) */
 const MODAL_CLOSE_MS = 480;
+/** 날짜 스와이프 전환 — 챕터 스냅 감성과 맞춘 부드러운 커브/시간 */
+const DAY_SWIPE_TRANSITION_MS = 420;
 
 /** 인라인 캘린더 패널과 유사한 이징으로 모달 열림·닫힘 */
 function useModalOpenAnimation(isOpen, onFullyClosed) {
@@ -486,7 +488,7 @@ function EmptyDayLockScreen({
             ? `translate3d(${swipePullX * 0.14}px, 0, 0)`
             : undefined,
           transition: !prefersReducedMotion && swipeTransition
-            ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1)"
+            ? "transform 0.42s cubic-bezier(0.22,1,0.36,1)"
             : "none",
           opacity: overlayEntered ? 1 : 0,
           transform: !prefersReducedMotion && !overlayEntered
@@ -541,7 +543,7 @@ function EmptyDayLockScreen({
                     filter: `blur(${Math.min(0.42, Math.abs(swipePullX) / 980)}px)`,
                     transformOrigin: "center top",
                     transition: swipeTransition
-                      ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1), opacity 0.24s ease-out, filter 0.24s ease-out"
+                      ? "transform 0.42s cubic-bezier(0.22,1,0.36,1), opacity 0.32s cubic-bezier(0.22,1,0.36,1), filter 0.32s cubic-bezier(0.22,1,0.36,1)"
                       : "none",
                     willChange: Math.abs(swipePullX) > 0 ? "transform,opacity,filter" : "auto",
                   }
@@ -2576,7 +2578,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         g.tracking = false;
         setDaySwipeTransition(true);
         setDaySwipePullX(0);
-        window.setTimeout(() => setDaySwipeTransition(false), 280);
+        window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
         return;
       }
       g.horizontalLocked = true;
@@ -2628,13 +2630,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         if (!isHorizontal) {
           setDaySwipeTransition(true);
           setDaySwipePullX(0);
-          window.setTimeout(() => setDaySwipeTransition(false), 280);
+          window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
           return;
         }
         if (Math.abs(dy) > Math.abs(dx)) {
           setDaySwipeTransition(true);
           setDaySwipePullX(0);
-          window.setTimeout(() => setDaySwipeTransition(false), 280);
+          window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
           return;
         }
 
@@ -2655,7 +2657,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             setSelectedDate((d) => addDaysToYmd(d, 1));
             setDaySwipeTransition(false);
             setDaySwipePullX(0);
-          }, 280);
+          }, DAY_SWIPE_TRANSITION_MS);
           event.preventDefault();
           event.stopPropagation();
           return;
@@ -2672,7 +2674,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             setSelectedDate((d) => addDaysToYmd(d, -1));
             setDaySwipeTransition(false);
             setDaySwipePullX(0);
-          }, 280);
+          }, DAY_SWIPE_TRANSITION_MS);
           event.preventDefault();
           event.stopPropagation();
           return;
@@ -2680,7 +2682,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         setDaySwipeTransition(true);
         setDaySwipePullX(0);
-        window.setTimeout(() => setDaySwipeTransition(false), 280);
+        window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
       },
       [captureCurrentChapterIdx, setSelectedDate]
   );
@@ -3482,7 +3484,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         filter: `blur(${Math.min(0.55, Math.abs(daySwipePullX) / 760)}px)`,
                         transformOrigin: "center top",
                         transition: daySwipeTransition
-                          ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1), opacity 0.24s ease-out, filter 0.24s ease-out"
+                          ? "transform 0.42s cubic-bezier(0.22,1,0.36,1), opacity 0.32s cubic-bezier(0.22,1,0.36,1), filter 0.32s cubic-bezier(0.22,1,0.36,1)"
                           : "none",
                         willChange: daySwipePullX !== 0 ? "transform,opacity,filter" : "auto",
                       }
