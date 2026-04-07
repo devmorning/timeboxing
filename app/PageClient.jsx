@@ -381,6 +381,7 @@ function rubberDaySwipeDx(dx, maxAbs) {
 function EmptyDayLockScreen({
   selectedDate,
   onDismiss,
+  onStartPlan,
   visible,
   onTouchStart,
   onTouchMove,
@@ -578,6 +579,10 @@ function EmptyDayLockScreen({
               ].join(" ")}
               onClick={(e) => {
                 e.stopPropagation();
+                if (typeof onStartPlan === "function") {
+                  onStartPlan();
+                  return;
+                }
                 onDismiss();
               }}
           >
@@ -3350,6 +3355,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             visible={showEmptyDayLock}
             selectedDate={selectedDate}
             onDismiss={() => setEmptyDayLockDismissedDate(selectedDate)}
+            onStartPlan={() => {
+              setEmptyDayLockDismissedDate(selectedDate);
+              setIsScheduleComposerModalOpen(true);
+            }}
             onTouchStart={handleDaySwipeTouchStart}
             onTouchMove={handleDaySwipeTouchMove}
             onTouchEnd={handleDaySwipeTouchEnd}
