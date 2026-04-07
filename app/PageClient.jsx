@@ -3354,7 +3354,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     <div
                         ref={storyScrollRef}
                         className={[
-                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-proximity space-y-8 pr-1",
+                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 pr-1",
                           !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
@@ -3364,7 +3364,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[0] = el;
                           }}
-                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start snap-always scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
@@ -3471,7 +3471,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[1] = el;
                           }}
-                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start snap-always scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
@@ -3535,7 +3535,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[2] = el;
                           }}
-                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start snap-always scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
@@ -3568,7 +3568,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                 : { transform: `translate3d(0, ${storyParallax[2] * -6}px, 0)` }
                             }
                         >
-                          <div className="px-3 py-3">
+                          <div className="max-h-[min(54dvh,500px)] overflow-y-auto overscroll-y-contain px-3 py-3 pr-2">
                             {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
                             {displayItemsMerged.length > 0 ? (
                                 <div className="space-y-2.5">
