@@ -403,6 +403,23 @@ function EmptyDayLockScreen({
     };
   }, [selectedDate]);
   const [isDateMorphing, setIsDateMorphing] = useState(false);
+  const previewParts = useMemo(() => {
+    const build = (ymd) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
+      const [y, m, d] = ymd.split("-").map(Number);
+      if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+      const dt = new Date(y, m - 1, d);
+      return {
+        dayNum: d,
+        weekday: dt.toLocaleDateString("ko-KR", { weekday: "short" }),
+        monthLine: dt.toLocaleDateString("ko-KR", { month: "long", day: "numeric" }),
+      };
+    };
+    return {
+      prev: build(addDaysToYmd(selectedDate, -1)),
+      next: build(addDaysToYmd(selectedDate, 1)),
+    };
+  }, [selectedDate]);
 
   useEffect(() => {
     if (!visible || prefersReducedMotion) return;
@@ -455,63 +472,99 @@ function EmptyDayLockScreen({
                 "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 42%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 38%)",
           }}
       />
-      <div
-          className={[
-            "relative flex w-full max-w-md flex-col items-center text-center",
-            !prefersReducedMotion
-              ? "transition-[transform,opacity,filter] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-              : "",
-            isDateMorphing && !prefersReducedMotion
-              ? "scale-[1.008] opacity-[0.985] blur-[0.25px]"
-              : "scale-100 opacity-100 blur-0",
-          ].join(" ")}
-      >
-        <p className="text-[13px] font-medium uppercase tracking-[0.22em] text-stone-400">
-          {parts.weekday}
-        </p>
-        <p
-            className={[
-              "mt-1 font-sans text-[clamp(4.25rem,20vw,6.75rem)] font-extralight leading-[0.92] tracking-[-0.085em]",
-              "text-stone-800 tabular-nums",
-              !prefersReducedMotion
-                ? "transition-[transform,text-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                : "",
-              isDateMorphing && !prefersReducedMotion
-                ? "scale-[1.015]"
-                : "scale-100",
-            ].join(" ")}
-            style={
-              isDateMorphing && !prefersReducedMotion
-                ? {
-                    textShadow: "0 8px 28px rgba(251,146,60,0.16)",
-                  }
-                : undefined
-            }
-        >
-          {parts.dayNum}
-        </p>
-        <p className="mt-5 text-xl font-medium tracking-tight text-stone-700">{parts.monthLine}</p>
-        <p className="mt-1 text-[13px] font-medium text-stone-400">{parts.year}년</p>
-        <p className="mt-14 max-w-[17rem] text-[13px] leading-relaxed text-stone-500">
-          이 날에는 아직 적은 내용이 없어요.
-          <br />
-          화면을 누르거나 아래를 눌러 플랜을 시작해 보세요.
-        </p>
-        <button
-            type="button"
-            className={[
-              "mt-10 rounded-full border border-white/50 bg-white/30 px-11 py-3.5 text-sm font-semibold tracking-tight text-stone-800",
-              "shadow-[0_12px_40px_-12px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl",
-              "transition-transform duration-200 active:scale-[0.97] active:opacity-90",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/35",
-            ].join(" ")}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDismiss();
+      <div className="relative w-full max-w-md overflow-hidden">
+        <div
+            className="flex w-[300%]"
+            style={{
+              transform: `translate3d(calc(-100% / 3 + ${swipePullX}px), 0, 0)`,
+              transition: !prefersReducedMotion && swipeTransition
+                ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1)"
+                : "none",
+              willChange:
+                !prefersReducedMotion && (swipePullX !== 0 || swipeTransition)
+                  ? "transform"
+                  : "auto",
             }}
         >
-          플랜 시작하기
-        </button>
+          <div className="flex w-1/3 shrink-0 items-center justify-center px-2">
+            {previewParts.prev ? (
+              <div className="w-full rounded-[2rem] border border-white/45 bg-white/30 px-6 py-10 text-center shadow-[0_20px_50px_-24px_rgba(15,23,42,0.2)] backdrop-blur-xl">
+                <p className="text-[12px] font-medium tracking-[0.18em] text-stone-400">{previewParts.prev.weekday}</p>
+                <p className="mt-1 text-[3.35rem] font-extralight leading-none tracking-[-0.07em] text-stone-700/90">{previewParts.prev.dayNum}</p>
+                <p className="mt-3 text-sm font-medium tracking-tight text-stone-500">{previewParts.prev.monthLine}</p>
+              </div>
+            ) : null}
+          </div>
+          <div className="flex w-1/3 shrink-0 items-center justify-center px-2">
+            <div
+                className={[
+                  "relative flex w-full flex-col items-center text-center",
+                  !prefersReducedMotion
+                    ? "transition-[transform,opacity,filter] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                    : "",
+                  isDateMorphing && !prefersReducedMotion
+                    ? "scale-[1.008] opacity-[0.985] blur-[0.25px]"
+                    : "scale-100 opacity-100 blur-0",
+                ].join(" ")}
+            >
+              <p className="text-[13px] font-medium uppercase tracking-[0.22em] text-stone-400">
+                {parts.weekday}
+              </p>
+              <p
+                  className={[
+                    "mt-1 font-sans text-[clamp(4.25rem,20vw,6.75rem)] font-extralight leading-[0.92] tracking-[-0.085em]",
+                    "text-stone-800 tabular-nums",
+                    !prefersReducedMotion
+                      ? "transition-[transform,text-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                      : "",
+                    isDateMorphing && !prefersReducedMotion
+                      ? "scale-[1.015]"
+                      : "scale-100",
+                  ].join(" ")}
+                  style={
+                    isDateMorphing && !prefersReducedMotion
+                      ? {
+                          textShadow: "0 8px 28px rgba(251,146,60,0.16)",
+                        }
+                      : undefined
+                  }
+              >
+                {parts.dayNum}
+              </p>
+              <p className="mt-5 text-xl font-medium tracking-tight text-stone-700">{parts.monthLine}</p>
+              <p className="mt-1 text-[13px] font-medium text-stone-400">{parts.year}년</p>
+              <p className="mt-14 max-w-[17rem] text-[13px] leading-relaxed text-stone-500">
+                이 날에는 아직 적은 내용이 없어요.
+                <br />
+                화면을 누르거나 아래를 눌러 플랜을 시작해 보세요.
+              </p>
+              <button
+                  type="button"
+                  className={[
+                    "mt-10 rounded-full border border-white/50 bg-white/30 px-11 py-3.5 text-sm font-semibold tracking-tight text-stone-800",
+                    "shadow-[0_12px_40px_-12px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl",
+                    "transition-transform duration-200 active:scale-[0.97] active:opacity-90",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/35",
+                  ].join(" ")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDismiss();
+                  }}
+              >
+                플랜 시작하기
+              </button>
+            </div>
+          </div>
+          <div className="flex w-1/3 shrink-0 items-center justify-center px-2">
+            {previewParts.next ? (
+              <div className="w-full rounded-[2rem] border border-white/45 bg-white/30 px-6 py-10 text-center shadow-[0_20px_50px_-24px_rgba(15,23,42,0.2)] backdrop-blur-xl">
+                <p className="text-[12px] font-medium tracking-[0.18em] text-stone-400">{previewParts.next.weekday}</p>
+                <p className="mt-1 text-[3.35rem] font-extralight leading-none tracking-[-0.07em] text-stone-700/90">{previewParts.next.dayNum}</p>
+                <p className="mt-3 text-sm font-medium tracking-tight text-stone-500">{previewParts.next.monthLine}</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -865,8 +918,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [isTrendOpen, setIsTrendOpen] = useState(false);
   /** 일정 추가·수정: 하단 탭 「일정」·목록 항목 탭 등으로 열림 */
   const [isScheduleComposerModalOpen, setIsScheduleComposerModalOpen] = useState(false);
-  /** 입력 없는 날 — 잠금화면 스타일 오버레이를 닫았는지 (날짜 바뀌면 초기화) */
-  const [emptyDayLockDismissed, setEmptyDayLockDismissed] = useState(false);
+  /** 입력 없는 날 — 사용자가 직접 닫은 날짜(해당 날짜에서만 오버레이 숨김) */
+  const [emptyDayLockDismissedDate, setEmptyDayLockDismissedDate] = useState(null);
   const [trendYm, setTrendYm] = useState(() => {
     const ymd = typeof initialSelectedDate === "string" ? initialSelectedDate : "";
     const [y, mo] = ymd.split("-").map(Number);
@@ -2353,7 +2406,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (isDayPlanLoading) return false;
     if (isDateTransitionLoading) return false;
     if (!isPlanEmpty) return false;
-    if (emptyDayLockDismissed) return false;
+    if (emptyDayLockDismissedDate === selectedDate) return false;
     return true;
   }, [
     authUser?.id,
@@ -2366,12 +2419,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     isDayPlanLoading,
     isDateTransitionLoading,
     isPlanEmpty,
-    emptyDayLockDismissed,
+    emptyDayLockDismissedDate,
+    selectedDate,
   ]);
-
-  useEffect(() => {
-    setEmptyDayLockDismissed(false);
-  }, [selectedDate]);
 
   const isDaySwipeIgnoredTarget = useCallback((target) => {
     if (!(target instanceof Element)) return true;
@@ -2972,7 +3022,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       setIsTrendOpen(false);
       setIsScheduleComposerModalOpen(false);
       setIsDatePickerOpen(false);
-      setEmptyDayLockDismissed(false);
+      setEmptyDayLockDismissedDate(null);
     }
   };
 
@@ -3194,7 +3244,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         <EmptyDayLockScreen
             visible={showEmptyDayLock}
             selectedDate={selectedDate}
-            onDismiss={() => setEmptyDayLockDismissed(true)}
+            onDismiss={() => setEmptyDayLockDismissedDate(selectedDate)}
             onTouchStart={handleDaySwipeTouchStart}
             onTouchMove={handleDaySwipeTouchMove}
             onTouchEnd={handleDaySwipeTouchEnd}
