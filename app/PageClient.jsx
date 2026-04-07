@@ -540,12 +540,12 @@ function EmptyDayLockScreen({
                       1 - Math.min(0.004, Math.abs(swipePullX) / 7600)
                     )})`,
                     opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(swipePullX) / 420)),
-                    filter: `blur(${Math.min(0.42, Math.abs(swipePullX) / 980)}px)`,
+                    filter: "none",
                     transformOrigin: "center top",
                     transition: swipeTransition
                       ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease-out, filter 0.2s ease-out"
                       : "none",
-                    willChange: Math.abs(swipePullX) > 0 ? "transform,opacity,filter" : "auto",
+                    willChange: Math.abs(swipePullX) > 0 ? "transform,opacity" : "auto",
                   }
                 : undefined
             }
@@ -3515,12 +3515,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           1 - Math.min(0.004, Math.abs(daySwipePullX) / 7600)
                         )})`,
                         opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(daySwipePullX) / 430)),
-                        filter: `blur(${Math.min(0.55, Math.abs(daySwipePullX) / 760)}px)`,
+                        filter: "none",
                         transformOrigin: "center top",
                         transition: daySwipeTransition
                           ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease-out, filter 0.2s ease-out"
                           : "none",
-                        willChange: daySwipePullX !== 0 ? "transform,opacity,filter" : "auto",
+                        willChange: daySwipePullX !== 0 ? "transform,opacity" : "auto",
                       }
                     : undefined
                 }
