@@ -3328,26 +3328,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               onTouchCancel={handleDaySwipeTouchCancel}
           >
             <div className="w-full min-w-0">
-          <div
-              className="relative grid w-full min-w-0"
-              style={
-                !prefersReducedMotion
-                  ? {
-                      transform: `translate3d(${daySwipePullX * 0.18}px, 0, 0) scale(${Math.max(
-                        0.996,
-                        1 - Math.min(0.004, Math.abs(daySwipePullX) / 7600)
-                      )})`,
-                      opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(daySwipePullX) / 430)),
-                      filter: `blur(${Math.min(0.55, Math.abs(daySwipePullX) / 760)}px)`,
-                      transformOrigin: "center top",
-                      transition: daySwipeTransition
-                        ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1), opacity 0.24s ease-out, filter 0.24s ease-out"
-                        : "none",
-                      willChange: daySwipePullX !== 0 ? "transform" : "auto",
-                    }
-                  : undefined
-              }
-          >
+          <div className="relative grid w-full min-w-0">
             {showDayPlanSkeleton ? (
                 <div
                     className={[
@@ -3409,6 +3390,23 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     ? "opacity-100 translate-y-0 scale-100 blur-0"
                     : "pointer-events-none opacity-0 translate-y-1 scale-[0.998] blur-[2px]",
                 ].join(" ")}
+                style={
+                  !prefersReducedMotion
+                    ? {
+                        transform: `translate3d(${daySwipePullX * 0.18}px, 0, 0) scale(${Math.max(
+                          0.996,
+                          1 - Math.min(0.004, Math.abs(daySwipePullX) / 7600)
+                        )})`,
+                        opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(daySwipePullX) / 430)),
+                        filter: `blur(${Math.min(0.55, Math.abs(daySwipePullX) / 760)}px)`,
+                        transformOrigin: "center top",
+                        transition: daySwipeTransition
+                          ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1), opacity 0.24s ease-out, filter 0.24s ease-out"
+                          : "none",
+                        willChange: daySwipePullX !== 0 ? "transform,opacity,filter" : "auto",
+                      }
+                    : undefined
+                }
             >
               <section aria-label="오늘 기록" className={UI_CANVAS}>
                 <div
