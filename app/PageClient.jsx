@@ -3172,7 +3172,18 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <AdjacentDayStaticColumn plan={peekPrevPlan} displayRows={peekPrevDisplayRows} />
               </div>
               <div className="flex w-1/3 shrink-0 min-w-0">
-          <div className="relative grid w-full min-w-0">
+          <div
+              className="relative grid w-full min-w-0"
+              style={
+                !prefersReducedMotion
+                  ? {
+                      transform: `translate3d(${daySwipePullX * 0.08}px, 0, 0)`,
+                      transition: daySwipeTransition ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1)" : "none",
+                      willChange: daySwipePullX !== 0 ? "transform" : "auto",
+                    }
+                  : undefined
+              }
+          >
             {showDayPlanSkeleton ? (
                 <div
                     className={[
@@ -3249,7 +3260,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   <div className="relative">
                     <div
                         className={[
-                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 pr-1 scrollbar-none",
+                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 scrollbar-none",
                           !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
