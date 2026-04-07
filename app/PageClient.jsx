@@ -758,7 +758,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const brainDumpTextareaRef = useRef(null);
   const storyChapterRefs = useRef([]);
   const [activeStoryChapterIdx, setActiveStoryChapterIdx] = useState(0);
-  const [storyParallax, setStoryParallax] = useState([0, 0, 0]);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const adjustBrainDumpHeight = useCallback(() => {
@@ -1118,43 +1117,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     targets.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    if (prefersReducedMotion) {
-      setStoryParallax([0, 0, 0]);
-      return;
-    }
-    if (typeof window === "undefined") return;
-    let rafId = 0;
-    const compute = () => {
-      rafId = 0;
-      const vh = window.innerHeight || 1;
-      const next = [0, 0, 0];
-      for (let i = 0; i < 3; i += 1) {
-        const el = storyChapterRefs.current[i];
-        if (!el) continue;
-        const rect = el.getBoundingClientRect();
-        const centerDelta = rect.top + rect.height / 2 - vh / 2;
-        const normalized = Math.max(-1, Math.min(1, centerDelta / (vh * 0.7)));
-        next[i] = normalized;
-      }
-      setStoryParallax((prev) =>
-          prev.every((v, idx) => Math.abs(v - next[idx]) < 0.01) ? prev : next
-      );
-    };
-    const requestCompute = () => {
-      if (rafId) return;
-      rafId = window.requestAnimationFrame(compute);
-    };
-    requestCompute();
-    window.addEventListener("scroll", requestCompute, { passive: true });
-    window.addEventListener("resize", requestCompute);
-    return () => {
-      window.removeEventListener("scroll", requestCompute);
-      window.removeEventListener("resize", requestCompute);
-      if (rafId) window.cancelAnimationFrame(rafId);
-    };
   }, [prefersReducedMotion]);
 
   useLayoutEffect(() => {
@@ -3359,11 +3321,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             storyChapterRefs.current[0] = el;
                           }}
                           className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
-                          style={
-                            prefersReducedMotion
-                              ? undefined
-                              : { transform: `translate3d(0, ${storyParallax[0] * -7}px, 0)` }
-                          }
                       >
                         <div
                             aria-hidden
@@ -3371,9 +3328,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 30% 20%, rgba(251,146,60,0.22), transparent 58%), radial-gradient(ellipse 70% 60% at 70% 40%, rgba(255,255,255,0.55), transparent 62%)",
-                              transform: prefersReducedMotion
-                                  ? undefined
-                                  : `translate3d(0, ${storyParallax[0] * -14}px, 0)`,
                             }}
                         />
                         <div
@@ -3408,11 +3362,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       ? "translate-y-[2px]"
                                       : "",
                             ].join(" ")}
-                            style={
-                              prefersReducedMotion
-                                ? undefined
-                                : { transform: `translate3d(0, ${storyParallax[0] * -6}px, 0)` }
-                            }
                         >
                           <div className="divide-y divide-stone-200/70 px-3 py-2.5">
                             {important3.map((v, idx) => (
@@ -3466,11 +3415,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             storyChapterRefs.current[1] = el;
                           }}
                           className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
-                          style={
-                            prefersReducedMotion
-                              ? undefined
-                              : { transform: `translate3d(0, ${storyParallax[1] * -7}px, 0)` }
-                          }
                       >
                         <div
                             aria-hidden
@@ -3478,9 +3422,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 40% 30%, rgba(255,255,255,0.6), transparent 60%), radial-gradient(ellipse 70% 60% at 70% 45%, rgba(120,113,108,0.16), transparent 62%)",
-                              transform: prefersReducedMotion
-                                  ? undefined
-                                  : `translate3d(0, ${storyParallax[1] * -14}px, 0)`,
                             }}
                         />
                         <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
@@ -3492,11 +3433,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </div>
                         <div
                             className={UI_CANVAS_INSET}
-                            style={
-                              prefersReducedMotion
-                                ? undefined
-                                : { transform: `translate3d(0, ${storyParallax[1] * -6}px, 0)` }
-                            }
                         >
                           <div className="px-3 py-3">
                             <textarea
@@ -3529,12 +3465,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[2] = el;
                           }}
-                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
-                          style={
-                            prefersReducedMotion
-                              ? undefined
-                              : { transform: `translate3d(0, ${storyParallax[2] * -7}px, 0)` }
-                          }
+                          className="relative min-h-0 snap-start scroll-mt-24"
                       >
                         <div
                             aria-hidden
@@ -3542,9 +3473,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 55% 25%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(ellipse 70% 60% at 20% 55%, rgba(255,255,255,0.55), transparent 62%)",
-                              transform: prefersReducedMotion
-                                  ? undefined
-                                  : `translate3d(0, ${storyParallax[2] * -14}px, 0)`,
                             }}
                         />
                         <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
@@ -3556,11 +3484,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </div>
                         <div
                             className={UI_CANVAS_INSET}
-                            style={
-                              prefersReducedMotion
-                                ? undefined
-                                : { transform: `translate3d(0, ${storyParallax[2] * -6}px, 0)` }
-                            }
                         >
                           <div className="px-3 py-3">
                             {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
@@ -3710,12 +3633,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               <div
                   className={[
                     "pointer-events-auto mx-auto w-full min-w-0 max-w-md",
-                    "px-3 pb-[max(0.6rem,calc(0.45rem+env(safe-area-inset-bottom)))]",
+                    "px-3 pb-[max(1rem,calc(0.75rem+env(safe-area-inset-bottom)))]",
                   ].join(" ")}
               >
                 <div
                     className={[
-                      "grid w-full grid-cols-5 overflow-hidden rounded-2xl border border-stone-200/40 bg-white/60 px-0 pt-2 pb-2",
+                      "grid w-full grid-cols-5 overflow-hidden rounded-3xl border border-stone-200/40 bg-white/60 px-0 pt-2 pb-2",
                       "shadow-[0_14px_44px_-18px_rgba(15,23,42,0.14)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/45",
                     ].join(" ")}
                 >
