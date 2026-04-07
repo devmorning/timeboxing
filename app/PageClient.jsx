@@ -454,9 +454,8 @@ function EmptyDayLockScreen({
         aria-modal="true"
         aria-label="선택한 날짜 — 아직 기록 없음"
         data-empty-day-lock
-        onClick={() => {
-          if (overlayTouchGestureRef.current.moved) return;
-          onDismiss();
+        onClick={(event) => {
+          event.preventDefault();
         }}
         onTouchStart={(event) => {
           const touch = event.touches?.[0];
