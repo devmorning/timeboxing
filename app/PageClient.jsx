@@ -498,10 +498,10 @@ function EmptyDayLockScreen({
               ? "transform"
               : "auto",
           background: [
-            "radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255,255,255,0.55), transparent 55%)",
-            "radial-gradient(ellipse 90% 60% at 0% 100%, rgba(251,146,60,0.09), transparent 52%)",
-            "radial-gradient(ellipse 80% 50% at 100% 40%, rgba(120,113,108,0.08), transparent 48%)",
-            "linear-gradient(165deg, #e7e5e4 0%, #f5f5f4 38%, #ebeae8 100%)",
+            "linear-gradient(165deg, #e7e5e4 0%, #e7e5e4 30%, #ebeae8 100%)",
+            "radial-gradient(ellipse 92% 62% at 4% 98%, rgba(251,146,60,0.085), transparent 52%)",
+            "radial-gradient(ellipse 82% 56% at 98% 46%, rgba(120,113,108,0.07), transparent 48%)",
+            "radial-gradient(ellipse 90% 60% at 50% 118%, rgba(255,255,255,0.34), transparent 56%)",
           ].join(", "),
         }}
     >
