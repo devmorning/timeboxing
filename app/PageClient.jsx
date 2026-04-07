@@ -3496,7 +3496,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 >
                   <div className="relative">
                     <div
-                        className="mb-3 rounded-2xl border border-white/55 bg-white/45 px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-xl"
+                        className="mb-3.5 rounded-3xl border border-white/65 bg-white/55 px-4 py-3 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl"
                         aria-label={`선택한 날짜 ${selectedDateLabel}`}
                         style={
                           !prefersReducedMotion
@@ -3509,14 +3509,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             : undefined
                         }
                     >
-                      <p className="text-[11px] font-semibold tracking-[0.16em] text-orange-700/70">
+                      <p className="text-[11px] font-semibold tracking-[0.18em] text-orange-700/80">
                         {selectedDateDisplay.weekday.toUpperCase()}
                       </p>
                       <div className="mt-1 flex items-end justify-between">
-                        <p className="font-sans text-[2.1rem] font-light leading-none tracking-[-0.06em] text-stone-800 tabular-nums">
+                        <p className="font-sans text-[2.45rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums">
                           {selectedDateDisplay.day}
                         </p>
-                        <p className="text-[13px] font-medium tracking-tight text-stone-500">
+                        <p className="text-[13px] font-semibold tracking-tight text-stone-600">
                           {selectedDateDisplay.ym}
                         </p>
                       </div>
