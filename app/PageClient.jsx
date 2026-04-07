@@ -3171,7 +3171,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               aria-hidden
               style={{
                 backgroundImage:
-                    "radial-gradient(circle at top, rgba(255,255,255,0.85), transparent 42%), linear-gradient(180deg, rgba(255,255,255,0.28), rgba(0,0,0,0.03))",
+                    "linear-gradient(180deg, rgba(231,229,228,0.96), rgba(231,229,228,0.96)), radial-gradient(ellipse 90% 60% at 50% 112%, rgba(255,255,255,0.24), transparent 56%)",
               }}
           />
           <section
