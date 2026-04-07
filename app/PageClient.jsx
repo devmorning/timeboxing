@@ -1077,7 +1077,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const daySwipeViewportRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   const mainChapterScrollRef = useRef(null);
-  const pendingChapterIdxAfterDaySwipeRef = useRef(null);
+  const pendingScrollTopAfterDaySwipeRef = useRef(null);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
@@ -2531,29 +2531,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     setDaySwipePullX(rubberDaySwipeDx(dx, maxPull));
   }, []);
 
-  const captureVisibleMainChapterIdx = useCallback(() => {
-    const root = mainChapterScrollRef.current;
-    if (!root) return null;
-    const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
-    if (!chapters.length) return null;
-    // 최상단 근처에서는 항상 챕터1로 간주해
-    // 스와이프 후 챕터2로 튀는 오판정을 막는다.
-    if (root.scrollTop <= 120) return 0;
-    // 현재 화면 "최상단 기준"으로 챕터를 판단해야
-    // 상단에 있어도 챕터2로 오판되는 경우를 막을 수 있다.
-    const probeY = root.scrollTop + 8;
-    let nearestIdx = 0;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-    chapters.forEach((el, idx) => {
-      const distance = Math.abs(el.offsetTop - probeY);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIdx = idx;
-      }
-    });
-    return nearestIdx;
-  }, []);
-
   const handleDaySwipeTouchEnd = useCallback(
       (event) => {
         const touch = event.changedTouches?.[0];
@@ -2595,7 +2572,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               : 400;
 
         if (dx <= -72) {
-          pendingChapterIdxAfterDaySwipeRef.current = captureVisibleMainChapterIdx();
+          pendingScrollTopAfterDaySwipeRef.current = mainChapterScrollRef.current?.scrollTop ?? 0;
           setDaySwipeTransition(true);
           setDaySwipePullX(-w);
           if (daySwipeCommitTimerRef.current != null) {
@@ -2612,7 +2589,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           return;
         }
         if (dx >= 72) {
-          pendingChapterIdxAfterDaySwipeRef.current = captureVisibleMainChapterIdx();
+          pendingScrollTopAfterDaySwipeRef.current = mainChapterScrollRef.current?.scrollTop ?? 0;
           setDaySwipeTransition(true);
           setDaySwipePullX(w);
           if (daySwipeCommitTimerRef.current != null) {
@@ -2633,7 +2610,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         setDaySwipePullX(0);
         window.setTimeout(() => setDaySwipeTransition(false), 280);
       },
-      [captureVisibleMainChapterIdx, setSelectedDate]
+      [setSelectedDate]
   );
 
   const handleDaySwipeTouchCancel = useCallback(() => {
@@ -2666,38 +2643,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   useLayoutEffect(() => {
     if (!showDayPlanContent) return;
-    const chapterIdx = pendingChapterIdxAfterDaySwipeRef.current;
-    if (chapterIdx == null) return;
+    const pendingScrollTop = pendingScrollTopAfterDaySwipeRef.current;
+    if (pendingScrollTop == null) return;
     const root = mainChapterScrollRef.current;
     if (!root) return;
-    const chapters = root.querySelectorAll("[data-main-chapter]");
-    const target = chapters[chapterIdx];
-    if (!(target instanceof HTMLElement)) {
-      pendingChapterIdxAfterDaySwipeRef.current = null;
-      return;
-    }
     requestAnimationFrame(() => {
-      target.scrollIntoView({ block: "start", behavior: "auto" });
-      pendingChapterIdxAfterDaySwipeRef.current = null;
-    });
-  }, [selectedDate, showDayPlanContent]);
-
-  useEffect(() => {
-    const root = mainChapterScrollRef.current;
-    if (!root) return;
-    let rafId = 0;
-    const update = () => {
-      if (rafId) return;
-      rafId = window.requestAnimationFrame(() => {
-        rafId = 0;
+      root.scrollTop = pendingScrollTop;
+      requestAnimationFrame(() => {
+        root.scrollTop = pendingScrollTop;
+        pendingScrollTopAfterDaySwipeRef.current = null;
       });
-    };
-    update();
-    root.addEventListener("scroll", update, { passive: true });
-    return () => {
-      root.removeEventListener("scroll", update);
-      if (rafId) window.cancelAnimationFrame(rafId);
-    };
+    });
   }, [selectedDate, showDayPlanContent]);
 
   useEffect(() => {
