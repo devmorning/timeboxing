@@ -924,6 +924,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       weekday: "long",
     });
   }, [selectedDate]);
+  const selectedDateDisplay = useMemo(() => {
+    const [y, m, d] = selectedDate.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return {
+      day: Number.isFinite(d) ? String(d) : "",
+      weekday: dt.toLocaleDateString("ko-KR", { weekday: "long" }),
+      ym: dt.toLocaleDateString("ko-KR", { year: "numeric", month: "long" }),
+    };
+  }, [selectedDate]);
 
   const peekPrevYmd = useMemo(() => addDaysToYmd(selectedDate, -1), [selectedDate]);
   const peekNextYmd = useMemo(() => addDaysToYmd(selectedDate, 1), [selectedDate]);
@@ -3486,6 +3495,32 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     }}
                 >
                   <div className="relative">
+                    <div
+                        className="mb-3 rounded-2xl border border-white/55 bg-white/45 px-3.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-xl"
+                        aria-label={`선택한 날짜 ${selectedDateLabel}`}
+                        style={
+                          !prefersReducedMotion
+                            ? {
+                                transform: `translate3d(${daySwipePullX * 0.05}px, 0, 0)`,
+                                transition: daySwipeTransition
+                                  ? "transform 0.26s cubic-bezier(0.22,1,0.36,1)"
+                                  : "none",
+                              }
+                            : undefined
+                        }
+                    >
+                      <p className="text-[11px] font-semibold tracking-[0.16em] text-orange-700/70">
+                        {selectedDateDisplay.weekday.toUpperCase()}
+                      </p>
+                      <div className="mt-1 flex items-end justify-between">
+                        <p className="font-sans text-[2.1rem] font-light leading-none tracking-[-0.06em] text-stone-800 tabular-nums">
+                          {selectedDateDisplay.day}
+                        </p>
+                        <p className="text-[13px] font-medium tracking-tight text-stone-500">
+                          {selectedDateDisplay.ym}
+                        </p>
+                      </div>
+                    </div>
                     <div
                         ref={mainChapterScrollRef}
                         className={[
