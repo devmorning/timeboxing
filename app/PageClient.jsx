@@ -756,7 +756,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [important3, setImportant3] = useState(initialPlan?.important3 ?? ["", "", ""]);
   const [brainDump, setBrainDump] = useState(initialPlan?.brainDump ?? "");
   const brainDumpTextareaRef = useRef(null);
-  const storyScrollRef = useRef(null);
   const storyChapterRefs = useRef([]);
   const [activeStoryChapterIdx, setActiveStoryChapterIdx] = useState(0);
   const [storyParallax, setStoryParallax] = useState([0, 0, 0]);
@@ -1102,7 +1101,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (typeof IntersectionObserver !== "function") return;
     const targets = storyChapterRefs.current.filter(Boolean);
     if (targets.length === 0) return;
-    const rootEl = storyScrollRef.current ?? null;
 
     const io = new IntersectionObserver(
         (entries) => {
@@ -1115,7 +1113,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           const idx = Number(best.target.getAttribute("data-story-idx") ?? "0");
           if (Number.isFinite(idx)) setActiveStoryChapterIdx(idx);
         },
-        { root: rootEl, threshold: [0.25, 0.45, 0.6, 0.75] }
+        { root: null, threshold: [0.25, 0.45, 0.6, 0.75] }
     );
 
     targets.forEach((el) => io.observe(el));
@@ -1128,19 +1126,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       return;
     }
     if (typeof window === "undefined") return;
-    const scroller = storyScrollRef.current;
-    if (!scroller) return;
     let rafId = 0;
     const compute = () => {
       rafId = 0;
-      const vh = scroller.clientHeight || 1;
-      const viewportCenter = scroller.scrollTop + vh / 2;
+      const vh = window.innerHeight || 1;
       const next = [0, 0, 0];
       for (let i = 0; i < 3; i += 1) {
         const el = storyChapterRefs.current[i];
         if (!el) continue;
-        const chapterCenter = el.offsetTop + el.offsetHeight / 2;
-        const centerDelta = chapterCenter - viewportCenter;
+        const rect = el.getBoundingClientRect();
+        const centerDelta = rect.top + rect.height / 2 - vh / 2;
         const normalized = Math.max(-1, Math.min(1, centerDelta / (vh * 0.7)));
         next[i] = normalized;
       }
@@ -1153,10 +1148,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       rafId = window.requestAnimationFrame(compute);
     };
     requestCompute();
-    scroller.addEventListener("scroll", requestCompute, { passive: true });
+    window.addEventListener("scroll", requestCompute, { passive: true });
     window.addEventListener("resize", requestCompute);
     return () => {
-      scroller.removeEventListener("scroll", requestCompute);
+      window.removeEventListener("scroll", requestCompute);
       window.removeEventListener("resize", requestCompute);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
@@ -3352,7 +3347,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     ) : null}
 
                     <div
-                        ref={storyScrollRef}
                         className={[
                           "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 pr-1",
                           !prefersReducedMotion ? "scroll-smooth" : "",
@@ -3364,7 +3358,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[0] = el;
                           }}
-                          className="relative min-h-[min(78dvh,760px)] snap-start snap-always scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
@@ -3471,7 +3465,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[1] = el;
                           }}
-                          className="relative min-h-[min(78dvh,760px)] snap-start snap-always scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
@@ -3535,7 +3529,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ref={(el) => {
                             storyChapterRefs.current[2] = el;
                           }}
-                          className="relative min-h-[min(78dvh,760px)] snap-start snap-always scroll-mt-24"
+                          className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
                           style={
                             prefersReducedMotion
                               ? undefined
@@ -3568,7 +3562,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                 : { transform: `translate3d(0, ${storyParallax[2] * -6}px, 0)` }
                             }
                         >
-                          <div className="max-h-[min(54dvh,500px)] overflow-y-auto overscroll-y-contain px-3 py-3 pr-2">
+                          <div className="px-3 py-3">
                             {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
                             {displayItemsMerged.length > 0 ? (
                                 <div className="space-y-2.5">
