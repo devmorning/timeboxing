@@ -756,8 +756,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [important3, setImportant3] = useState(initialPlan?.important3 ?? ["", "", ""]);
   const [brainDump, setBrainDump] = useState(initialPlan?.brainDump ?? "");
   const brainDumpTextareaRef = useRef(null);
-  const storyChapterRefs = useRef([]);
-  const [activeStoryChapterIdx, setActiveStoryChapterIdx] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const adjustBrainDumpHeight = useCallback(() => {
@@ -1094,30 +1092,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     mq.addListener?.(apply);
     return () => mq.removeListener?.(apply);
   }, []);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-    if (typeof IntersectionObserver !== "function") return;
-    const targets = storyChapterRefs.current.filter(Boolean);
-    if (targets.length === 0) return;
-
-    const io = new IntersectionObserver(
-        (entries) => {
-          let best = null;
-          for (const e of entries) {
-            if (!e.isIntersecting) continue;
-            if (!best || e.intersectionRatio > best.intersectionRatio) best = e;
-          }
-          if (!best) return;
-          const idx = Number(best.target.getAttribute("data-story-idx") ?? "0");
-          if (Number.isFinite(idx)) setActiveStoryChapterIdx(idx);
-        },
-        { root: null, threshold: [0.25, 0.45, 0.6, 0.75] }
-    );
-
-    targets.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [prefersReducedMotion]);
 
   useLayoutEffect(() => {
     if (!isScheduleComposerModalOpen) return;
@@ -3273,41 +3247,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     }}
                 >
                   <div className="relative">
-                    {/* 스토리 진행 인디케이터 */}
-                    {!prefersReducedMotion ? (
-                      <div
-                          className="pointer-events-none absolute right-0 top-2 z-10 flex flex-col items-end gap-2"
-                          aria-hidden
-                      >
-                        <div
-                            className={[
-                              "flex items-center gap-1.5 rounded-full border border-white/60 bg-white/50 px-2 py-1 text-[11px] font-semibold text-stone-600",
-                              "shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl",
-                              "transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                              activeStoryChapterIdx >= 0 ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1",
-                            ].join(" ")}
-                        >
-                          <span className="text-orange-700/80">{activeStoryChapterIdx + 1}</span>
-                          <span className="text-stone-400">/</span>
-                          <span className="text-stone-500">3</span>
-                        </div>
-                        <div className="flex flex-col gap-2 pr-0.5">
-                          {[0, 1, 2].map((i) => (
-                            <span
-                                key={i}
-                                className={[
-                                  "h-2 w-2 rounded-full ring-1 ring-white/70",
-                                  "transition-[transform,background-color,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                                  activeStoryChapterIdx === i
-                                      ? "bg-orange-500 scale-110 opacity-100"
-                                      : "bg-stone-300/70 scale-100 opacity-70",
-                                ].join(" ")}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
-
                     <div
                         className={[
                           "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 pr-1 scrollbar-none",
@@ -3316,10 +3255,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     >
                       <section
                           aria-label="가장 중요한 3가지"
-                          data-story-idx="0"
-                          ref={(el) => {
-                            storyChapterRefs.current[0] = el;
-                          }}
                           className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
                       >
                         <div
@@ -3394,10 +3329,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       <section
                           aria-label="브레인 덤프"
-                          data-story-idx="1"
-                          ref={(el) => {
-                            storyChapterRefs.current[1] = el;
-                          }}
                           className="relative min-h-[min(78dvh,760px)] snap-start scroll-mt-24"
                       >
                         <div
@@ -3445,10 +3376,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       <section
                           aria-label="일정 목록"
-                          data-story-idx="2"
-                          ref={(el) => {
-                            storyChapterRefs.current[2] = el;
-                          }}
                           className="relative min-h-0 snap-start scroll-mt-24"
                       >
                         <div
