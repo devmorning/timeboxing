@@ -2536,6 +2536,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!root) return null;
     const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
     if (!chapters.length) return null;
+    // 최상단 근처에서는 항상 챕터1로 간주해
+    // 스와이프 후 챕터2로 튀는 오판정을 막는다.
+    if (root.scrollTop <= 120) return 0;
     // 현재 화면 "최상단 기준"으로 챕터를 판단해야
     // 상단에 있어도 챕터2로 오판되는 경우를 막을 수 있다.
     const probeY = root.scrollTop + 8;
