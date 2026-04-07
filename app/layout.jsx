@@ -24,6 +24,8 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1.0,
+  maximumScale: 1.0,
+  userScalable: false,
   /** PWA·모바일 브라우저 상단 영역 — body `bg-stone-200` 과 동일 */
   themeColor: "#e7e5e4",
 };
