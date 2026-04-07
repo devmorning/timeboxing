@@ -3310,7 +3310,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                     <div
                         className={[
-                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 pr-1",
+                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 pr-1 scrollbar-none",
                           !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
