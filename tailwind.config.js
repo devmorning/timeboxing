@@ -7,7 +7,18 @@ export default {
     // Tailwind v4에서 색상 유틸이 생성되지 않는 케이스가 있어
     // 기본 테마의 colors 자체를 명시적으로 채웁니다.
     colors,
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: [
+          "var(--font-sans)",
+          "ui-sans-serif",
+          "system-ui",
+          "Apple SD Gothic Neo",
+          "Malgun Gothic",
+          "sans-serif",
+        ],
+      },
+    },
   },
   plugins: [],
 };

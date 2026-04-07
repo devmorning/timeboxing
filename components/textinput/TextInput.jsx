@@ -2,8 +2,13 @@
 
 import { useId } from "react";
 
+const DEFAULT_LABEL_CLASS =
+  "mb-1.5 block text-[13px] font-medium text-slate-600";
+
 export default function TextInput({
   label,
+  labelClassName,
+  ariaLabel,
   value,
   onChange,
   placeholder = "",
@@ -20,7 +25,7 @@ export default function TextInput({
       {label ? (
         <label
           htmlFor={inputId}
-          className="mb-1.5 block text-[13px] font-medium text-slate-600"
+          className={labelClassName ?? DEFAULT_LABEL_CLASS}
         >
           {label}
         </label>
@@ -32,6 +37,7 @@ export default function TextInput({
         value={value}
         disabled={disabled}
         placeholder={placeholder}
+        aria-label={!label && ariaLabel ? ariaLabel : undefined}
         onChange={(e) => onChange?.(e.target.value)}
         className={[
           // 배경 제거 + 하단 라인 중심 스타일

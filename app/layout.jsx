@@ -1,4 +1,12 @@
 import "./globals.css";
+import { Noto_Sans_KR } from "next/font/google";
+
+const notoSansKr = Noto_Sans_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata = {
   title: {
@@ -16,17 +24,19 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1.0,
-  /** PWA·모바일 브라우저 상단 영역 — body `bg-[#F2F2F7]` 와 동일 */
-  themeColor: "#F2F2F7",
+  /** PWA·모바일 브라우저 상단 영역 — body `bg-stone-200` 과 동일 */
+  themeColor: "#e7e5e4",
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={notoSansKr.variable}>
       <head>
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="min-h-screen bg-[#F2F2F7] text-slate-900 antialiased">
+      <body
+          className={`${notoSansKr.className} min-h-screen bg-stone-200 font-sans text-stone-900 antialiased`}
+      >
         {children}
       </body>
     </html>

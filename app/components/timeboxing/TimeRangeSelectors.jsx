@@ -50,21 +50,21 @@ const MIN_DURATION_MIN = 1;
 const MAX_DURATION_MIN = 24 * 60;
 
 const inputClass = [
-  "block w-full min-w-0 border-0 border-b border-slate-200 bg-transparent px-0 py-2.5 text-[15px] text-slate-900",
+  "block h-10 w-full min-w-0 rounded-lg border border-slate-200/90 bg-[#FAFAFA] px-2.5 text-[15px] text-slate-900",
   "[color-scheme:light]",
-  "focus:border-orange-500 focus:outline-none focus:ring-0",
-  "disabled:cursor-not-allowed disabled:text-slate-400",
+  "focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20",
+  "disabled:cursor-not-allowed disabled:bg-slate-100/80 disabled:text-slate-400",
 ].join(" ");
 
-/** 시작·종료 time input과 동일: 밑줄만, 투명 배경 (구간은 라벨이 길어서 약간 좁게·글자만 살짝 축소) */
+/** 구간(분) 셀렉트 — time input과 동일 톤 */
 const selectClass = [
-  "block w-full min-w-[4.25rem] max-w-[5.25rem] shrink-0 cursor-pointer appearance-none",
-  "border-0 border-b border-slate-200 bg-transparent py-2.5 pl-0 pr-5 text-left text-[14px] text-slate-900",
-  "bg-[length:0.75rem] bg-[position:right_0.0625rem_center] bg-no-repeat",
+  "block h-10 w-full min-w-[4.25rem] max-w-[5.25rem] shrink-0 cursor-pointer appearance-none",
+  "rounded-lg border border-slate-200/90 bg-[#FAFAFA] py-0 pl-2.5 pr-7 text-left text-[14px] text-slate-900",
+  "bg-[length:0.75rem] bg-[position:right_0.375rem_center] bg-no-repeat",
   "[background-image:url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2394a3b8%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')]",
   "[color-scheme:light]",
-  "focus:border-orange-500 focus:outline-none focus:ring-0",
-  "disabled:cursor-not-allowed disabled:text-slate-400",
+  "focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20",
+  "disabled:cursor-not-allowed disabled:bg-slate-100/80 disabled:text-slate-400",
 ].join(" ");
 
 /** step: 초 단위. 300 = 5분 단위 */
@@ -174,23 +174,23 @@ export default function TimeRangeSelectors({
   if (!showTimeControls) {
     return (
       <div
-        className="flex min-w-0 flex-nowrap items-end gap-2 overflow-x-auto pb-0.5 sm:gap-3"
+        className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 sm:gap-3"
         aria-hidden="true"
       >
         <div className="w-[104px] shrink-0">
-          <div className="block h-10 w-full border-b border-slate-200" />
+          <div className="block h-10 w-full rounded-lg border border-slate-200/90 bg-slate-100/80" />
         </div>
         <div className="w-[104px] shrink-0">
-          <div className="block h-10 w-full border-b border-slate-200" />
+          <div className="block h-10 w-full rounded-lg border border-slate-200/90 bg-slate-100/80" />
         </div>
-        <div className="h-10 min-w-[4.25rem] shrink-0 border-b border-slate-200 bg-transparent" />
+        <div className="h-10 min-w-[4.25rem] shrink-0 rounded-lg border border-slate-200/90 bg-slate-100/80" />
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex min-w-0 flex-nowrap items-end gap-2 overflow-x-auto pb-0.5 sm:gap-3">
+      <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 sm:gap-3">
         <div className="w-[104px] shrink-0">
           <label className="block">
             <span className="sr-only">시작 시간 선택</span>

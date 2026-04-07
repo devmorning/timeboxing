@@ -4,11 +4,60 @@ html,
 body {
   padding: 0;
   margin: 0;
+  width: 100%;
+  max-width: 100%;
   overflow-x: hidden;
-  background-color: #f2f2f7;
+  background-color: #e7e5e4;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/**
+ * 앱 전역 타이포그래피
+ * — Noto Sans KR (layout.jsx next/font) + 한글 UI용 자간·가독성
+ */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    letter-spacing: -0.014em;
+    line-height: 1.55;
+  }
+}
+
+/**
+ * 의미 단위 타이포 (필요 시 컴포넌트 className에 조합)
+ */
+@layer components {
+  .type-page-title {
+    @apply text-lg font-semibold leading-snug tracking-tight text-stone-900 sm:text-xl;
+  }
+
+  .type-section-label {
+    @apply text-[0.6875rem] font-semibold uppercase leading-4 tracking-wider text-stone-500;
+  }
+
+  .type-body {
+    @apply text-base font-normal leading-relaxed tracking-[-0.01em] text-stone-800;
+  }
+
+  .type-body-sm {
+    @apply text-sm font-normal leading-relaxed tracking-[-0.01em] text-stone-700;
+  }
+
+  .type-caption {
+    @apply text-xs font-medium leading-snug text-stone-500;
+  }
+
+  .type-numeric {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
