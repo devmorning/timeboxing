@@ -1125,6 +1125,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
+  const daySwipePullXRafRef = useRef(null);
+  const daySwipePullXPendingRef = useRef(0);
   /** 좌우 피크 패널용 인접 날 플랜(null이면 스켈레톤) */
   const [peekPrevPlan, setPeekPrevPlan] = useState(null);
   const [peekNextPlan, setPeekNextPlan] = useState(null);
@@ -2588,7 +2590,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           ? daySwipeViewportRef.current?.offsetWidth ?? window.innerWidth
           : 400;
     const maxPull = Math.min(w * 0.42, 300);
-    setDaySwipePullX(rubberDaySwipeDx(dx, maxPull));
+    daySwipePullXPendingRef.current = rubberDaySwipeDx(dx, maxPull);
+    if (daySwipePullXRafRef.current != null) return;
+    daySwipePullXRafRef.current = window.requestAnimationFrame(() => {
+      daySwipePullXRafRef.current = null;
+      setDaySwipePullX(daySwipePullXPendingRef.current);
+    });
   }, []);
 
   const captureCurrentChapterIdx = useCallback(() => {
@@ -2630,12 +2637,20 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         if (!isHorizontal) {
           setDaySwipeTransition(true);
           setDaySwipePullX(0);
+          if (daySwipePullXRafRef.current != null) {
+            window.cancelAnimationFrame(daySwipePullXRafRef.current);
+            daySwipePullXRafRef.current = null;
+          }
           window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
           return;
         }
         if (Math.abs(dy) > Math.abs(dx)) {
           setDaySwipeTransition(true);
           setDaySwipePullX(0);
+          if (daySwipePullXRafRef.current != null) {
+            window.cancelAnimationFrame(daySwipePullXRafRef.current);
+            daySwipePullXRafRef.current = null;
+          }
           window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
           return;
         }
@@ -2657,6 +2672,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             setSelectedDate((d) => addDaysToYmd(d, 1));
             setDaySwipeTransition(false);
             setDaySwipePullX(0);
+            if (daySwipePullXRafRef.current != null) {
+              window.cancelAnimationFrame(daySwipePullXRafRef.current);
+              daySwipePullXRafRef.current = null;
+            }
           }, DAY_SWIPE_TRANSITION_MS);
           event.preventDefault();
           event.stopPropagation();
@@ -2674,6 +2693,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             setSelectedDate((d) => addDaysToYmd(d, -1));
             setDaySwipeTransition(false);
             setDaySwipePullX(0);
+            if (daySwipePullXRafRef.current != null) {
+              window.cancelAnimationFrame(daySwipePullXRafRef.current);
+              daySwipePullXRafRef.current = null;
+            }
           }, DAY_SWIPE_TRANSITION_MS);
           event.preventDefault();
           event.stopPropagation();
@@ -2682,6 +2705,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         setDaySwipeTransition(true);
         setDaySwipePullX(0);
+        if (daySwipePullXRafRef.current != null) {
+          window.cancelAnimationFrame(daySwipePullXRafRef.current);
+          daySwipePullXRafRef.current = null;
+        }
         window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
       },
       [captureCurrentChapterIdx, setSelectedDate]
@@ -2700,12 +2727,19 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     };
     setDaySwipeTransition(false);
     setDaySwipePullX(0);
+    if (daySwipePullXRafRef.current != null) {
+      window.cancelAnimationFrame(daySwipePullXRafRef.current);
+      daySwipePullXRafRef.current = null;
+    }
   }, []);
 
   useEffect(() => {
     return () => {
       if (daySwipeCommitTimerRef.current != null) {
         window.clearTimeout(daySwipeCommitTimerRef.current);
+      }
+      if (daySwipePullXRafRef.current != null) {
+        window.cancelAnimationFrame(daySwipePullXRafRef.current);
       }
     };
   }, []);
