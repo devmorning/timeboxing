@@ -266,7 +266,7 @@ function isDayPlanItemUuid(id) {
 /** 닫힘 완료 타이머 — modalBackdropClass / modalPanelClass 의 closing `duration-[480ms]` 와 동일 (열림은 400ms) */
 const MODAL_CLOSE_MS = 480;
 /** 날짜 스와이프 전환 — 챕터 스냅처럼 과한 탄성 없이 매끈하게 */
-const DAY_SWIPE_TRANSITION_MS = 320;
+const DAY_SWIPE_TRANSITION_MS = 260;
 
 /** 인라인 캘린더 패널과 유사한 이징으로 모달 열림·닫힘 */
 function useModalOpenAnimation(isOpen, onFullyClosed) {
@@ -488,7 +488,7 @@ function EmptyDayLockScreen({
             ? `translate3d(${swipePullX * 0.14}px, 0, 0)`
             : undefined,
           transition: !prefersReducedMotion && swipeTransition
-            ? "transform 0.32s cubic-bezier(0.2,0.8,0.2,1)"
+            ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1)"
             : "none",
           opacity: overlayEntered ? 1 : 0,
           transform: !prefersReducedMotion && !overlayEntered
@@ -543,7 +543,7 @@ function EmptyDayLockScreen({
                     filter: `blur(${Math.min(0.42, Math.abs(swipePullX) / 980)}px)`,
                     transformOrigin: "center top",
                     transition: swipeTransition
-                      ? "transform 0.32s cubic-bezier(0.2,0.8,0.2,1), opacity 0.24s ease-out, filter 0.24s ease-out"
+                      ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease-out, filter 0.2s ease-out"
                       : "none",
                     willChange: Math.abs(swipePullX) > 0 ? "transform,opacity,filter" : "auto",
                   }
@@ -2648,7 +2648,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         if (dx <= -72) {
           pendingChapterIdxAfterDaySwipeRef.current = captureCurrentChapterIdx();
           setDaySwipeTransition(true);
-          setDaySwipePullX(-Math.min(w * 0.44, 220));
+          setDaySwipePullX(-Math.min(w * 0.4, 180));
           if (daySwipeCommitTimerRef.current != null) {
             window.clearTimeout(daySwipeCommitTimerRef.current);
           }
@@ -2665,7 +2665,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         if (dx >= 72) {
           pendingChapterIdxAfterDaySwipeRef.current = captureCurrentChapterIdx();
           setDaySwipeTransition(true);
-          setDaySwipePullX(Math.min(w * 0.44, 220));
+          setDaySwipePullX(Math.min(w * 0.4, 180));
           if (daySwipeCommitTimerRef.current != null) {
             window.clearTimeout(daySwipeCommitTimerRef.current);
           }
@@ -3484,7 +3484,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         filter: `blur(${Math.min(0.55, Math.abs(daySwipePullX) / 760)}px)`,
                         transformOrigin: "center top",
                         transition: daySwipeTransition
-                          ? "transform 0.32s cubic-bezier(0.2,0.8,0.2,1), opacity 0.24s ease-out, filter 0.24s ease-out"
+                          ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease-out, filter 0.2s ease-out"
                           : "none",
                         willChange: daySwipePullX !== 0 ? "transform,opacity,filter" : "auto",
                       }
