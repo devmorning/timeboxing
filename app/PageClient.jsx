@@ -386,6 +386,9 @@ function EmptyDayLockScreen({
   onTouchMove,
   onTouchEnd,
   onTouchCancel,
+  swipePullX = 0,
+  swipeTransition = false,
+  prefersReducedMotion = false,
 }) {
   const parts = useMemo(() => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) return null;
@@ -399,6 +402,14 @@ function EmptyDayLockScreen({
       year: y,
     };
   }, [selectedDate]);
+  const [isDateMorphing, setIsDateMorphing] = useState(false);
+
+  useEffect(() => {
+    if (!visible || prefersReducedMotion) return;
+    setIsDateMorphing(true);
+    const t = window.setTimeout(() => setIsDateMorphing(false), 260);
+    return () => window.clearTimeout(t);
+  }, [selectedDate, visible, prefersReducedMotion]);
 
   if (!visible || !parts) return null;
 
@@ -418,6 +429,16 @@ function EmptyDayLockScreen({
         onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchCancel}
         style={{
+          transform: !prefersReducedMotion
+            ? `translate3d(${swipePullX * 0.14}px, 0, 0)`
+            : undefined,
+          transition: !prefersReducedMotion && swipeTransition
+            ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1)"
+            : "none",
+          willChange:
+            !prefersReducedMotion && (swipePullX !== 0 || swipeTransition)
+              ? "transform"
+              : "auto",
           background: [
             "radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255,255,255,0.55), transparent 55%)",
             "radial-gradient(ellipse 90% 60% at 0% 100%, rgba(251,146,60,0.09), transparent 52%)",
@@ -434,7 +455,17 @@ function EmptyDayLockScreen({
                 "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 42%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 38%)",
           }}
       />
-      <div className="relative flex w-full max-w-md flex-col items-center text-center">
+      <div
+          className={[
+            "relative flex w-full max-w-md flex-col items-center text-center",
+            !prefersReducedMotion
+              ? "transition-[transform,opacity,filter] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+              : "",
+            isDateMorphing && !prefersReducedMotion
+              ? "scale-[1.008] opacity-[0.985] blur-[0.25px]"
+              : "scale-100 opacity-100 blur-0",
+          ].join(" ")}
+      >
         <p className="text-[13px] font-medium uppercase tracking-[0.22em] text-stone-400">
           {parts.weekday}
         </p>
@@ -442,7 +473,20 @@ function EmptyDayLockScreen({
             className={[
               "mt-1 font-sans text-[clamp(4.25rem,20vw,6.75rem)] font-extralight leading-[0.92] tracking-[-0.085em]",
               "text-stone-800 tabular-nums",
+              !prefersReducedMotion
+                ? "transition-[transform,text-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                : "",
+              isDateMorphing && !prefersReducedMotion
+                ? "scale-[1.015]"
+                : "scale-100",
             ].join(" ")}
+            style={
+              isDateMorphing && !prefersReducedMotion
+                ? {
+                    textShadow: "0 8px 28px rgba(251,146,60,0.16)",
+                  }
+                : undefined
+            }
         >
           {parts.dayNum}
         </p>
@@ -3155,6 +3199,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             onTouchMove={handleDaySwipeTouchMove}
             onTouchEnd={handleDaySwipeTouchEnd}
             onTouchCancel={handleDaySwipeTouchCancel}
+            swipePullX={daySwipePullX}
+            swipeTransition={daySwipeTransition}
+            prefersReducedMotion={prefersReducedMotion}
         />
 
         <div
