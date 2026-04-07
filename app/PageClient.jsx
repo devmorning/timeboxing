@@ -1104,7 +1104,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const daySwipeCommitTimerRef = useRef(null);
   const mainChapterScrollRef = useRef(null);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
-  const [activeMainChapterIdx, setActiveMainChapterIdx] = useState(0);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
@@ -2712,8 +2711,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       if (rafId) return;
       rafId = window.requestAnimationFrame(() => {
         rafId = 0;
-        const idx = captureVisibleMainChapterIdx();
-        if (idx != null) setActiveMainChapterIdx(idx);
       });
     };
     update();
@@ -3395,33 +3392,21 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               onTouchEnd={handleDaySwipeTouchEnd}
               onTouchCancel={handleDaySwipeTouchCancel}
           >
-            <div
-                className="flex w-[300%]"
-                style={{
-                  transform: `translate3d(calc(-100% / 3 + ${daySwipePullX}px), 0, 0)`,
-                  transition: daySwipeTransition
-                    ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1)"
-                    : "none",
-                  willChange: daySwipePullX !== 0 ? "transform" : "auto",
-                }}
-            >
-              <div className="flex w-1/3 shrink-0 min-w-0">
-                <AdjacentDayStaticColumn
-                    plan={peekPrevPlan}
-                    displayRows={peekPrevDisplayRows}
-                    activeChapterIdx={activeMainChapterIdx}
-                    daySwipePullX={daySwipePullX}
-                    prefersReducedMotion={prefersReducedMotion}
-                />
-              </div>
-              <div className="flex w-1/3 shrink-0 min-w-0">
+            <div className="w-full min-w-0">
           <div
               className="relative grid w-full min-w-0"
               style={
                 !prefersReducedMotion
                   ? {
-                      transform: `translate3d(${daySwipePullX * 0.08}px, 0, 0)`,
-                      transition: daySwipeTransition ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1)" : "none",
+                      transform: `translate3d(${daySwipePullX * 0.18}px, 0, 0) scale(${Math.max(
+                        0.985,
+                        1 - Math.min(0.02, Math.abs(daySwipePullX) / 4200)
+                      )})`,
+                      opacity: Math.max(0.72, 1 - Math.min(0.28, Math.abs(daySwipePullX) / 380)),
+                      filter: `blur(${Math.min(1.6, Math.abs(daySwipePullX) / 320)}px)`,
+                      transition: daySwipeTransition
+                        ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1), opacity 0.24s ease-out, filter 0.24s ease-out"
+                        : "none",
                       willChange: daySwipePullX !== 0 ? "transform" : "auto",
                     }
                   : undefined
@@ -3785,16 +3770,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               </section>
             </div>
           </div>
-              </div>
-              <div className="flex w-1/3 shrink-0 min-w-0">
-                <AdjacentDayStaticColumn
-                    plan={peekNextPlan}
-                    displayRows={peekNextDisplayRows}
-                    activeChapterIdx={activeMainChapterIdx}
-                    daySwipePullX={daySwipePullX}
-                    prefersReducedMotion={prefersReducedMotion}
-                />
-              </div>
             </div>
           </div>
         </div>
