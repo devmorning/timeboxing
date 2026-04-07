@@ -447,7 +447,7 @@ function EmptyDayLockScreen({
           "fixed inset-0 z-[39] flex cursor-default flex-col items-center justify-center overflow-hidden px-6",
           "pb-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom)))] pt-[max(3.5rem,env(safe-area-inset-top)+2.25rem)]",
           !prefersReducedMotion
-            ? "transition-[opacity,backdrop-filter,transform] duration-[560ms] ease-[cubic-bezier(0.22,1,0.32,1)]"
+            ? "transition-[opacity,backdrop-filter,transform] duration-[440ms] ease-[cubic-bezier(0.22,1,0.32,1)]"
             : "",
         ].join(" ")}
         role="dialog"
@@ -524,7 +524,7 @@ function EmptyDayLockScreen({
             className={[
               "relative flex w-full flex-col items-center text-center",
               !prefersReducedMotion
-                ? "transition-[transform,opacity,filter] duration-[500ms] ease-[cubic-bezier(0.22,1,0.32,1)]"
+                ? "transition-[transform,opacity,filter] duration-[390ms] ease-[cubic-bezier(0.22,1,0.32,1)]"
                 : "",
               isDateMorphing && !prefersReducedMotion
                 ? "scale-[1.008] opacity-[0.985] blur-[0.25px]"
@@ -538,7 +538,7 @@ function EmptyDayLockScreen({
                       1 - Math.min(0.004, Math.abs(swipePullX) / 7600)
                     )})`,
                     opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(swipePullX) / 420)),
-                    filter: `blur(${Math.min(0.6, Math.abs(swipePullX) / 700)}px)`,
+                    filter: `blur(${Math.min(0.42, Math.abs(swipePullX) / 980)}px)`,
                     transformOrigin: "center top",
                     transition: swipeTransition
                       ? "transform 0.28s cubic-bezier(0.25, 0.82, 0.2, 1), opacity 0.24s ease-out, filter 0.24s ease-out"
