@@ -677,7 +677,13 @@ function EmptyScheduleListBlock({ variant = "interactive" }) {
 /**
  * 좌우 스와이프 시 옆에서 보이는 이전/다음 날 — 가운데 열과 동일 블록(읽기 전용, 입력·실행 UI 없음)
  */
-function AdjacentDayStaticColumn({ plan, displayRows }) {
+function AdjacentDayStaticColumn({
+  plan,
+  displayRows,
+  previewScrollTop = 0,
+  daySwipePullX = 0,
+  prefersReducedMotion = false,
+}) {
   const norm = plan ? normalizeDayPlan(plan) : null;
   const important3 = norm?.important3 ?? ["", "", ""];
   const brainDump = norm?.brainDump ?? "";
@@ -721,8 +727,23 @@ function AdjacentDayStaticColumn({ plan, displayRows }) {
 
   const rows = displayRows ?? [];
 
+  const previewTranslateY = !prefersReducedMotion
+    ? -Math.min(Math.max(0, previewScrollTop) * 0.22, 220) + daySwipePullX * 0.03
+    : 0;
+
   return (
-    <div className="pointer-events-none w-full min-w-0 select-none space-y-5 pb-5 pt-1">
+    <div
+        className="pointer-events-none w-full min-w-0 select-none space-y-5 pb-5 pt-1"
+        style={
+          !prefersReducedMotion
+            ? {
+                transform: `translate3d(0, ${previewTranslateY}px, 0)`,
+                transition: "transform 0.2s ease-out",
+                willChange: Math.abs(daySwipePullX) > 0 ? "transform" : "auto",
+              }
+            : undefined
+        }
+    >
       <section aria-label="가장 중요한 3가지">
         <div className={UI_SURFACE_P4}>
           <div className="divide-y divide-stone-200/80">
@@ -1038,6 +1059,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const daySwipeCommitTimerRef = useRef(null);
   const mainChapterScrollRef = useRef(null);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
+  const [mainChapterScrollTop, setMainChapterScrollTop] = useState(0);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
@@ -2638,6 +2660,25 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, [selectedDate, showDayPlanContent]);
 
   useEffect(() => {
+    const root = mainChapterScrollRef.current;
+    if (!root) return;
+    let rafId = 0;
+    const update = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        setMainChapterScrollTop(root.scrollTop);
+      });
+    };
+    update();
+    root.addEventListener("scroll", update, { passive: true });
+    return () => {
+      root.removeEventListener("scroll", update);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, [selectedDate, showDayPlanContent]);
+
+  useEffect(() => {
     if (!authUser?.id) {
       setPeekPrevPlan(null);
       setPeekNextPlan(null);
@@ -3319,7 +3360,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 }}
             >
               <div className="flex w-1/3 shrink-0 min-w-0">
-                <AdjacentDayStaticColumn plan={peekPrevPlan} displayRows={peekPrevDisplayRows} />
+                <AdjacentDayStaticColumn
+                    plan={peekPrevPlan}
+                    displayRows={peekPrevDisplayRows}
+                    previewScrollTop={mainChapterScrollTop}
+                    daySwipePullX={daySwipePullX}
+                    prefersReducedMotion={prefersReducedMotion}
+                />
               </div>
               <div className="flex w-1/3 shrink-0 min-w-0">
           <div
@@ -3694,7 +3741,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           </div>
               </div>
               <div className="flex w-1/3 shrink-0 min-w-0">
-                <AdjacentDayStaticColumn plan={peekNextPlan} displayRows={peekNextDisplayRows} />
+                <AdjacentDayStaticColumn
+                    plan={peekNextPlan}
+                    displayRows={peekNextDisplayRows}
+                    previewScrollTop={mainChapterScrollTop}
+                    daySwipePullX={daySwipePullX}
+                    prefersReducedMotion={prefersReducedMotion}
+                />
               </div>
             </div>
           </div>
