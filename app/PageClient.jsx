@@ -962,6 +962,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   const composerBrainDumpRef = useRef(null);
+  const scheduleComposerFirstImportantInputRef = useRef(null);
   const adjustComposerBrainDumpHeight = useCallback(() => {
     const el = composerBrainDumpRef.current;
     if (!el) return;
@@ -1287,6 +1288,22 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!isScheduleComposerModalOpen) return;
     adjustComposerBrainDumpHeight();
   }, [brainDump, isScheduleComposerModalOpen, adjustComposerBrainDumpHeight]);
+
+  useEffect(() => {
+    if (!isScheduleComposerModalOpen) return;
+    if (isDatePickerOpen) return;
+    const delay = prefersReducedMotion ? 0 : 140;
+    const t = window.setTimeout(() => {
+      const el = scheduleComposerFirstImportantInputRef.current;
+      if (!(el instanceof HTMLInputElement)) return;
+      el.focus({ preventScroll: true });
+      const end = el.value.length;
+      if (typeof el.setSelectionRange === "function") {
+        el.setSelectionRange(end, end);
+      }
+    }, delay);
+    return () => window.clearTimeout(t);
+  }, [isScheduleComposerModalOpen, isDatePickerOpen, prefersReducedMotion]);
 
   useEffect(() => {
     if (!initialAuthUser?.id || !initialSelectedDate) return;
@@ -3566,6 +3583,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   </span>
                                   <TextInput
                                       className="min-w-0 flex-1"
+                                      inputRef={idx === 0 ? scheduleComposerFirstImportantInputRef : null}
                                       ariaLabel={`가장 중요한 일 ${idx + 1}`}
                                       value={v}
                                       placeholder={`가장 중요한 일 ${idx + 1}`}

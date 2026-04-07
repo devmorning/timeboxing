@@ -16,6 +16,8 @@ export default function TextInput({
   className = "",
   inputClassName = "",
   type = "text",
+  inputRef = null,
+  autoFocus = false,
 }) {
   const reactId = useId();
   const inputId = label ? `textinput_${reactId}` : reactId;
@@ -32,8 +34,10 @@ export default function TextInput({
       ) : null}
 
       <input
+        ref={inputRef}
         id={inputId}
         type={type}
+        autoFocus={autoFocus}
         value={value}
         disabled={disabled}
         placeholder={placeholder}
