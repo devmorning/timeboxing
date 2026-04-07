@@ -378,7 +378,15 @@ function rubberDaySwipeDx(dx, maxAbs) {
 /**
  * 입력이 전혀 없는 날짜 — 잠금화면 스타일로 날짜만 강조 (2026 스톤·소프트 글래스 톤)
  */
-function EmptyDayLockScreen({ selectedDate, onDismiss, visible }) {
+function EmptyDayLockScreen({
+  selectedDate,
+  onDismiss,
+  visible,
+  onTouchStart,
+  onTouchMove,
+  onTouchEnd,
+  onTouchCancel,
+}) {
   const parts = useMemo(() => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) return null;
     const [y, m, d] = selectedDate.split("-").map(Number);
@@ -405,6 +413,10 @@ function EmptyDayLockScreen({ selectedDate, onDismiss, visible }) {
         aria-label="선택한 날짜 — 아직 기록 없음"
         data-empty-day-lock
         onClick={onDismiss}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchCancel}
         style={{
           background: [
             "radial-gradient(ellipse 120% 80% at 50% -20%, rgba(255,255,255,0.55), transparent 55%)",
@@ -2332,7 +2344,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         if (isReportOpen || isStatsOpen || isTemplatesOpen || isTrendOpen || isScheduleComposerModalOpen)
           return;
         if (isDateTransitionLoading) return;
-        if (showEmptyDayLock) return;
         if (isDaySwipeIgnoredTarget(event.target)) return;
         const touch = event.touches?.[0];
         if (!touch) return;
@@ -2356,7 +2367,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         isTrendOpen,
         isScheduleComposerModalOpen,
         isDateTransitionLoading,
-        showEmptyDayLock,
         isDaySwipeIgnoredTarget,
       ]
   );
@@ -3142,6 +3152,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             visible={showEmptyDayLock}
             selectedDate={selectedDate}
             onDismiss={() => setEmptyDayLockDismissed(true)}
+            onTouchStart={handleDaySwipeTouchStart}
+            onTouchMove={handleDaySwipeTouchMove}
+            onTouchEnd={handleDaySwipeTouchEnd}
+            onTouchCancel={handleDaySwipeTouchCancel}
         />
 
         <div
