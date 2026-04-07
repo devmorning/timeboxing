@@ -2306,7 +2306,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         isScheduleComposerModalOpen
     )
       return false;
-    if (isDayPlanLoading || !showDayPlanContent) return false;
+    if (isDayPlanLoading) return false;
     if (isDateTransitionLoading) return false;
     if (!isPlanEmpty) return false;
     if (emptyDayLockDismissed) return false;
@@ -2320,7 +2320,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     isTrendOpen,
     isScheduleComposerModalOpen,
     isDayPlanLoading,
-    showDayPlanContent,
     isDateTransitionLoading,
     isPlanEmpty,
     emptyDayLockDismissed,
