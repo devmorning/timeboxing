@@ -1133,14 +1133,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     let rafId = 0;
     const compute = () => {
       rafId = 0;
-      const scrollerRect = scroller.getBoundingClientRect();
       const vh = scroller.clientHeight || 1;
+      const viewportCenter = scroller.scrollTop + vh / 2;
       const next = [0, 0, 0];
       for (let i = 0; i < 3; i += 1) {
         const el = storyChapterRefs.current[i];
         if (!el) continue;
-        const rect = el.getBoundingClientRect();
-        const centerDelta = rect.top - scrollerRect.top + rect.height / 2 - vh / 2;
+        const chapterCenter = el.offsetTop + el.offsetHeight / 2;
+        const centerDelta = chapterCenter - viewportCenter;
         const normalized = Math.max(-1, Math.min(1, centerDelta / (vh * 0.7)));
         next[i] = normalized;
       }
@@ -1160,7 +1160,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       window.removeEventListener("resize", requestCompute);
       if (rafId) window.cancelAnimationFrame(rafId);
     };
-  }, [prefersReducedMotion, activeStoryChapterIdx]);
+  }, [prefersReducedMotion]);
 
   useLayoutEffect(() => {
     if (!isScheduleComposerModalOpen) return;
@@ -3368,7 +3368,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           style={
                             prefersReducedMotion
                               ? undefined
-                              : { transform: `translate3d(0, ${storyParallax[0] * -5}px, 0)` }
+                              : { transform: `translate3d(0, ${storyParallax[0] * -7}px, 0)` }
                           }
                       >
                         <div
@@ -3379,7 +3379,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   "radial-gradient(ellipse 70% 60% at 30% 20%, rgba(251,146,60,0.22), transparent 58%), radial-gradient(ellipse 70% 60% at 70% 40%, rgba(255,255,255,0.55), transparent 62%)",
                               transform: prefersReducedMotion
                                   ? undefined
-                                  : `translate3d(0, ${storyParallax[0] * -10}px, 0)`,
+                                  : `translate3d(0, ${storyParallax[0] * -14}px, 0)`,
                             }}
                         />
                         <div
@@ -3417,7 +3417,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={
                               prefersReducedMotion
                                 ? undefined
-                                : { transform: `translate3d(0, ${storyParallax[0] * -4}px, 0)` }
+                                : { transform: `translate3d(0, ${storyParallax[0] * -6}px, 0)` }
                             }
                         >
                           <div className="divide-y divide-stone-200/70 px-3 py-2.5">
@@ -3475,7 +3475,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           style={
                             prefersReducedMotion
                               ? undefined
-                              : { transform: `translate3d(0, ${storyParallax[1] * -5}px, 0)` }
+                              : { transform: `translate3d(0, ${storyParallax[1] * -7}px, 0)` }
                           }
                       >
                         <div
@@ -3486,7 +3486,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   "radial-gradient(ellipse 70% 60% at 40% 30%, rgba(255,255,255,0.6), transparent 60%), radial-gradient(ellipse 70% 60% at 70% 45%, rgba(120,113,108,0.16), transparent 62%)",
                               transform: prefersReducedMotion
                                   ? undefined
-                                  : `translate3d(0, ${storyParallax[1] * -10}px, 0)`,
+                                  : `translate3d(0, ${storyParallax[1] * -14}px, 0)`,
                             }}
                         />
                         <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
@@ -3501,7 +3501,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={
                               prefersReducedMotion
                                 ? undefined
-                                : { transform: `translate3d(0, ${storyParallax[1] * -4}px, 0)` }
+                                : { transform: `translate3d(0, ${storyParallax[1] * -6}px, 0)` }
                             }
                         >
                           <div className="px-3 py-3">
@@ -3539,7 +3539,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           style={
                             prefersReducedMotion
                               ? undefined
-                              : { transform: `translate3d(0, ${storyParallax[2] * -5}px, 0)` }
+                              : { transform: `translate3d(0, ${storyParallax[2] * -7}px, 0)` }
                           }
                       >
                         <div
@@ -3550,7 +3550,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   "radial-gradient(ellipse 70% 60% at 55% 25%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(ellipse 70% 60% at 20% 55%, rgba(255,255,255,0.55), transparent 62%)",
                               transform: prefersReducedMotion
                                   ? undefined
-                                  : `translate3d(0, ${storyParallax[2] * -10}px, 0)`,
+                                  : `translate3d(0, ${storyParallax[2] * -14}px, 0)`,
                             }}
                         />
                         <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
@@ -3565,7 +3565,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={
                               prefersReducedMotion
                                 ? undefined
-                                : { transform: `translate3d(0, ${storyParallax[2] * -4}px, 0)` }
+                                : { transform: `translate3d(0, ${storyParallax[2] * -6}px, 0)` }
                             }
                         >
                           <div className="px-3 py-3">
