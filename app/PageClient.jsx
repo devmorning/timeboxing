@@ -447,7 +447,7 @@ function EmptyDayLockScreen({
           "fixed inset-0 z-[39] flex cursor-default flex-col items-center justify-center overflow-hidden px-6",
           "pb-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom)))] pt-[max(3.5rem,env(safe-area-inset-top)+2.25rem)]",
           !prefersReducedMotion
-            ? "transition-[opacity,backdrop-filter,transform] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+            ? "transition-[opacity,backdrop-filter,transform] duration-[560ms] ease-[cubic-bezier(0.22,1,0.32,1)]"
             : "",
         ].join(" ")}
         role="dialog"
@@ -491,7 +491,7 @@ function EmptyDayLockScreen({
             : "none",
           opacity: overlayEntered ? 1 : 0,
           transform: !prefersReducedMotion && !overlayEntered
-            ? "translate3d(0, 8px, 0)"
+            ? "translate3d(0, 7px, 0)"
             : undefined,
           backdropFilter: overlayEntered ? "blur(1.2px)" : "blur(0px)",
           willChange:
@@ -525,7 +525,7 @@ function EmptyDayLockScreen({
             className={[
               "relative flex w-full flex-col items-center text-center",
               !prefersReducedMotion
-                ? "transition-[transform,opacity,filter] duration-[460ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+                ? "transition-[transform,opacity,filter] duration-[500ms] ease-[cubic-bezier(0.22,1,0.32,1)]"
                 : "",
               isDateMorphing && !prefersReducedMotion
                 ? "scale-[1.008] opacity-[0.985] blur-[0.25px]"
