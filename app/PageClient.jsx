@@ -403,6 +403,11 @@ function EmptyDayLockScreen({
     };
   }, [selectedDate]);
   const [isDateMorphing, setIsDateMorphing] = useState(false);
+  const overlayTouchGestureRef = useRef({
+    startX: 0,
+    startY: 0,
+    moved: false,
+  });
   const previewParts = useMemo(() => {
     const build = (ymd) => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return null;
@@ -440,10 +445,33 @@ function EmptyDayLockScreen({
         aria-modal="true"
         aria-label="선택한 날짜 — 아직 기록 없음"
         data-empty-day-lock
-        onClick={onDismiss}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+        onClick={() => {
+          if (overlayTouchGestureRef.current.moved) return;
+          onDismiss();
+        }}
+        onTouchStart={(event) => {
+          const touch = event.touches?.[0];
+          if (touch) {
+            overlayTouchGestureRef.current.startX = touch.clientX;
+            overlayTouchGestureRef.current.startY = touch.clientY;
+            overlayTouchGestureRef.current.moved = false;
+          }
+          onTouchStart?.(event);
+        }}
+        onTouchMove={(event) => {
+          const touch = event.touches?.[0];
+          if (touch) {
+            const dx = touch.clientX - overlayTouchGestureRef.current.startX;
+            const dy = touch.clientY - overlayTouchGestureRef.current.startY;
+            if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+              overlayTouchGestureRef.current.moved = true;
+            }
+          }
+          onTouchMove?.(event);
+        }}
+        onTouchEnd={(event) => {
+          onTouchEnd?.(event);
+        }}
         onTouchCancel={onTouchCancel}
         style={{
           transform: !prefersReducedMotion
