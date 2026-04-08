@@ -3322,9 +3322,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }
 
   return (
-      <main className="min-h-[100dvh] w-full min-w-0 bg-stone-200">
+      <main className="min-h-[100dvh] w-full min-w-0 overflow-hidden bg-stone-200">
         {/* 하단 고정 탭바가 main overflow에 잘리지 않도록 스크롤 영역만 overflow-x 숨김 */}
-        <div className="w-full min-w-0 overflow-x-clip">
+        <div className="h-[100dvh] w-full min-w-0 overflow-x-clip overflow-y-hidden">
 
         <EmptyDayLockScreen
             visible={showEmptyDayLock}
