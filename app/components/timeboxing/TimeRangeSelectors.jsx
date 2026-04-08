@@ -174,7 +174,7 @@ export default function TimeRangeSelectors({
   if (!showTimeControls) {
     return (
       <div
-        className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 sm:gap-3"
+        className="flex min-w-0 flex-nowrap items-center justify-center gap-2 overflow-x-auto pb-0.5 sm:gap-3"
         aria-hidden="true"
       >
         <div className="w-[104px] shrink-0">
@@ -190,7 +190,7 @@ export default function TimeRangeSelectors({
 
   return (
     <>
-      <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto pb-0.5 sm:gap-3">
+      <div className="flex min-w-0 flex-nowrap items-center justify-center gap-2 overflow-x-auto pb-0.5 sm:gap-3">
         <div className="w-[104px] shrink-0">
           <label className="block">
             <span className="sr-only">시작 시간 선택</span>
@@ -247,7 +247,7 @@ export default function TimeRangeSelectors({
         </div>
       </div>
       {showNextDayHint ? (
-        <p className="w-full max-w-[min(100%,20rem)] pt-0.5 text-[11px] leading-snug text-slate-400">
+        <p className="mx-auto w-full max-w-[min(100%,20rem)] pt-0.5 text-center text-[11px] leading-snug text-slate-400">
           종료가 시작보다 이르면 다음날까지로 계산됩니다 (예: 수면 23:00~08:00)
         </p>
       ) : null}
