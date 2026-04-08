@@ -3697,7 +3697,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       <section
                           aria-label="일정 목록"
                           data-main-chapter
-                          className="relative min-h-0 snap-start scroll-mt-24"
+                          className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24"
                       >
                         <div
                             aria-hidden
