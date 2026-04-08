@@ -4588,7 +4588,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               <div className="flex h-full min-h-0 w-full max-w-none items-stretch justify-center px-0 pb-0 pt-0">
                 <section
                     className={modalPanelClass(statsModalAnim.showOverlay, statsModalAnim.closing, {
-                      surface: "app",
+                      surface: "white",
                     })}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleStatsTouchStart}
@@ -4602,17 +4602,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     }}
                     style={{ touchAction: "pan-y" }}
                 >
-                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] bg-white/90 px-5 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] backdrop-blur-[6px]">
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/60 bg-white/40 px-5 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-snug text-slate-700">{statsDayLabel}</p>
-                      <p className="mt-0.5 text-[12px] text-slate-400">계획(종료−시작) 대비 실행 시간 달성률</p>
+                      <p className="text-sm font-semibold leading-snug text-stone-800">{statsDayLabel}</p>
+                      <p className="mt-0.5 text-[12px] text-stone-500">계획(종료−시작) 대비 실행 시간 달성률</p>
                     </div>
                     <div className="flex items-center gap-1">
                       <button
                           type="button"
                           aria-label="이전 날"
                           onClick={() => setStatsDayYmd((prev) => addDaysToYmd(prev, -1))}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60"
                       >
                         ‹
                       </button>
@@ -4620,7 +4620,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           type="button"
                           aria-label="다음 날"
                           onClick={() => setStatsDayYmd((prev) => addDaysToYmd(prev, 1))}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60"
                       >
                         ›
                       </button>
@@ -4628,7 +4628,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           type="button"
                           aria-label="통계 닫기"
                           onClick={closeStatsModal}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60"
                       >
                         ✕
                       </button>
