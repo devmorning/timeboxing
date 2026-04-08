@@ -3475,19 +3475,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             : undefined
                         }
                     >
-                      {isDatePickerOpen && !prefersReducedMotion ? (
-                          <div
-                              aria-hidden
-                              className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-3xl"
-                          >
-                            <div
-                                className={[
-                                  "main-date-sheen-track absolute -top-px left-0 h-[calc(100%+2px)] w-[42%]",
-                                  "bg-gradient-to-r from-transparent via-white/45 to-transparent opacity-55 mix-blend-overlay",
-                                ].join(" ")}
-                            />
-                          </div>
-                      ) : null}
+                      {/* 성능 우선: 열림 시 대면적 sheen 애니메이션 제거 */}
                       <div className="relative z-10 flex w-full items-start gap-1.5 px-4 py-2">
                         {isDatePickerOpen ? (
                             <div className="flex min-w-0 flex-1 items-start gap-2">
@@ -3682,7 +3670,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           className={[
                             "relative z-10 overflow-hidden",
                             !prefersReducedMotion
-                              ? "transition-[max-height,opacity] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                              ? "transition-opacity duration-300 ease-out"
                               : "",
                             isDatePickerOpen
                               ? "max-h-[min(72vh,560px)] opacity-100"
@@ -3694,11 +3682,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       >
                         <div
                             className={[
-                              "mx-4 mb-4 max-h-[min(72vh,560px)] overflow-hidden rounded-2xl border border-white/55 bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-md",
+                              "mx-4 mb-4 max-h-[min(72vh,560px)] overflow-hidden rounded-2xl border border-white/55 bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]",
                               !prefersReducedMotion
                                 ? "transition-[transform,opacity] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
                                 : "",
-                              isDatePickerOpen && !prefersReducedMotion ? "main-date-slot-glow" : "",
                               isDatePickerOpen ? "translate-y-0 scale-100 opacity-100" : "-translate-y-1.5 scale-[0.985] opacity-0",
                             ]
                               .filter(Boolean)
