@@ -16,13 +16,13 @@ describe("인라인 캘린더 열기", () => {
   it("날짜 버튼 클릭 시 인라인 캘린더가 열린다", async () => {
     render(<PageClient {...initialProps} />);
 
-    expect(screen.queryByTestId("inline-calendar-panel")).not.toBeInTheDocument();
+    const panel = screen.getByTestId("inline-calendar-panel");
+    expect(panel.className).toContain("max-h-0");
 
     fireEvent.click(screen.getByLabelText("날짜 선택 열기"));
 
     await waitFor(() => {
-      const panel = screen.getByTestId("inline-calendar-panel");
-      expect(panel.className).toContain("max-h-[min(72vh,560px)]");
+      expect(panel.className).toContain("max-h-[calc(100dvh-4rem)]");
     });
   });
 
@@ -34,10 +34,10 @@ describe("인라인 캘린더 열기", () => {
     contentInput.focus();
     fireEvent.change(contentInput, { target: { value: "테스트 일정" } });
 
+    const panel = screen.getByTestId("inline-calendar-panel");
     fireEvent.click(screen.getByLabelText("날짜 선택 열기"));
     await waitFor(() => {
-      const panel = screen.getByTestId("inline-calendar-panel");
-      expect(panel.className).toContain("max-h-[min(72vh,560px)]");
+      expect(panel.className).toContain("max-h-[calc(100dvh-4rem)]");
     });
   });
 
