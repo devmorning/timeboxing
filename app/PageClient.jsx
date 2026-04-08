@@ -40,6 +40,9 @@ const SECONDS_PER_DAY = 86400;
 const THIRTY_MIN_SECONDS = 1800;
 /** 브레인 덤프 textarea — 빈 상태 기본 1줄 높이(px, text-base·leading-relaxed 기준) */
 const BRAIN_DUMP_TEXTAREA_MIN_HEIGHT_PX = 28;
+/** 인라인 캘린더 가상 스크롤: 월 하나의 대략 높이(px) */
+const CALENDAR_VIRTUAL_MONTH_HEIGHT_PX = 316;
+const CALENDAR_VIRTUAL_OVERSCAN = 2;
 
 /** 데이 플랜·모달 본문 카드: 캔버스(stone-200) 대비 밝은 스톤 면 — 가장 중요한 일·브레인 덤프·일정 등 공통 */
 const UI_SURFACE_P4 =
@@ -986,8 +989,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
-  /** 캘린더는 열림 애니메이션 이후에 무겁게 확장 렌더 */
-  const [calendarRenderPhase, setCalendarRenderPhase] = useState("idle"); // idle | light | full
+  const [calendarVisibleRange, setCalendarVisibleRange] = useState({ start: 0, end: 0 });
+  const calendarScrollRef = useRef(null);
   const [markedDates, setMarkedDates] = useState(new Set());
   const [repeatingTemplates, setRepeatingTemplates] = useState([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
@@ -2105,7 +2108,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const closeInlineCalendar = useCallback(() => {
     setIsDatePickerOpen(false);
     setCalendarMonthRange(null);
-    setCalendarRenderPhase("idle");
+    setCalendarVisibleRange({ start: 0, end: 0 });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -2142,43 +2145,46 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       const centerYm = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
         ? selectedDate.slice(0, 7)
         : toLocalYmd(new Date()).slice(0, 7);
-      // 1) 열릴 때는 가벼운 범위만 먼저 렌더 (프레임 드랍 방지)
-      setCalendarMonthRange(buildMonthKeys(centerYm, 1, 1));
-      setCalendarRenderPhase("light");
+      setCalendarMonthRange(buildMonthKeys(centerYm, 6, 6));
       setIsDatePickerOpen(true);
     });
   };
 
-  useEffect(() => {
-    if (!isDatePickerOpen) return;
-    if (calendarRenderPhase !== "light") return;
+  const updateCalendarVirtualRange = useCallback((scrollTop, viewportHeight) => {
+    if (!calendarMonthRange?.length) return;
+    const total = calendarMonthRange.length;
+    const start = Math.max(
+      0,
+      Math.floor(scrollTop / CALENDAR_VIRTUAL_MONTH_HEIGHT_PX) - CALENDAR_VIRTUAL_OVERSCAN
+    );
+    const visibleCount =
+      Math.ceil(viewportHeight / CALENDAR_VIRTUAL_MONTH_HEIGHT_PX) + CALENDAR_VIRTUAL_OVERSCAN * 2;
+    const end = Math.min(total - 1, start + visibleCount - 1);
+    setCalendarVisibleRange((prev) => {
+      if (prev.start === start && prev.end === end) return prev;
+      return { start, end };
+    });
+  }, [calendarMonthRange]);
 
-    const centerYm = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
-      ? selectedDate.slice(0, 7)
-      : toLocalYmd(new Date()).slice(0, 7);
+  const visibleCalendarMonths = useMemo(() => {
+    if (!calendarMonthRange?.length) return [];
+    const start = Math.max(0, calendarVisibleRange.start);
+    const end = Math.max(start, Math.min(calendarMonthRange.length - 1, calendarVisibleRange.end));
+    return calendarMonthRange.slice(start, end + 1);
+  }, [calendarMonthRange, calendarVisibleRange]);
 
-    let cancelled = false;
-    const run = () => {
-      if (cancelled) return;
-      setCalendarMonthRange(buildMonthKeys(centerYm, 6, 6));
-      setCalendarRenderPhase("full");
-    };
+  const calendarTopSpacerPx =
+    Math.max(0, calendarVisibleRange.start) * CALENDAR_VIRTUAL_MONTH_HEIGHT_PX;
+  const hiddenMonthCount = calendarMonthRange?.length
+    ? Math.max(0, calendarMonthRange.length - (calendarVisibleRange.end + 1))
+    : 0;
+  const calendarBottomSpacerPx = hiddenMonthCount * CALENDAR_VIRTUAL_MONTH_HEIGHT_PX;
 
-    // 2) 열림 애니메이션이 안정된 뒤 유휴 시간에 확장 렌더
-    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(run, { timeout: 900 });
-      return () => {
-        cancelled = true;
-        window.cancelIdleCallback?.(id);
-      };
-    }
-
-    const t = setTimeout(run, 520);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [isDatePickerOpen, calendarRenderPhase, selectedDate]);
+  const handleCalendarScroll = useCallback((event) => {
+    const node = event.currentTarget;
+    if (!(node instanceof HTMLElement)) return;
+    updateCalendarVirtualRange(node.scrollTop, node.clientHeight);
+  }, [updateCalendarVirtualRange]);
 
 
   useEffect(() => {
@@ -2444,15 +2450,20 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   useEffect(() => {
     if (!isDatePickerOpen || !calendarMonthRange?.length) return;
     const ym = selectedDate.slice(0, 7);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const el = document.getElementById(`cal-month-${ym}`);
-        if (el && typeof el.scrollIntoView === "function") {
-          el.scrollIntoView({ block: "center", behavior: "auto" });
-        }
-      });
+    const monthIdx = Math.max(0, calendarMonthRange.findIndex((key) => key === ym));
+    const scrollTop = Math.max(0, (monthIdx - 1) * CALENDAR_VIRTUAL_MONTH_HEIGHT_PX);
+    const viewportHeight = calendarScrollRef.current?.clientHeight ?? 560;
+    setCalendarVisibleRange({
+      start: Math.max(0, monthIdx - 3),
+      end: Math.min(calendarMonthRange.length - 1, monthIdx + 3),
     });
-  }, [isDatePickerOpen, calendarMonthRange, selectedDate]);
+    requestAnimationFrame(() => {
+      const node = calendarScrollRef.current;
+      if (!node) return;
+      node.scrollTop = scrollTop;
+      updateCalendarVirtualRange(scrollTop, viewportHeight);
+    });
+  }, [isDatePickerOpen, calendarMonthRange, selectedDate, updateCalendarVirtualRange]);
 
   const hasCachedSelectedPlan = dayPlanCacheRef.current.has(selectedDate);
   const isDateTransitionLoading =
@@ -3673,10 +3684,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               .join(" ")}
                             aria-label="날짜 선택 확장 영역"
                         >
-                          <div className="min-h-0 max-h-[min(72vh,560px)] overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 py-3 scrollbar-none touch-pan-y [-webkit-overflow-scrolling:touch]">
+                          <div
+                              ref={calendarScrollRef}
+                              onScroll={handleCalendarScroll}
+                              className="min-h-0 max-h-[min(72vh,560px)] overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 py-3 scrollbar-none touch-pan-y [-webkit-overflow-scrolling:touch]"
+                          >
                             {calendarMonthRange?.length ? (
                                 <div className="mx-auto w-full max-w-md min-w-0">
-                                  {calendarMonthRange.map((ym) => (
+                                  {calendarTopSpacerPx > 0 ? (
+                                      <div style={{ height: `${calendarTopSpacerPx}px` }} aria-hidden />
+                                  ) : null}
+                                  {visibleCalendarMonths.map((ym) => (
                                       <InlineCalendarMonth
                                           key={ym}
                                           ym={ym}
@@ -3688,6 +3706,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                           }}
                                       />
                                   ))}
+                                  {calendarBottomSpacerPx > 0 ? (
+                                      <div style={{ height: `${calendarBottomSpacerPx}px` }} aria-hidden />
+                                  ) : null}
                                 </div>
                             ) : (
                                 <div className="flex min-h-[min(72vh,560px)] items-center justify-center">
