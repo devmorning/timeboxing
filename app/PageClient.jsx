@@ -3789,24 +3789,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   "radial-gradient(ellipse 70% 60% at 55% 25%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(ellipse 70% 60% at 20% 55%, rgba(255,255,255,0.55), transparent 62%)",
                             }}
                         />
-                        <div
-                            className={[
-                              "sticky top-2 z-10 mb-2.5 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-2.5 py-1.5",
-                              "shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl",
-                            ].join(" ")}
-                        >
+                        <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
                           <div className="min-w-0">
                             <p className="text-[11px] font-semibold tracking-[0.14em] text-orange-700/70">CHAPTER 03</p>
                             <p className="mt-1 text-base font-semibold tracking-tight text-stone-800">내용</p>
                           </div>
-                          <span className="invisible text-[12px] font-semibold text-stone-500" aria-hidden>
-                            메모
-                          </span>
                         </div>
                         <div
                             className={UI_CANVAS_INSET}
                         >
-                          <div className="px-2.5 py-2.5">
+                          <div className="px-3 py-3">
                             {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
                             {displayItemsMerged.length > 0 ? (
                                 <div className="space-y-2.5">
