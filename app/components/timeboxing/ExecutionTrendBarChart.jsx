@@ -54,8 +54,10 @@ export default function ExecutionTrendBarChart({ points, formatDuration, period 
     >
       <div
         className="grid min-h-[140px] items-end gap-1 px-0.5 pt-2"
-        style={{ gridTemplateColumns: `repeat(${Math.max(points.length, 1)}, minmax(0, 1fr))` }}
-        {...(!isWeek ? { minWidth: monthTrackMinWidth } : {})}
+        style={{
+          gridTemplateColumns: `repeat(${Math.max(points.length, 1)}, minmax(0, 1fr))`,
+          ...(!isWeek ? { minWidth: monthTrackMinWidth } : {}),
+        }}
       >
         {points.map(({ ymd, seconds }) => {
           const day = Number(ymd.slice(8, 10));
