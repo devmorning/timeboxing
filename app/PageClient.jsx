@@ -3434,7 +3434,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     : undefined
                 }
             >
-              <section aria-label="오늘 기록" className={UI_CANVAS}>
+              <section aria-label="오늘 기록" className={[UI_CANVAS, "max-h-none"].join(" ")}>
                 <div
                     className="px-4 py-4"
                     style={{
