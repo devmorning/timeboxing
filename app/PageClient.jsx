@@ -3476,9 +3476,18 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     }}
                 >
                   <div className="relative">
-                    <div
-                        className="mb-3.5 rounded-3xl border border-white/65 bg-white/55 px-4 py-3 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl"
-                        aria-label={`선택한 날짜 ${selectedDateLabel}`}
+                    <button
+                        type="button"
+                        aria-label={`날짜 선택 열기 — ${selectedDateLabel}`}
+                        disabled={isDatePickerOpen || isDateTransitionLoading}
+                        onClick={openInlineCalendar}
+                        className={[
+                          "mb-3.5 w-full rounded-3xl border border-white/65 bg-white/55 px-4 py-3 text-left shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
+                          "cursor-pointer transition-colors active:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                          isDatePickerOpen || isDateTransitionLoading
+                            ? "cursor-not-allowed opacity-60"
+                            : "",
+                        ].join(" ")}
                         style={
                           !prefersReducedMotion
                             ? {
@@ -3501,7 +3510,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           {selectedDateDisplay.ym}
                         </p>
                       </div>
-                    </div>
+                    </button>
                     <div
                         ref={mainChapterScrollRef}
                         onScroll={onMainChapterScroll}
