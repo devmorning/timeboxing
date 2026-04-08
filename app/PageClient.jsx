@@ -3343,7 +3343,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         />
 
         <div
-            className="mx-auto w-full min-w-0 max-w-md px-0 pb-[max(6.5rem,calc(4.15rem+env(safe-area-inset-bottom)))] pt-[max(1rem,env(safe-area-inset-top)+0.75rem)]"
+            className="mx-auto w-full min-w-0 max-w-md px-0 pb-[max(8.75rem,calc(5.75rem+env(safe-area-inset-bottom)))] pt-[max(1rem,env(safe-area-inset-top)+0.75rem)]"
         >
           <div
               ref={daySwipeViewportRef}
@@ -3716,7 +3716,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         ref={mainChapterScrollRef}
                         onScroll={onMainChapterScroll}
                         className={[
-                          "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 scrollbar-none",
+                          "h-[min(calc(100dvh-11.5rem-env(safe-area-inset-bottom)),760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 scrollbar-none",
                           !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
