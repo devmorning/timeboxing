@@ -986,6 +986,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
+  /** 캘린더는 열림 애니메이션 이후에 무겁게 확장 렌더 */
+  const [calendarRenderPhase, setCalendarRenderPhase] = useState("idle"); // idle | light | full
   const [markedDates, setMarkedDates] = useState(new Set());
   const [repeatingTemplates, setRepeatingTemplates] = useState([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
@@ -2103,6 +2105,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const closeInlineCalendar = useCallback(() => {
     setIsDatePickerOpen(false);
     setCalendarMonthRange(null);
+    setCalendarRenderPhase("idle");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -2139,10 +2142,43 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       const centerYm = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
         ? selectedDate.slice(0, 7)
         : toLocalYmd(new Date()).slice(0, 7);
-      setCalendarMonthRange(buildMonthKeys(centerYm, 6, 6));
+      // 1) 열릴 때는 가벼운 범위만 먼저 렌더 (프레임 드랍 방지)
+      setCalendarMonthRange(buildMonthKeys(centerYm, 1, 1));
+      setCalendarRenderPhase("light");
       setIsDatePickerOpen(true);
     });
   };
+
+  useEffect(() => {
+    if (!isDatePickerOpen) return;
+    if (calendarRenderPhase !== "light") return;
+
+    const centerYm = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
+      ? selectedDate.slice(0, 7)
+      : toLocalYmd(new Date()).slice(0, 7);
+
+    let cancelled = false;
+    const run = () => {
+      if (cancelled) return;
+      setCalendarMonthRange(buildMonthKeys(centerYm, 6, 6));
+      setCalendarRenderPhase("full");
+    };
+
+    // 2) 열림 애니메이션이 안정된 뒤 유휴 시간에 확장 렌더
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(run, { timeout: 900 });
+      return () => {
+        cancelled = true;
+        window.cancelIdleCallback?.(id);
+      };
+    }
+
+    const t = setTimeout(run, 520);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [isDatePickerOpen, calendarRenderPhase, selectedDate]);
 
 
   useEffect(() => {
@@ -3392,7 +3428,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           "group relative mb-3.5 overflow-hidden rounded-3xl border border-white/65 bg-white/55 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
                           "transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
                           isDatePickerOpen
-                            ? "ring-2 ring-orange-400/35 ring-offset-2 ring-offset-transparent shadow-[0_18px_44px_-22px_rgba(251,146,60,0.22),inset_0_1px_0_rgba(255,255,255,0.9)]"
+                            ? "shadow-[0_18px_44px_-22px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.9)]"
                             : "hover:border-white/75 hover:shadow-[0_14px_36px_-20px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.88)]",
                           isDateTransitionLoading ? "opacity-60" : "",
                         ].join(" ")}
