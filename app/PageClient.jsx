@@ -3250,108 +3250,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       <main className="min-h-[100dvh] w-full min-w-0 bg-stone-200">
         {/* 하단 고정 탭바가 main overflow에 잘리지 않도록 스크롤 영역만 overflow-x 숨김 */}
         <div className="w-full min-w-0 overflow-x-clip">
-        <header
-            className={[
-              "fixed inset-x-0 top-0 z-50 bg-stone-200/90 backdrop-blur-md transition-opacity duration-200",
-              isReportOpen ? "pointer-events-none opacity-0" : "opacity-100",
-              !isDatePickerOpen ? "hidden" : "",
-            ].join(" ")}
-        >
-          <div className="mx-auto w-full max-w-md px-0 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            {isDatePickerOpen ? (
-              <div className="flex w-full flex-col gap-2">
-                <div
-                    className={[
-                      "grid h-10 w-full grid-cols-[minmax(44px,auto)_1fr_minmax(44px,auto)] items-center",
-                      "gap-0",
-                    ].join(" ")}
-                >
-                  <button
-                      type="button"
-                      aria-label="오늘 날짜로 이동"
-                      disabled={isDateTransitionLoading}
-                      onClick={() => {
-                        const today = toLocalYmd(new Date());
-                        setSelectedDate(today);
-                        closeInlineCalendar();
-                      }}
-                      className={[
-                        "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
-                        "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-                        isDateTransitionLoading ? "cursor-wait opacity-40" : "",
-                      ].join(" ")}
-                  >
-                    <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
-                      ◎
-                    </span>
-                    <span className="sr-only">오늘</span>
-                  </button>
-                  <button
-                      type="button"
-                      aria-label="캘린더 닫기"
-                      onClick={closeInlineCalendar}
-                      className={[
-                        "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-sm font-semibold tracking-tight text-slate-600",
-                        "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-                      ].join(" ")}
-                      suppressHydrationWarning
-                  >
-                    <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
-                  </button>
-                  <div className="flex min-w-[44px] items-center justify-end">
-                    <button
-                        type="button"
-                        aria-label="로그아웃"
-                        onClick={handleLogout}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-transparent text-slate-500 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
-                    >
-                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]">
-                        <path
-                            fill="currentColor"
-                            d="M10 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3v-2H7V6h3zm5.59 3.41L14.17 8.83 16.34 11H9v2h7.34l-2.17 2.17 1.42 1.42L20.17 12z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <div
-                data-testid="inline-calendar-panel"
-                className={[
-                  "overflow-hidden transition-[max-height,opacity,padding-top] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
-                  isDatePickerOpen
-                      ? "flex max-h-[calc(100dvh-4rem)] flex-col opacity-100 pt-3"
-                      : "max-h-0 opacity-0 pt-0",
-                ].join(" ")}
-            >
-              <section
-                  className={[
-                    "flex min-h-0 flex-1 flex-col rounded-2xl bg-transparent px-1 py-2",
-                    "transition-[transform,opacity] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
-                    isDatePickerOpen ? "translate-y-0 scale-100" : "-translate-y-1 scale-[0.98]",
-                  ].join(" ")}
-              >
-                {calendarMonthRange ? (
-                    <div
-                        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] px-0.5 pb-1"
-                    >
-                      {calendarMonthRange.map((ym) => (
-                          <InlineCalendarMonth
-                              key={ym}
-                              ym={ym}
-                              selectedDate={selectedDate}
-                              markedDates={markedDates}
-                              onSelectDate={handlePickCalendarDate}
-                          />
-                      ))}
-                    </div>
-                ) : null}
-              </section>
-            </div>
-          </div>
-        </header>
 
         <EmptyDayLockScreen
             visible={showEmptyDayLock}
@@ -3370,10 +3268,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         />
 
         <div
-            className={[
-              "mx-auto w-full min-w-0 max-w-md px-0 pb-[max(6.5rem,calc(4.15rem+env(safe-area-inset-bottom)))] transition-[padding-top] duration-300 ease-out",
-              isDatePickerOpen ? "pt-[calc(100dvh-4rem)]" : "pt-[max(1rem,env(safe-area-inset-top)+0.75rem)]",
-            ].join(" ")}
+            className="mx-auto w-full min-w-0 max-w-md px-0 pb-[max(6.5rem,calc(4.15rem+env(safe-area-inset-bottom)))] pt-[max(1rem,env(safe-area-inset-top)+0.75rem)]"
         >
           <div
               ref={daySwipeViewportRef}
@@ -3511,6 +3406,109 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </p>
                       </div>
                     </button>
+
+                    <div
+                        data-testid="inline-calendar-panel"
+                        className={[
+                          "overflow-hidden",
+                          !prefersReducedMotion
+                            ? "transition-[max-height,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                            : "",
+                          isDatePickerOpen
+                            ? "max-h-[min(72vh,560px)] opacity-100"
+                            : "pointer-events-none max-h-0 opacity-0",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        aria-hidden={!isDatePickerOpen}
+                    >
+                      <div
+                          className={[
+                            "mt-2 rounded-3xl border border-white/65 bg-white/55 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
+                            "mb-3.5 flex min-h-0 flex-col px-3 pb-2 pt-2",
+                          ].join(" ")}
+                          style={{
+                            background: [
+                              "linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 100%)",
+                              "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(251,146,60,0.08), transparent 55%)",
+                            ].join(", "),
+                          }}
+                      >
+                        <div
+                            className={[
+                              "grid h-10 w-full shrink-0 grid-cols-[minmax(44px,auto)_1fr_minmax(44px,auto)] items-center gap-0",
+                              "border-b border-stone-200/60 pb-2",
+                            ].join(" ")}
+                        >
+                          <button
+                              type="button"
+                              aria-label="오늘 날짜로 이동"
+                              disabled={isDateTransitionLoading}
+                              onClick={() => {
+                                const today = toLocalYmd(new Date());
+                                setSelectedDate(today);
+                                closeInlineCalendar();
+                              }}
+                              className={[
+                                "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-xl bg-transparent text-orange-700 active:opacity-60",
+                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                                isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                              ].join(" ")}
+                          >
+                            <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
+                              ◎
+                            </span>
+                            <span className="sr-only">오늘</span>
+                          </button>
+                          <button
+                              type="button"
+                              aria-label="캘린더 닫기"
+                              onClick={closeInlineCalendar}
+                              className={[
+                                "min-w-0 justify-self-stretch rounded-xl px-2 py-1 text-center text-sm font-semibold tracking-tight text-stone-600",
+                                "active:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                              ].join(" ")}
+                              suppressHydrationWarning
+                          >
+                            <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
+                          </button>
+                          <div className="flex min-w-[44px] items-center justify-end">
+                            <button
+                                type="button"
+                                aria-label="로그아웃"
+                                onClick={handleLogout}
+                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-transparent text-stone-500 active:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25"
+                            >
+                              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]">
+                                <path
+                                    fill="currentColor"
+                                    d="M10 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3v-2H7V6h3zm5.59 3.41L14.17 8.83 16.34 11H9v2h7.34l-2.17 2.17 1.42 1.42L20.17 12z"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        {calendarMonthRange ? (
+                            <div
+                                className={[
+                                  "min-h-0 max-h-[min(56vh,480px)] overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] px-0.5 pb-1 pt-2",
+                                  "[&_h3]:text-stone-700",
+                                ].join(" ")}
+                            >
+                              {calendarMonthRange.map((ym) => (
+                                  <InlineCalendarMonth
+                                      key={ym}
+                                      ym={ym}
+                                      selectedDate={selectedDate}
+                                      markedDates={markedDates}
+                                      onSelectDate={handlePickCalendarDate}
+                                  />
+                              ))}
+                            </div>
+                        ) : null}
+                      </div>
+                    </div>
+
                     <div
                         ref={mainChapterScrollRef}
                         onScroll={onMainChapterScroll}
