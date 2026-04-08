@@ -185,5 +185,21 @@ export function createApiDayPlanRepository() {
         method: "DELETE",
       });
     },
+
+    async getAiDayFeedback(dateYmd) {
+      const data = await requestJson("/api/ai/feedback/day", {
+        method: "POST",
+        body: JSON.stringify({ dateYmd }),
+      });
+      return data?.feedback ?? null;
+    },
+
+    async suggestAiPlan(targetDateYmd, lookbackDays = 7) {
+      const data = await requestJson("/api/ai/plan/suggest", {
+        method: "POST",
+        body: JSON.stringify({ targetDateYmd, lookbackDays }),
+      });
+      return data?.suggestion ?? null;
+    },
   };
 }

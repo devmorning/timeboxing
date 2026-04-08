@@ -1206,6 +1206,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     unplannedSeconds: SECONDS_PER_DAY,
     unplannedDayPercent: 100,
   });
+  const [aiDayFeedback, setAiDayFeedback] = useState(null);
+  const [aiDayFeedbackLoading, setAiDayFeedbackLoading] = useState(false);
+  const [aiDayFeedbackError, setAiDayFeedbackError] = useState("");
+  const [aiPlanSuggestLoading, setAiPlanSuggestLoading] = useState(false);
+  const [aiPlanSuggestError, setAiPlanSuggestError] = useState("");
 
   const statsDayLabel = useMemo(() => {
     const [y, m, d] = statsDayYmd.split("-").map(Number);
@@ -1224,6 +1229,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     }
     prevStatsOpenRef.current = isStatsOpen;
   }, [isStatsOpen, selectedDate]);
+
+  useEffect(() => {
+    setAiDayFeedback(null);
+    setAiDayFeedbackError("");
+  }, [statsDayYmd, isStatsOpen]);
 
   useLayoutEffect(() => {
     adjustBrainDumpHeight();
@@ -1388,6 +1398,61 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     );
     closeScheduleComposerModal();
   };
+
+  const handleLoadAiDayFeedback = useCallback(async () => {
+    if (!authUser?.id || typeof dayPlanRepository.getAiDayFeedback !== "function") return;
+    setAiDayFeedbackError("");
+    setAiDayFeedbackLoading(true);
+    try {
+      const feedback = await dayPlanRepository.getAiDayFeedback(statsDayYmd);
+      setAiDayFeedback(feedback);
+    } catch (error) {
+      console.error("Failed to load AI day feedback", error);
+      setAiDayFeedbackError("AI 피드백을 불러오지 못했습니다.");
+    } finally {
+      setAiDayFeedbackLoading(false);
+    }
+  }, [authUser?.id, dayPlanRepository, statsDayYmd]);
+
+  const handleApplyAiPlanSuggestion = useCallback(async () => {
+    if (!authUser?.id || typeof dayPlanRepository.suggestAiPlan !== "function") return;
+    setAiPlanSuggestError("");
+    setAiPlanSuggestLoading(true);
+    try {
+      const suggestion = await dayPlanRepository.suggestAiPlan(selectedDate, 10);
+      if (!suggestion) {
+        setAiPlanSuggestError("AI 초안을 만들지 못했습니다.");
+        return;
+      }
+      if (Array.isArray(suggestion.important3) && suggestion.important3.length === 3) {
+        setImportant3(suggestion.important3.map((v) => (typeof v === "string" ? v : "")));
+      }
+      if (typeof suggestion.brainDump === "string") {
+        setBrainDump(suggestion.brainDump);
+      }
+      if (Array.isArray(suggestion.items) && suggestion.items.length > 0) {
+        const mapped = suggestion.items
+          .map((it) => ({
+            id:
+              typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+                ? crypto.randomUUID()
+                : `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+            startTime: typeof it?.startTime === "string" ? it.startTime : "09:00",
+            endTime: typeof it?.endTime === "string" ? it.endTime : "",
+            content: typeof it?.content === "string" ? it.content.trim() : "",
+            done: false,
+            executedSeconds: 0,
+          }))
+          .filter((it) => it.content.length > 0);
+        if (mapped.length > 0) setItems(sortItemsByTimeAsc(mapped));
+      }
+    } catch (error) {
+      console.error("Failed to apply AI plan suggestion", error);
+      setAiPlanSuggestError("AI 일정 초안 적용에 실패했습니다.");
+    } finally {
+      setAiPlanSuggestLoading(false);
+    }
+  }, [authUser?.id, dayPlanRepository, selectedDate, sortItemsByTimeAsc]);
 
   const shiftTrendMonth = useCallback((delta) => {
     setTrendYm((prev) => {
@@ -4293,6 +4358,25 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             disabled={isDatePickerOpen}
                         />
                       </div>
+                      <div className="flex items-center justify-end">
+                        <button
+                            type="button"
+                            onClick={handleApplyAiPlanSuggestion}
+                            disabled={isDatePickerOpen || aiPlanSuggestLoading}
+                            className={[
+                              "inline-flex h-9 items-center justify-center rounded-xl border border-white/60 bg-white/55 px-3 text-[12px] font-semibold",
+                              "text-stone-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]",
+                              "focus:outline-none focus:ring-2 focus:ring-orange-500/25 active:opacity-60",
+                              aiPlanSuggestLoading ? "cursor-wait opacity-70" : "",
+                              isDatePickerOpen ? "cursor-not-allowed opacity-45" : "",
+                            ].join(" ")}
+                        >
+                          {aiPlanSuggestLoading ? "AI 초안 생성 중…" : "AI로 일정 초안 생성"}
+                        </button>
+                      </div>
+                      {aiPlanSuggestError ? (
+                          <p className="text-[12px] text-rose-600">{aiPlanSuggestError}</p>
+                      ) : null}
                       <section aria-label="일정 내용 입력">
                         <div className={UI_SURFACE_P4}>
                           <div className="flex items-stretch gap-2.5">
@@ -4647,6 +4731,53 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]"
                   >
                     <div className="space-y-5">
+                      <div className="flex items-center justify-end">
+                        <button
+                            type="button"
+                            onClick={handleLoadAiDayFeedback}
+                            disabled={dailyStats.loading || aiDayFeedbackLoading}
+                            className={[
+                              "inline-flex h-9 items-center justify-center rounded-xl border border-white/60 bg-white/55 px-3 text-[12px] font-semibold",
+                              "text-stone-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]",
+                              "focus:outline-none focus:ring-2 focus:ring-orange-500/25 active:opacity-60",
+                              aiDayFeedbackLoading ? "cursor-wait opacity-70" : "",
+                            ].join(" ")}
+                        >
+                          {aiDayFeedbackLoading ? "AI 피드백 분석 중…" : "AI 피드백 보기"}
+                        </button>
+                      </div>
+                      {aiDayFeedbackError ? (
+                          <p className="text-[12px] text-rose-600">{aiDayFeedbackError}</p>
+                      ) : null}
+                      {aiDayFeedback ? (
+                          <div className={UI_SURFACE_PX4}>
+                            <p className="text-[12px] font-semibold text-stone-700">AI 피드백</p>
+                            {aiDayFeedback.summary ? (
+                                <p className="mt-2 text-[13px] leading-snug text-stone-700">{aiDayFeedback.summary}</p>
+                            ) : null}
+                            {Array.isArray(aiDayFeedback.strengths) && aiDayFeedback.strengths.length > 0 ? (
+                                <ul className="mt-2 space-y-1 text-[12px] text-stone-700">
+                                  {aiDayFeedback.strengths.map((line, idx) => (
+                                      <li key={`ai_strength_${idx}`}>- 강점: {line}</li>
+                                  ))}
+                                </ul>
+                            ) : null}
+                            {Array.isArray(aiDayFeedback.risks) && aiDayFeedback.risks.length > 0 ? (
+                                <ul className="mt-2 space-y-1 text-[12px] text-stone-700">
+                                  {aiDayFeedback.risks.map((line, idx) => (
+                                      <li key={`ai_risk_${idx}`}>- 리스크: {line}</li>
+                                  ))}
+                                </ul>
+                            ) : null}
+                            {Array.isArray(aiDayFeedback.actions) && aiDayFeedback.actions.length > 0 ? (
+                                <ul className="mt-2 space-y-1 text-[12px] text-stone-700">
+                                  {aiDayFeedback.actions.map((line, idx) => (
+                                      <li key={`ai_action_${idx}`}>- 액션: {line}</li>
+                                  ))}
+                                </ul>
+                            ) : null}
+                          </div>
+                      ) : null}
                       <div className="grid grid-cols-2 gap-3">
                         <div className={UI_SURFACE_PX4}>
                           <p className="text-[12px] font-medium text-slate-500">계획 시간 합</p>
