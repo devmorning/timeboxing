@@ -2574,8 +2574,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     const dx = touch.clientX - g.startX;
     const dy = touch.clientY - g.startY;
     if (!g.horizontalLocked) {
-      if (Math.abs(dx) < 8) return;
-      if (Math.abs(dx) <= Math.abs(dy)) {
+      // 세로 스크롤 중에는 가로 스와이프를 잠그지 않는다.
+      if (Math.abs(dx) < 12) return;
+      if ((Math.abs(dy) > 6 && Math.abs(dy) >= Math.abs(dx) * 0.8) || Math.abs(dx) < Math.abs(dy) * 1.35) {
         g.tracking = false;
         setDaySwipeTransition(true);
         setDaySwipePullX(0);
@@ -2634,7 +2635,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         const dx = touch.clientX - startX;
         const dy = touch.clientY - startY;
 
-        const isHorizontal = wasHorizontalLocked || Math.abs(dx) > 24;
+        const isHorizontal =
+            wasHorizontalLocked &&
+            Math.abs(dx) > 36 &&
+            Math.abs(dx) > Math.abs(dy) * 1.25;
         if (!isHorizontal) {
           setDaySwipeTransition(true);
           setDaySwipePullX(0);
