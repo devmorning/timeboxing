@@ -4431,10 +4431,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0">
                             <path
                                 fill="currentColor"
-                                d="M12 3.5c.27 0 .52.15.64.39l1.66 3.39 3.74.54c.56.08.79.77.38 1.17l-2.7 2.63.64 3.72c.1.56-.49 1-.99.74L12 14.33l-3.35 1.76c-.5.26-1.09-.18-.99-.74l.64-3.72-2.7-2.63c-.41-.4-.18-1.09.38-1.17l3.74-.54 1.66-3.39c.12-.24.37-.39.64-.39Z"
+                                d="M9 3h6v2l-1.3 2.2A5.5 5.5 0 1 1 7 12.5c0-1.2.4-2.3 1.1-3.2L9 7V3Zm2 2v2.55l-1.35 2.28A3.5 3.5 0 1 0 14.5 12.5c0-.76-.24-1.46-.65-2.03L12.5 8.2V5H11Zm6.2 11.2.8-1.7 1.7-.8-1.7-.8-.8-1.7-.8 1.7-1.7.8 1.7.8.8 1.7Z"
                             />
                           </svg>
-                          {aiPlanSuggestLoading ? "AI 초안 생성 중…" : "AI로 일정 초안 생성"}
+                          {aiPlanSuggestLoading ? "AI 초안…" : "AI 초안"}
                         </button>
                       </div>
                       {aiPlanSuggestError ? (
@@ -4807,10 +4807,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0">
                             <path
                                 fill="currentColor"
-                                d="M12 3.5c.27 0 .52.15.64.39l1.66 3.39 3.74.54c.56.08.79.77.38 1.17l-2.7 2.63.64 3.72c.1.56-.49 1-.99.74L12 14.33l-3.35 1.76c-.5.26-1.09-.18-.99-.74l.64-3.72-2.7-2.63c-.41-.4-.18-1.09.38-1.17l3.74-.54 1.66-3.39c.12-.24.37-.39.64-.39Z"
+                                d="M9 3h6v2l-1.3 2.2A5.5 5.5 0 1 1 7 12.5c0-1.2.4-2.3 1.1-3.2L9 7V3Zm2 2v2.55l-1.35 2.28A3.5 3.5 0 1 0 14.5 12.5c0-.76-.24-1.46-.65-2.03L12.5 8.2V5H11Zm6.2 11.2.8-1.7 1.7-.8-1.7-.8-.8-1.7-.8 1.7-1.7.8 1.7.8.8 1.7Z"
                             />
                           </svg>
-                          {aiDayFeedbackLoading ? "AI 피드백 분석 중…" : "AI 피드백 보기"}
+                          {aiDayFeedbackLoading ? "AI 분석…" : "AI 피드백"}
                         </button>
                       </div>
                       {aiDayFeedbackError ? (
