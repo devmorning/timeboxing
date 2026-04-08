@@ -44,7 +44,7 @@ function endsNextDay(startTime, endTime) {
 const SECONDS_PER_DAY = 86400;
 
 /** select에 표시할 구간(분) — 고정 목록 */
-const ALLOWED_DURATIONS = [5, 10, 15, 20, 25, 30, 40, 50, 60];
+const ALLOWED_DURATIONS = [5, 10, 15, 20, 25, 30, 40, 50, 60, 120, 180, 240];
 const DEFAULT_DURATION_MIN = 30;
 const MIN_DURATION_MIN = 1;
 const MAX_DURATION_MIN = 24 * 60;
