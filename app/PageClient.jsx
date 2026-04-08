@@ -3668,13 +3668,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           id="main-date-expand-slot"
                           data-testid="inline-calendar-panel"
                           className={[
-                            "relative z-10 overflow-hidden",
+                            "relative z-10 grid overflow-hidden",
                             !prefersReducedMotion
-                              ? "transition-opacity duration-300 ease-out"
+                              ? "transition-[grid-template-rows,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
                               : "",
                             isDatePickerOpen
-                              ? "max-h-[min(72vh,560px)] opacity-100"
-                              : "pointer-events-none max-h-0 opacity-0",
+                              ? "grid-rows-[1fr] opacity-100"
+                              : "pointer-events-none grid-rows-[0fr] opacity-0",
                           ]
                             .filter(Boolean)
                             .join(" ")}
@@ -3682,7 +3682,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       >
                         <div
                             className={[
-                              "mx-4 mb-4 max-h-[min(72vh,560px)] overflow-hidden rounded-2xl border border-white/55 bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]",
+                              "mx-4 mb-4 min-h-0 max-h-[min(72vh,560px)] overflow-hidden rounded-2xl border border-white/55 bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] will-change-[transform,opacity]",
                               !prefersReducedMotion
                                 ? "transition-[transform,opacity] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
                                 : "",
