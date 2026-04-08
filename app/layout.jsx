@@ -8,6 +8,8 @@ const notoSansKr = Noto_Sans_KR({
   display: "swap",
 });
 
+const ICON_VERSION = "20260408b";
+
 export const metadata = {
   title: {
     default: "Timeboxing",
@@ -15,8 +17,12 @@ export const metadata = {
   },
   description: "하루 일정을 시간 단위로 정리하는 타임박싱 앱",
   icons: {
-    icon: "/icon.svg",
-    apple: "/apple-icon",
+    icon: [
+      { url: `/icon.svg?v=${ICON_VERSION}`, type: "image/svg+xml" },
+      { url: `/icon-192?v=${ICON_VERSION}`, sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: `/icon.svg?v=${ICON_VERSION}`,
+    apple: `/apple-icon?v=${ICON_VERSION}`,
   },
 };
 
@@ -34,7 +40,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ko" className={notoSansKr.variable}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href={`/manifest.json?v=${ICON_VERSION}`} />
       </head>
       <body
           className={`${notoSansKr.className} min-h-screen bg-stone-200 font-sans text-stone-900 antialiased`}
