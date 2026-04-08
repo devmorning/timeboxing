@@ -991,6 +991,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
   const [calendarVisibleRange, setCalendarVisibleRange] = useState({ start: 0, end: 0 });
   const calendarScrollRef = useRef(null);
+  const calendarScrollRafRef = useRef(null);
+  const calendarScrollPendingRef = useRef({ scrollTop: 0, viewportHeight: 0 });
   const [markedDates, setMarkedDates] = useState(new Set());
   const [repeatingTemplates, setRepeatingTemplates] = useState([]);
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
@@ -2183,8 +2185,27 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const handleCalendarScroll = useCallback((event) => {
     const node = event.currentTarget;
     if (!(node instanceof HTMLElement)) return;
-    updateCalendarVirtualRange(node.scrollTop, node.clientHeight);
+    calendarScrollPendingRef.current = {
+      scrollTop: node.scrollTop,
+      viewportHeight: node.clientHeight,
+    };
+    if (calendarScrollRafRef.current) return;
+    calendarScrollRafRef.current = requestAnimationFrame(() => {
+      calendarScrollRafRef.current = null;
+      const pending = calendarScrollPendingRef.current;
+      updateCalendarVirtualRange(pending.scrollTop, pending.viewportHeight);
+    });
   }, [updateCalendarVirtualRange]);
+
+  useEffect(
+    () => () => {
+      if (calendarScrollRafRef.current) {
+        cancelAnimationFrame(calendarScrollRafRef.current);
+        calendarScrollRafRef.current = null;
+      }
+    },
+    []
+  );
 
 
   useEffect(() => {

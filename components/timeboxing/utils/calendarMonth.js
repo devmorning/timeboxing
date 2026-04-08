@@ -1,3 +1,6 @@
+const monthCellsCache = new Map();
+const monthTitleCache = new Map();
+
 /** @param {string} ym `YYYY-MM` */
 export function buildMonthKeys(centerYm, past = 12, future = 12) {
   const [y, m] = centerYm.split("-").map(Number);
@@ -11,6 +14,9 @@ export function buildMonthKeys(centerYm, past = 12, future = 12) {
 
 /** @param {string} ym `YYYY-MM` */
 export function getCellsForMonth(ym) {
+  const cached = monthCellsCache.get(ym);
+  if (cached) return cached;
+
   const [year, month] = ym.split("-").map(Number);
   const firstDay = new Date(year, month - 1, 1);
   const startWeekday = firstDay.getDay();
@@ -26,16 +32,22 @@ export function getCellsForMonth(ym) {
     const dateYmd = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     cells.push({ day, dateYmd });
   }
+  monthCellsCache.set(ym, cells);
   return cells;
 }
 
 /** @param {string} ym `YYYY-MM` */
 export function formatMonthTitle(ym) {
+  const cached = monthTitleCache.get(ym);
+  if (cached) return cached;
+
   const [year, month] = ym.split("-").map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString("ko-KR", {
+  const title = new Date(year, month - 1, 1).toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
   });
+  monthTitleCache.set(ym, title);
+  return title;
 }
 
 /** 월 키 배열로 IndexedDB 범위 조회용 `YYYY-MM-DD` 구간 */
