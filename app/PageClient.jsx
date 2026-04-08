@@ -3854,7 +3854,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
         {!isDatePickerOpen ? (
             <nav
-                className="pointer-events-none fixed inset-x-0 bottom-0 z-40"
+                className="pointer-events-none fixed inset-x-0 bottom-2 z-40"
                 aria-label="하단 메뉴"
             >
               <div
