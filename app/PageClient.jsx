@@ -1139,9 +1139,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const emptyDaySwipeSurfaceRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   const mainChapterScrollRef = useRef(null);
-  /** 0=중요3, 1=브레인덤프, 2=일정 — 스크롤 위치로 동기화, 이전 챕터 입력 영역 페이드아웃용 */
+  /** 0=중요3, 1=브레인덤프, 2=일정 — 스크롤 위치로 동기화, 이전 챕터 본문 접힘용 */
   const [mainActiveChapterIdx, setMainActiveChapterIdx] = useState(0);
   const mainChapterScrollSyncRafRef = useRef(null);
+  /** 이전 챕터 본문 접힘으로 scrollHeight가 줄어들 때 scrollTop 보정용 */
+  const mainChapterScrollHeightRef = useRef(0);
+  const prevMainActiveChapterIdxRef = useRef(0);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
@@ -2632,6 +2635,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     mainChapterScrollSyncRafRef.current = requestAnimationFrame(() => {
       mainChapterScrollSyncRafRef.current = null;
       syncMainActiveChapterIdx();
+      const root = mainChapterScrollRef.current;
+      if (root) mainChapterScrollHeightRef.current = root.scrollHeight;
     });
   }, [syncMainActiveChapterIdx]);
 
@@ -2805,6 +2810,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, [selectedDate]);
 
   useLayoutEffect(() => {
+    prevMainActiveChapterIdxRef.current = 0;
+  }, [selectedDate]);
+
+  useLayoutEffect(() => {
     if (!showDayPlanContent) return;
     const pendingChapterIdx = pendingChapterIdxAfterDaySwipeRef.current;
     if (pendingChapterIdx == null) return;
@@ -2822,6 +2831,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         root.scrollTop = target.offsetTop;
         pendingChapterIdxAfterDaySwipeRef.current = null;
         setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(root));
+        mainChapterScrollHeightRef.current = root.scrollHeight;
       });
     });
   }, [selectedDate, showDayPlanContent]);
@@ -2829,10 +2839,32 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   useLayoutEffect(() => {
     if (!showDayPlanContent) return;
     const id = requestAnimationFrame(() => {
-      setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(mainChapterScrollRef.current));
+      const root = mainChapterScrollRef.current;
+      setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(root));
+      if (root) mainChapterScrollHeightRef.current = root.scrollHeight;
     });
     return () => cancelAnimationFrame(id);
   }, [selectedDate, showDayPlanContent]);
+
+  /** 이전 챕터 본문이 max-h-0으로 접히면서 높이가 줄어들 때, 뷰가 들쭉날쭉하지 않게 scrollTop 보정 (앞으로 넘길 때만) */
+  useLayoutEffect(() => {
+    const root = mainChapterScrollRef.current;
+    if (!root) return;
+    const prevIdx = prevMainActiveChapterIdxRef.current;
+    prevMainActiveChapterIdxRef.current = mainActiveChapterIdx;
+    const prevH = mainChapterScrollHeightRef.current;
+    const newH = root.scrollHeight;
+    if (prevH > 0 && newH < prevH && mainActiveChapterIdx > prevIdx) {
+      root.scrollTop = Math.max(0, root.scrollTop - (prevH - newH));
+    }
+    mainChapterScrollHeightRef.current = root.scrollHeight;
+    const id = requestAnimationFrame(() => {
+      syncMainActiveChapterIdx();
+      const r = mainChapterScrollRef.current;
+      if (r) mainChapterScrollHeightRef.current = r.scrollHeight;
+    });
+    return () => cancelAnimationFrame(id);
+  }, [mainActiveChapterIdx, syncMainActiveChapterIdx]);
 
   useEffect(() => {
     if (!authUser?.id) {
@@ -3663,16 +3695,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </div>
                         <div
                             className={[
-                              UI_CANVAS_INSET,
-                              mainActiveChapterIdx >= 1 && "pointer-events-none select-none opacity-0",
-                              mainActiveChapterIdx >= 1 &&
-                                !prefersReducedMotion &&
-                                "transition-opacity duration-300 ease-out",
+                              "overflow-hidden",
+                              !prefersReducedMotion && "transition-[max-height,opacity] duration-300 ease-out",
+                              mainActiveChapterIdx >= 1
+                                ? "pointer-events-none max-h-0 select-none opacity-0"
+                                : "max-h-[2000px] opacity-100",
                             ]
                               .filter(Boolean)
                               .join(" ")}
                             aria-hidden={mainActiveChapterIdx >= 1}
                         >
+                          <div className={UI_CANVAS_INSET}>
                           <div className="divide-y divide-stone-200/35 px-2.5 py-2">
                             {important3.map((v, idx) => (
                                 <div
@@ -3716,6 +3749,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                 </div>
                             ))}
                           </div>
+                          </div>
                         </div>
                       </section>
 
@@ -3741,16 +3775,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </div>
                         <div
                             className={[
-                              UI_CANVAS_INSET,
-                              mainActiveChapterIdx >= 2 && "pointer-events-none select-none opacity-0",
-                              mainActiveChapterIdx >= 2 &&
-                                !prefersReducedMotion &&
-                                "transition-opacity duration-300 ease-out",
+                              "overflow-hidden",
+                              !prefersReducedMotion && "transition-[max-height,opacity] duration-300 ease-out",
+                              mainActiveChapterIdx >= 2
+                                ? "pointer-events-none max-h-0 select-none opacity-0"
+                                : "max-h-[2000px] opacity-100",
                             ]
                               .filter(Boolean)
                               .join(" ")}
                             aria-hidden={mainActiveChapterIdx >= 2}
                         >
+                          <div className={UI_CANVAS_INSET}>
                           <div className="px-2.5 py-2.5">
                             <textarea
                                 ref={brainDumpTextareaRef}
@@ -3773,6 +3808,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     .join(" ")}
                             />
                           </div>
+                          </div>
                         </div>
                       </section>
 
@@ -3789,16 +3825,19 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   "radial-gradient(ellipse 70% 60% at 55% 25%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(ellipse 70% 60% at 20% 55%, rgba(255,255,255,0.55), transparent 62%)",
                             }}
                         />
-                        <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
+                        <div className="sticky top-2 z-10 mb-2.5 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-2.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
                           <div className="min-w-0">
                             <p className="text-[11px] font-semibold tracking-[0.14em] text-orange-700/70">CHAPTER 03</p>
                             <p className="mt-1 text-base font-semibold tracking-tight text-stone-800">내용</p>
                           </div>
+                          <span className="invisible text-[12px] font-semibold text-stone-500" aria-hidden>
+                            메모
+                          </span>
                         </div>
                         <div
                             className={UI_CANVAS_INSET}
                         >
-                          <div className="px-3 py-3">
+                          <div className="px-2.5 py-2.5">
                             {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
                             {displayItemsMerged.length > 0 ? (
                                 <div className="space-y-2.5">
