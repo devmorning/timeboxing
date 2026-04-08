@@ -1209,6 +1209,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [aiDayFeedback, setAiDayFeedback] = useState(null);
   const [aiDayFeedbackLoading, setAiDayFeedbackLoading] = useState(false);
   const [aiDayFeedbackError, setAiDayFeedbackError] = useState("");
+  const [aiFeedbackTypedSummary, setAiFeedbackTypedSummary] = useState("");
+  const [aiFeedbackListsVisible, setAiFeedbackListsVisible] = useState(false);
+  const aiFeedbackTypeTimerRef = useRef(null);
+  const aiFeedbackListTimerRef = useRef(null);
   const [aiPlanSuggestLoading, setAiPlanSuggestLoading] = useState(false);
   const [aiPlanSuggestError, setAiPlanSuggestError] = useState("");
 
@@ -1233,7 +1237,60 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   useEffect(() => {
     setAiDayFeedback(null);
     setAiDayFeedbackError("");
+    setAiFeedbackTypedSummary("");
+    setAiFeedbackListsVisible(false);
   }, [statsDayYmd, isStatsOpen]);
+
+  useEffect(() => {
+    if (aiFeedbackTypeTimerRef.current) {
+      clearInterval(aiFeedbackTypeTimerRef.current);
+      aiFeedbackTypeTimerRef.current = null;
+    }
+    if (aiFeedbackListTimerRef.current) {
+      clearTimeout(aiFeedbackListTimerRef.current);
+      aiFeedbackListTimerRef.current = null;
+    }
+    if (!aiDayFeedback) {
+      setAiFeedbackTypedSummary("");
+      setAiFeedbackListsVisible(false);
+      return;
+    }
+
+    const summary = typeof aiDayFeedback.summary === "string" ? aiDayFeedback.summary : "";
+    setAiFeedbackTypedSummary("");
+    setAiFeedbackListsVisible(false);
+
+    if (!summary) {
+      setAiFeedbackListsVisible(true);
+      return;
+    }
+
+    let idx = 0;
+    aiFeedbackTypeTimerRef.current = setInterval(() => {
+      idx += 1;
+      setAiFeedbackTypedSummary(summary.slice(0, idx));
+      if (idx >= summary.length) {
+        if (aiFeedbackTypeTimerRef.current) {
+          clearInterval(aiFeedbackTypeTimerRef.current);
+          aiFeedbackTypeTimerRef.current = null;
+        }
+        aiFeedbackListTimerRef.current = setTimeout(() => {
+          setAiFeedbackListsVisible(true);
+        }, 120);
+      }
+    }, 14);
+
+    return () => {
+      if (aiFeedbackTypeTimerRef.current) {
+        clearInterval(aiFeedbackTypeTimerRef.current);
+        aiFeedbackTypeTimerRef.current = null;
+      }
+      if (aiFeedbackListTimerRef.current) {
+        clearTimeout(aiFeedbackListTimerRef.current);
+        aiFeedbackListTimerRef.current = null;
+      }
+    };
+  }, [aiDayFeedback]);
 
   useLayoutEffect(() => {
     adjustBrainDumpHeight();
@@ -4752,24 +4809,33 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       {aiDayFeedback ? (
                           <div className={UI_SURFACE_PX4}>
                             <p className="text-[12px] font-semibold text-stone-700">AI 피드백</p>
-                            {aiDayFeedback.summary ? (
-                                <p className="mt-2 text-[13px] leading-snug text-stone-700">{aiDayFeedback.summary}</p>
+                            {aiFeedbackTypedSummary ? (
+                                <p className="mt-2 whitespace-pre-wrap text-[13px] leading-snug text-stone-700">
+                                  {aiFeedbackTypedSummary}
+                                  {!aiFeedbackListsVisible ? <span className="ml-0.5 inline-block animate-pulse">|</span> : null}
+                                </p>
                             ) : null}
-                            {Array.isArray(aiDayFeedback.strengths) && aiDayFeedback.strengths.length > 0 ? (
+                            {aiFeedbackListsVisible &&
+                            Array.isArray(aiDayFeedback.strengths) &&
+                            aiDayFeedback.strengths.length > 0 ? (
                                 <ul className="mt-2 space-y-1 text-[12px] text-stone-700">
                                   {aiDayFeedback.strengths.map((line, idx) => (
                                       <li key={`ai_strength_${idx}`}>- 강점: {line}</li>
                                   ))}
                                 </ul>
                             ) : null}
-                            {Array.isArray(aiDayFeedback.risks) && aiDayFeedback.risks.length > 0 ? (
+                            {aiFeedbackListsVisible &&
+                            Array.isArray(aiDayFeedback.risks) &&
+                            aiDayFeedback.risks.length > 0 ? (
                                 <ul className="mt-2 space-y-1 text-[12px] text-stone-700">
                                   {aiDayFeedback.risks.map((line, idx) => (
                                       <li key={`ai_risk_${idx}`}>- 리스크: {line}</li>
                                   ))}
                                 </ul>
                             ) : null}
-                            {Array.isArray(aiDayFeedback.actions) && aiDayFeedback.actions.length > 0 ? (
+                            {aiFeedbackListsVisible &&
+                            Array.isArray(aiDayFeedback.actions) &&
+                            aiDayFeedback.actions.length > 0 ? (
                                 <ul className="mt-2 space-y-1 text-[12px] text-stone-700">
                                   {aiDayFeedback.actions.map((line, idx) => (
                                       <li key={`ai_action_${idx}`}>- 액션: {line}</li>
