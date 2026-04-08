@@ -427,33 +427,6 @@ function EmptyDayLockScreen({
       year: y,
     };
   }, [selectedDate]);
-  const [isDateMorphing, setIsDateMorphing] = useState(false);
-  const [overlayEntered, setOverlayEntered] = useState(prefersReducedMotion);
-  const overlayTouchGestureRef = useRef({
-    startX: 0,
-    startY: 0,
-    moved: false,
-  });
-
-  useEffect(() => {
-    if (!visible) return;
-    if (prefersReducedMotion) {
-      setOverlayEntered(true);
-      return;
-    }
-    setOverlayEntered(false);
-    const id = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setOverlayEntered(true));
-    });
-    return () => cancelAnimationFrame(id);
-  }, [visible, prefersReducedMotion]);
-
-  useEffect(() => {
-    if (!visible || prefersReducedMotion) return;
-    setIsDateMorphing(true);
-    const t = window.setTimeout(() => setIsDateMorphing(false), 260);
-    return () => window.clearTimeout(t);
-  }, [selectedDate, visible, prefersReducedMotion]);
 
   if (!visible || !parts) return null;
 
@@ -462,9 +435,6 @@ function EmptyDayLockScreen({
         className={[
           "fixed inset-0 z-[39] flex cursor-default flex-col items-center justify-center overflow-hidden px-6",
           "pb-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom)))] pt-[max(3.5rem,env(safe-area-inset-top)+2.25rem)]",
-          !prefersReducedMotion
-            ? "transition-[opacity,backdrop-filter,transform] duration-[440ms] ease-[cubic-bezier(0.22,1,0.32,1)]"
-            : "",
         ].join(" ")}
         role="dialog"
         aria-modal="true"
@@ -473,29 +443,9 @@ function EmptyDayLockScreen({
         onClick={(event) => {
           event.preventDefault();
         }}
-        onTouchStart={(event) => {
-          const touch = event.touches?.[0];
-          if (touch) {
-            overlayTouchGestureRef.current.startX = touch.clientX;
-            overlayTouchGestureRef.current.startY = touch.clientY;
-            overlayTouchGestureRef.current.moved = false;
-          }
-          onTouchStart?.(event);
-        }}
-        onTouchMove={(event) => {
-          const touch = event.touches?.[0];
-          if (touch) {
-            const dx = touch.clientX - overlayTouchGestureRef.current.startX;
-            const dy = touch.clientY - overlayTouchGestureRef.current.startY;
-            if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-              overlayTouchGestureRef.current.moved = true;
-            }
-          }
-          onTouchMove?.(event);
-        }}
-        onTouchEnd={(event) => {
-          onTouchEnd?.(event);
-        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         onTouchCancel={onTouchCancel}
         style={{
           transform: !prefersReducedMotion
@@ -504,11 +454,6 @@ function EmptyDayLockScreen({
           transition: !prefersReducedMotion && swipeTransition
             ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1)"
             : "none",
-          opacity: overlayEntered ? 1 : 0,
-          transform: !prefersReducedMotion && !overlayEntered
-            ? "translate3d(0, 7px, 0)"
-            : undefined,
-          backdropFilter: overlayEntered ? "blur(1.2px)" : "blur(0px)",
           willChange:
             !prefersReducedMotion && (swipePullX !== 0 || swipeTransition)
               ? "transform"
@@ -523,13 +468,7 @@ function EmptyDayLockScreen({
     >
       <div
           aria-hidden
-          className={[
-            "pointer-events-none absolute inset-0 mix-blend-overlay",
-            !prefersReducedMotion
-              ? "transition-opacity duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-              : "",
-            overlayEntered ? "opacity-[0.4]" : "opacity-0",
-          ].join(" ")}
+          className="pointer-events-none absolute inset-0 mix-blend-overlay opacity-[0.4]"
           style={{
             backgroundImage:
                 "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 0%, transparent 42%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.15) 0%, transparent 38%)",
@@ -537,29 +476,14 @@ function EmptyDayLockScreen({
       />
       <div className="relative w-full max-w-md overflow-hidden px-2">
         <div
-            className={[
-              "relative flex w-full flex-col items-center text-center",
-              !prefersReducedMotion
-                ? "transition-[transform,opacity,filter] duration-[390ms] ease-[cubic-bezier(0.22,1,0.32,1)]"
-                : "",
-              isDateMorphing && !prefersReducedMotion
-                ? "scale-[1.008] opacity-[0.985] blur-[0.25px]"
-                : "scale-100 opacity-100 blur-0",
-            ].join(" ")}
+            className="relative flex w-full flex-col items-center text-center"
             style={
               !prefersReducedMotion
                 ? {
-                    transform: `translate3d(${swipePullX * 0.18}px, ${overlayEntered ? "0px" : "10px"}, 0) scale(${Math.max(
-                      overlayEntered ? 0.996 : 0.985,
-                      1 - Math.min(0.004, Math.abs(swipePullX) / 7600)
-                    )})`,
-                    opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(swipePullX) / 420)),
-                    filter: "none",
-                    transformOrigin: "center top",
+                    transform: `translate3d(${swipePullX * 0.18}px, 0, 0)`,
                     transition: swipeTransition
-                      ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease-out, filter 0.2s ease-out"
+                      ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1)"
                       : "none",
-                    willChange: Math.abs(swipePullX) > 0 ? "transform,opacity" : "auto",
                   }
                 : undefined
             }
@@ -568,23 +492,7 @@ function EmptyDayLockScreen({
             {parts.weekday}
           </p>
           <p
-              className={[
-                "mt-1 font-sans text-[clamp(4.25rem,20vw,6.75rem)] font-extralight leading-[0.92] tracking-[-0.085em]",
-                "text-stone-800 tabular-nums",
-                !prefersReducedMotion
-                  ? "transition-[transform,text-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
-                  : "",
-                isDateMorphing && !prefersReducedMotion
-                  ? "scale-[1.015]"
-                  : "scale-100",
-              ].join(" ")}
-              style={
-                isDateMorphing && !prefersReducedMotion
-                  ? {
-                      textShadow: "0 8px 28px rgba(251,146,60,0.16)",
-                    }
-                  : undefined
-              }
+              className="mt-1 font-sans text-[clamp(4.25rem,20vw,6.75rem)] font-extralight leading-[0.92] tracking-[-0.085em] text-stone-800 tabular-nums"
           >
             {parts.dayNum}
           </p>
@@ -600,7 +508,6 @@ function EmptyDayLockScreen({
               className={[
                 "mt-10 rounded-full border border-white/50 bg-white/30 px-11 py-3.5 text-sm font-semibold tracking-tight text-stone-800",
                 "shadow-[0_12px_40px_-12px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl",
-                "transition-transform duration-200 active:scale-[0.97] active:opacity-90",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/35",
               ].join(" ")}
               onClick={(e) => {
