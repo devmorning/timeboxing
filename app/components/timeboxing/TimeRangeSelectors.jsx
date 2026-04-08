@@ -50,7 +50,9 @@ const MIN_DURATION_MIN = 1;
 const MAX_DURATION_MIN = 24 * 60;
 
 const inputClass = [
-  "block h-10 w-full min-w-0 rounded-lg border border-slate-200/90 bg-[#FAFAFA] px-2.5 text-[15px] text-slate-900",
+  "block h-10 w-full min-w-0 appearance-none rounded-lg border border-slate-200/90 bg-[#FAFAFA] px-2.5 py-0 text-[15px] leading-[2.5rem] text-slate-900",
+  "[&::-webkit-date-and-time-value]:py-0 [&::-webkit-date-and-time-value]:leading-[2.5rem]",
+  "[&::-webkit-datetime-edit]:p-0 [&::-webkit-datetime-edit]:leading-[2.5rem]",
   "[color-scheme:light]",
   "focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20",
   "disabled:cursor-not-allowed disabled:bg-slate-100/80 disabled:text-slate-400",
