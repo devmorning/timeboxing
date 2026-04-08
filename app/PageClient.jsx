@@ -400,16 +400,28 @@ function rubberDaySwipeDx(dx, maxAbs) {
   return sign * (maxAbs + Math.min(excess * 0.33, maxAbs * 0.55));
 }
 
+/**
+ * 스크롤 컨테이너 기준으로 el 상단까지의 콘텐츠 오프셋(px).
+ * HTMLElement.offsetTop은 offsetParent 기준이라 래퍼·포지셔닝에 따라 깨지므로 통일한다.
+ */
+function getScrollContentOffsetTop(root, el) {
+  if (!root || !el || !(el instanceof HTMLElement) || !root.contains(el)) return 0;
+  return (
+    root.scrollTop +
+    (el.getBoundingClientRect().top - root.getBoundingClientRect().top)
+  );
+}
+
 /** 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스 (captureCurrentChapterIdx와 동일 기준) */
 function getMainChapterIdxFromScrollRoot(root) {
   if (!root) return 0;
   const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
   if (!chapters.length) return 0;
-  const top = root.scrollTop + 12;
+  const probeTop = root.scrollTop + 12;
   let idx = 0;
   for (let i = 0; i < chapters.length; i += 1) {
     const el = chapters[i];
-    if (el instanceof HTMLElement && el.offsetTop <= top) idx = i;
+    if (el instanceof HTMLElement && getScrollContentOffsetTop(root, el) <= probeTop) idx = i;
   }
   return idx;
 }
@@ -656,6 +668,7 @@ function AdjacentDayStaticColumn({
   daySwipePullX = 0,
   prefersReducedMotion = false,
 }) {
+  const columnRootRef = useRef(null);
   const norm = plan ? normalizeDayPlan(plan) : null;
   const important3 = norm?.important3 ?? ["", "", ""];
   const brainDump = norm?.brainDump ?? "";
@@ -709,8 +722,9 @@ function AdjacentDayStaticColumn({
     }
     const idx = Math.max(0, Math.min(2, activeChapterIdx ?? 0));
     const target = chapterRefs[idx]?.current;
-    if (!(target instanceof HTMLElement)) return;
-    setChapterAlignedOffsetY(-target.offsetTop);
+    const root = columnRootRef.current;
+    if (!(target instanceof HTMLElement) || !root) return;
+    setChapterAlignedOffsetY(-getScrollContentOffsetTop(root, target));
   }, [activeChapterIdx, prefersReducedMotion]);
 
   const previewTranslateY = !prefersReducedMotion
@@ -719,6 +733,7 @@ function AdjacentDayStaticColumn({
 
   return (
     <div
+        ref={columnRootRef}
         className="pointer-events-none w-full min-w-0 select-none space-y-5 pb-5 pt-1"
         style={
           !prefersReducedMotion
@@ -2907,9 +2922,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       return;
     }
     requestAnimationFrame(() => {
-      root.scrollTop = target.offsetTop;
+      const y = getScrollContentOffsetTop(root, target);
+      root.scrollTop = y;
       requestAnimationFrame(() => {
-        root.scrollTop = target.offsetTop;
+        root.scrollTop = getScrollContentOffsetTop(root, target);
         pendingChapterIdxAfterDaySwipeRef.current = null;
         setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(root));
       });
