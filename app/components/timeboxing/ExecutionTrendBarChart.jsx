@@ -39,27 +39,17 @@ export function ExecutionTrendDayList({ points, formatDuration }) {
 
 /**
  * 일별 실행 시간(초) 막대 — 높이는 기간 내 최댓값 대비 비율
- * - month: 가로 스크롤 허용
- * - week: 7칸 그리드로 화면 폭에 맞춰 꽉 채움
+ * - month/week 모두 화면 가로폭에 맞춰 칸을 균등 분배
  */
 export default function ExecutionTrendBarChart({ points, formatDuration, period = "month" }) {
   const isWeek = period === "week";
   const maxSec = points.reduce((m, p) => Math.max(m, p.seconds), 1);
 
   return (
-    <div
-      className={
-        isWeek
-          ? "w-full pb-2"
-          : "w-full overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]"
-      }
-    >
+    <div className="w-full pb-2">
       <div
-        className={
-          isWeek
-            ? "grid min-h-[140px] grid-cols-7 items-end gap-1 px-0.5 pt-2"
-            : "flex min-h-[140px] min-w-max items-end gap-1 px-0.5 pt-2"
-        }
+        className="grid min-h-[140px] items-end gap-1 px-0.5 pt-2"
+        style={{ gridTemplateColumns: `repeat(${Math.max(points.length, 1)}, minmax(0, 1fr))` }}
       >
         {points.map(({ ymd, seconds }) => {
           const day = Number(ymd.slice(8, 10));
@@ -68,13 +58,13 @@ export default function ExecutionTrendBarChart({ points, formatDuration, period 
           return (
             <div
               key={ymd}
-              className={isWeek ? "flex min-w-0 flex-col items-center gap-1" : "flex w-7 shrink-0 flex-col items-center gap-1"}
+              className="flex min-w-0 flex-col items-center gap-1"
               title={`${ymd}: ${formatDuration(seconds)}`}
             >
               <div className="flex h-[112px] w-full items-end justify-center">
                 <div
                   className={[
-                    isWeek ? "w-[calc(100%-2px)]" : "w-4",
+                    isWeek ? "w-[calc(100%-2px)]" : "w-[calc(100%-4px)]",
                     isZeroValue ? "rounded-full bg-orange-400/85" : "rounded-t bg-orange-500/90",
                     "transition-[height] duration-300",
                   ].join(" ")}
