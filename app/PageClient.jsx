@@ -4293,96 +4293,103 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             disabled={isDatePickerOpen}
                         />
                       </div>
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <div className="min-w-0 flex-1">
-                          <ComposerContentInput
-                              value={newContent}
-                              placeholder="예: 고객 피드백 정리"
-                              disabled={isDatePickerOpen}
-                              onChange={setNewContent}
-                              inputClassName={[
-                                "!border-0 rounded-none bg-stone-100/70 px-3.5 py-2.5 text-base leading-relaxed tracking-[-0.01em] text-stone-800",
-                                "placeholder:text-stone-400",
-                                "focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/12",
-                                "disabled:bg-stone-200/40 disabled:text-stone-400",
-                              ].join(" ")}
-                          />
-                        </div>
-                        <div className="w-[56px] shrink-0">
-                          {editingId ? (
-                              isEditingChanged ? (
-                                  <button
-                                      type="button"
-                                      aria-label="저장"
-                                      disabled={!canAdd}
-                                      onClick={saveEditItem}
-                                      className={[
-                                        "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
-                                        "text-orange-700 active:opacity-60",
-                                        "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                                        "disabled:cursor-not-allowed disabled:opacity-40",
-                                      ].join(" ")}
-                                  >
-                                    ✓
-                                  </button>
-                              ) : (
-                                  <button
-                                      type="button"
-                                      aria-label="취소"
-                                      onClick={closeScheduleComposerModal}
-                                      className={[
-                                        "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
-                                        "text-orange-700 active:opacity-60",
-                                        "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
-                                      ].join(" ")}
-                                  >
-                                    ✕
-                                  </button>
-                              )
-                          ) : (
+                      <section aria-label="일정 내용 입력">
+                        <div className={UI_SURFACE_P4}>
+                          <div className="flex items-stretch gap-2.5">
+                            <div className="min-w-0 flex-1">
+                              <ComposerContentInput
+                                  value={newContent}
+                                  placeholder="예: 고객 피드백 정리"
+                                  disabled={isDatePickerOpen}
+                                  onChange={setNewContent}
+                                  inputClassName={[
+                                    "!border-0 rounded-xl !bg-stone-100/70 px-3.5 py-3 text-base leading-relaxed tracking-[-0.01em] text-stone-800",
+                                    "min-h-[40px]",
+                                    "placeholder:text-stone-400",
+                                    "focus:!bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/12",
+                                    "disabled:!bg-stone-200/40 disabled:text-stone-400",
+                                  ].join(" ")}
+                              />
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
                               <button
                                   type="button"
-                                  aria-label="추가"
-                                  disabled={!canAdd}
-                                  onClick={addItem}
+                                  aria-label="반복 내용 관리 열기"
+                                  disabled={isDatePickerOpen}
+                                  onClick={() => {
+                                    setIsDatePickerOpen(false);
+                                    setIsTemplatesOpen(true);
+                                  }}
                                   className={[
-                                    "h-10 w-full select-none bg-transparent text-[18px] font-semibold leading-none",
-                                    "text-orange-700 active:opacity-60",
-                                    "focus:outline-none focus:ring-2 focus:ring-orange-500/25 rounded-md",
+                                    "flex h-10 w-10 select-none items-center justify-center rounded-xl border border-white/60 bg-white/55 p-0",
+                                    "text-orange-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60",
+                                    "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
                                     "disabled:cursor-not-allowed disabled:opacity-40",
                                   ].join(" ")}
                               >
-                                +
+                                <svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 24 24"
+                                    className="block h-[18px] w-[18px] shrink-0 translate-y-px"
+                                >
+                                  <path
+                                      fill="currentColor"
+                                      d="M4 7.5C4 6.67 4.67 6 5.5 6h8C14.33 6 15 6.67 15 7.5v8c0 .83-.67 1.5-1.5 1.5h-8C4.67 17 4 16.33 4 15.5zm5-3C9 3.67 9.67 3 10.5 3h8c.83 0 1.5.67 1.5 1.5v8c0 .83-.67 1.5-1.5 1.5H17v-6.5C17 5.57 15.43 4 13.5 4H9z"
+                                  />
+                                </svg>
                               </button>
-                          )}
+                              <div className="w-[44px] shrink-0">
+                                {editingId ? (
+                                    isEditingChanged ? (
+                                        <button
+                                            type="button"
+                                            aria-label="저장"
+                                            disabled={!canAdd}
+                                            onClick={saveEditItem}
+                                            className={[
+                                              "h-10 w-full select-none rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none",
+                                              "text-orange-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60",
+                                              "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                                              "disabled:cursor-not-allowed disabled:opacity-40",
+                                            ].join(" ")}
+                                        >
+                                          ✓
+                                        </button>
+                                    ) : (
+                                        <button
+                                            type="button"
+                                            aria-label="취소"
+                                            onClick={closeScheduleComposerModal}
+                                            className={[
+                                              "h-10 w-full select-none rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none",
+                                              "text-orange-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60",
+                                              "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                                            ].join(" ")}
+                                        >
+                                          ✕
+                                        </button>
+                                    )
+                                ) : (
+                                    <button
+                                        type="button"
+                                        aria-label="추가"
+                                        disabled={!canAdd}
+                                        onClick={addItem}
+                                        className={[
+                                          "h-10 w-full select-none rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none",
+                                          "text-orange-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60",
+                                          "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                                          "disabled:cursor-not-allowed disabled:opacity-40",
+                                        ].join(" ")}
+                                    >
+                                      +
+                                    </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <button
-                            type="button"
-                            aria-label="반복 내용 관리 열기"
-                            disabled={isDatePickerOpen}
-                            onClick={() => {
-                              setIsDatePickerOpen(false);
-                              setIsTemplatesOpen(true);
-                            }}
-                            className={[
-                              "flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-md bg-transparent p-0",
-                              "text-orange-700 active:opacity-60",
-                              "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-                              "disabled:cursor-not-allowed disabled:opacity-40",
-                            ].join(" ")}
-                        >
-                          <svg
-                              aria-hidden="true"
-                              viewBox="0 0 24 24"
-                              className="block h-[18px] w-[18px] shrink-0 translate-y-px"
-                          >
-                            <path
-                                fill="currentColor"
-                                d="M4 7.5C4 6.67 4.67 6 5.5 6h8C14.33 6 15 6.67 15 7.5v8c0 .83-.67 1.5-1.5 1.5h-8C4.67 17 4 16.33 4 15.5zm5-3C9 3.67 9.67 3 10.5 3h8c.83 0 1.5.67 1.5 1.5v8c0 .83-.67 1.5-1.5 1.5H17v-6.5C17 5.57 15.43 4 13.5 4H9z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
+                      </section>
                     </div>
                   </div>
                 </section>
