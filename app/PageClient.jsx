@@ -4208,7 +4208,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                   <div
                       ref={scheduleComposerScrollRef}
-                      className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pt-4 pb-[max(2.75rem,calc(1.75rem+env(safe-area-inset-bottom)))] [-webkit-overflow-scrolling:touch]"
+                      className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 pt-4 pb-[max(1.5rem,calc(0.75rem+env(safe-area-inset-bottom)))] [-webkit-overflow-scrolling:touch]"
                   >
                     <div className="space-y-4">
                       <section aria-label="가장 중요한 3가지">
