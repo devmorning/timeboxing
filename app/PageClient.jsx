@@ -40,6 +40,17 @@ const SECONDS_PER_DAY = 86400;
 const THIRTY_MIN_SECONDS = 1800;
 /** 브레인 덤프 textarea — 빈 상태 기본 1줄 높이(px, text-base·leading-relaxed 기준) */
 const BRAIN_DUMP_TEXTAREA_MIN_HEIGHT_PX = 28;
+/** 일정 추가 모달 브레인 덤프 textarea 최대 줄 수 */
+const COMPOSER_BRAIN_DUMP_MAX_LINES = 7;
+
+function getTextareaMaxHeightByLines(el, maxLines) {
+  if (!el) return Number.MAX_SAFE_INTEGER;
+  if (!Number.isFinite(maxLines) || maxLines <= 0) return Number.MAX_SAFE_INTEGER;
+  const computed = window.getComputedStyle(el);
+  const lineHeightPx = Number.parseFloat(computed.lineHeight);
+  if (!Number.isFinite(lineHeightPx) || lineHeightPx <= 0) return Number.MAX_SAFE_INTEGER;
+  return Math.ceil(lineHeightPx * maxLines);
+}
 /** 인라인 캘린더 가상 스크롤: 월 하나의 대략 높이(px) */
 const CALENDAR_VIRTUAL_MONTH_HEIGHT_PX = 316;
 const CALENDAR_VIRTUAL_OVERSCAN = 2;
@@ -368,7 +379,7 @@ function modalBottomSheetPanelClass(showOverlay, closing, options = {}) {
           : "translate-y-full scale-[0.985] opacity-95 blur-[1px]";
   return [
     "flex w-full max-w-lg flex-col overflow-hidden",
-    "mx-auto max-h-[min(92vh,920px)] min-h-0",
+    "mx-auto max-h-[min(95vh,980px)] min-h-0",
     "rounded-t-[1.25rem] shadow-[0_-8px_40px_rgba(15,23,42,0.14)]",
     "pb-[max(0px,env(safe-area-inset-bottom))]",
     bgClass,
@@ -905,14 +916,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     if (!el) return;
     el.style.height = "auto";
     const scrollH = el.scrollHeight;
+    const lineCap = getTextareaMaxHeightByLines(el, COMPOSER_BRAIN_DUMP_MAX_LINES);
     const vhCap =
         typeof window !== "undefined"
             ? Math.floor(window.innerHeight * 0.32)
             : Number.MAX_SAFE_INTEGER;
-    const capped = Math.min(scrollH, vhCap);
+    const capped = Math.min(scrollH, vhCap, lineCap);
     const next = Math.max(capped, BRAIN_DUMP_TEXTAREA_MIN_HEIGHT_PX);
     el.style.height = `${next}px`;
-    el.style.overflowY = scrollH > vhCap ? "auto" : "hidden";
+    el.style.overflowY = scrollH > Math.min(vhCap, lineCap) ? "auto" : "hidden";
   }, []);
 
   const [newStartTime, setNewStartTime] = useState("09:00");
