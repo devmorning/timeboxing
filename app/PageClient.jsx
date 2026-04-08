@@ -4035,25 +4035,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               >
                 <div
                     className={[
-                      "grid w-full grid-cols-5 overflow-hidden rounded-3xl border border-stone-200/40 bg-white/60 px-0 pt-2 pb-2",
+                      "grid w-full grid-cols-4 overflow-hidden rounded-3xl border border-stone-200/40 bg-white/60 px-0 pt-2 pb-2",
                       "shadow-[0_14px_44px_-18px_rgba(15,23,42,0.14)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/45",
                     ].join(" ")}
                 >
-                  <button
-                      type="button"
-                      aria-label="날짜 선택 열기"
-                      disabled={isDateTransitionLoading}
-                      onClick={openInlineCalendar}
-                      className={[
-                        "flex min-h-[52px] min-w-0 flex-col items-center justify-center rounded-xl px-1 py-1.5",
-                        "text-stone-600 active:bg-stone-100/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20",
-                        isDateTransitionLoading ? "cursor-wait opacity-45" : "",
-                      ].join(" ")}
-                  >
-                    <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-stone-500">
-                      날짜
-                    </span>
-                  </button>
                   <button
                       type="button"
                       aria-label="일정 추가"

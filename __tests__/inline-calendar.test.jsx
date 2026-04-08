@@ -19,7 +19,7 @@ describe("인라인 캘린더 열기", () => {
     const panel = screen.getByTestId("inline-calendar-panel");
     expect(panel.className).toContain("grid-rows-[0fr]");
 
-    fireEvent.click(screen.getByLabelText("날짜 선택 열기"));
+    fireEvent.click(screen.getByLabelText("날짜 패널 펼치기"));
 
     await waitFor(() => {
       expect(panel.className).toContain("grid-rows-[1fr]");
@@ -35,7 +35,7 @@ describe("인라인 캘린더 열기", () => {
     fireEvent.change(contentInput, { target: { value: "테스트 일정" } });
 
     const panel = screen.getByTestId("inline-calendar-panel");
-    fireEvent.click(screen.getByLabelText("날짜 선택 열기"));
+    fireEvent.click(screen.getByLabelText("날짜 패널 펼치기"));
     await waitFor(() => {
       expect(panel.className).toContain("grid-rows-[1fr]");
     });
@@ -103,7 +103,7 @@ describe("인라인 캘린더 열기", () => {
 
     render(<PageClient {...initialProps} />);
 
-    fireEvent.click(screen.getByLabelText("날짜 선택 열기"));
+    fireEvent.click(screen.getByLabelText("날짜 패널 펼치기"));
     const goTodayBtn = await screen.findByRole("button", { name: /오늘 날짜로 이동/ });
     fireEvent.click(goTodayBtn);
 
