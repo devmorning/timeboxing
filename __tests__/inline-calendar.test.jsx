@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import PageClient from "../app/PageClient.jsx";
 
 const initialProps = {
@@ -67,5 +67,59 @@ describe("인라인 캘린더 열기", () => {
     await waitFor(() => {
       expect(screen.getByText("시간 + 내용")).toBeInTheDocument();
     });
+  });
+
+  it("날짜 이동 후 데이터 fetch 중에는 스켈레톤을 보여준다", async () => {
+    jest.useFakeTimers();
+    const originalFetch = global.fetch;
+
+    const toLocalYmd = (d) => {
+      const yy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yy}-${mm}-${dd}`;
+    };
+    const todayYmd = toLocalYmd(new Date());
+
+    global.fetch = jest.fn((input, init = {}) => {
+      const url = typeof input === "string" ? input : input?.url ?? "";
+      if (url.includes(`/api/day-plans/${todayYmd}`)) {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            resolve({
+              ok: true,
+              status: 200,
+              json: async () => ({
+                important3: ["", "", ""],
+                brainDump: "",
+                items: [],
+              }),
+            });
+          }, 250);
+        });
+      }
+      return originalFetch(input, init);
+    });
+
+    render(<PageClient {...initialProps} />);
+
+    fireEvent.click(screen.getByLabelText("날짜 선택 열기"));
+    const goTodayBtn = await screen.findByRole("button", { name: /오늘 날짜로 이동/ });
+    fireEvent.click(goTodayBtn);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("일정 불러오는 중")).toBeInTheDocument();
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(1200);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText("일정 불러오는 중")).not.toBeInTheDocument();
+    });
+
+    global.fetch = originalFetch;
+    jest.useRealTimers();
   });
 });
