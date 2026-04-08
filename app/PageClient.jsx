@@ -4045,24 +4045,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       disabled={isDateTransitionLoading}
                       onClick={openInlineCalendar}
                       className={[
-                        "flex min-h-[52px] min-w-0 flex-col items-center justify-end gap-0.5 rounded-xl px-1 py-1.5",
+                        "flex min-h-[52px] min-w-0 flex-col items-center justify-center rounded-xl px-1 py-1.5",
                         "text-stone-600 active:bg-stone-100/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20",
                         isDateTransitionLoading ? "cursor-wait opacity-45" : "",
                       ].join(" ")}
                   >
-                    <svg
-                        aria-hidden="true"
-                        className="h-[22px] w-[22px] shrink-0"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                      <rect x="3.5" y="5" width="17" height="15" rx="2" />
-                      <path d="M3.5 10h17M8 3v4M16 3v4" />
-                    </svg>
                     <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-stone-500">
                       날짜
                     </span>
