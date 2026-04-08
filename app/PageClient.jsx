@@ -2114,20 +2114,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const [showJumpedToTodayNotice, setShowJumpedToTodayNotice] = useState(false);
-
   const handleGoToday = useCallback(() => {
     const today = toLocalYmd(new Date());
     setSelectedDate(today);
     closeInlineCalendar();
-    setShowJumpedToTodayNotice(true);
   }, [closeInlineCalendar]);
-
-  useEffect(() => {
-    if (!showJumpedToTodayNotice) return;
-    const t = setTimeout(() => setShowJumpedToTodayNotice(false), 3200);
-    return () => clearTimeout(t);
-  }, [showJumpedToTodayNotice]);
 
   const openInlineCalendar = (event) => {
     event?.preventDefault();
@@ -3646,23 +3637,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           </svg>
                         </button>
                       </div>
-
-                      {showJumpedToTodayNotice ? (
-                          <div
-                              className={[
-                                "border-t border-orange-200/45 bg-gradient-to-r from-orange-50/90 to-amber-50/70 px-4 py-2 text-center",
-                                !prefersReducedMotion && "transition-opacity duration-300 ease-out",
-                              ]
-                                .filter(Boolean)
-                                .join(" ")}
-                              role="status"
-                              aria-live="polite"
-                          >
-                            <p className="text-[12px] font-semibold tracking-tight text-orange-800">
-                              오늘 날짜로 이동했어요
-                            </p>
-                          </div>
-                      ) : null}
 
                       <div
                           id="main-date-expand-slot"
