@@ -3654,7 +3654,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             .join(" ")}
                           style={
                             !prefersReducedMotion
-                              ? { transitionDuration: isDatePickerOpen ? "320ms" : "240ms" }
+                              ? { transitionDuration: isDatePickerOpen ? "320ms" : "300ms" }
                               : undefined
                           }
                           aria-hidden={!isDatePickerOpen}
@@ -3671,7 +3671,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               .join(" ")}
                             style={
                               !prefersReducedMotion
-                                ? { transitionDuration: isDatePickerOpen ? "380ms" : "280ms" }
+                                ? { transitionDuration: isDatePickerOpen ? "380ms" : "340ms" }
                                 : undefined
                             }
                             aria-label="날짜 선택 확장 영역"
