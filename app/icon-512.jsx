@@ -36,16 +36,18 @@ export default function Icon512() {
           style={{
             width: "62%",
             height: "62%",
-            display: "grid",
-            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-            gap: 24,
-            zIndex: 1,
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "space-between",
+            alignContent: "space-between",
           }}
         >
           {Array.from({ length: 4 }).map((_, idx) => (
             <div
               key={idx}
               style={{
+                width: "46%",
+                height: "46%",
                 borderRadius: 28,
                 background: idx === 1 ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.8)",
               }}
@@ -55,6 +57,7 @@ export default function Icon512() {
         <div
           style={{
             position: "absolute",
+            display: "flex",
             right: "20%",
             bottom: "18%",
             width: 102,
@@ -62,7 +65,6 @@ export default function Icon512() {
             borderRadius: 999,
             background: "#fff7ed",
             border: "5px solid rgba(255,255,255,0.95)",
-            zIndex: 2,
           }}
         >
           <div
