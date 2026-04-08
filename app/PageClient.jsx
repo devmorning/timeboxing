@@ -4332,14 +4332,35 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     <p className="min-w-0 flex-1 text-sm font-semibold leading-snug text-slate-700">
                       {editingId ? "일정 수정" : "일정 추가"}
                     </p>
-                    <button
-                        type="button"
-                        aria-label="일정 입력 닫기"
-                        onClick={closeScheduleComposerModal}
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
-                    >
-                      ✕
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                          type="button"
+                          onClick={handleApplyAiPlanSuggestion}
+                          disabled={isDatePickerOpen || aiPlanSuggestLoading}
+                          className={[
+                            UI_AI_BUTTON,
+                            "h-8 px-2.5 text-[11px]",
+                            aiPlanSuggestLoading ? "cursor-wait opacity-70" : "",
+                            isDatePickerOpen ? "cursor-not-allowed opacity-45" : "",
+                          ].join(" ")}
+                      >
+                        <svg aria-hidden viewBox="0 0 24 24" className="h-3 w-3 shrink-0">
+                          <path
+                              fill="currentColor"
+                              d="M9 3h6v2l-1.3 2.2A5.5 5.5 0 1 1 7 12.5c0-1.2.4-2.3 1.1-3.2L9 7V3Zm2 2v2.55l-1.35 2.28A3.5 3.5 0 1 0 14.5 12.5c0-.76-.24-1.46-.65-2.03L12.5 8.2V5H11Zm6.2 11.2.8-1.7 1.7-.8-1.7-.8-.8-1.7-.8 1.7-1.7.8 1.7.8.8 1.7Z"
+                          />
+                        </svg>
+                        {aiPlanSuggestLoading ? "AI…" : "AI 초안"}
+                      </button>
+                      <button
+                          type="button"
+                          aria-label="일정 입력 닫기"
+                          onClick={closeScheduleComposerModal}
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
 
                   <div
@@ -4416,26 +4437,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             onChangeEndTime={setNewEndTime}
                             disabled={isDatePickerOpen}
                         />
-                      </div>
-                      <div className="flex items-center justify-end">
-                        <button
-                            type="button"
-                            onClick={handleApplyAiPlanSuggestion}
-                            disabled={isDatePickerOpen || aiPlanSuggestLoading}
-                            className={[
-                              UI_AI_BUTTON,
-                              aiPlanSuggestLoading ? "cursor-wait opacity-70" : "",
-                              isDatePickerOpen ? "cursor-not-allowed opacity-45" : "",
-                            ].join(" ")}
-                        >
-                          <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0">
-                            <path
-                                fill="currentColor"
-                                d="M9 3h6v2l-1.3 2.2A5.5 5.5 0 1 1 7 12.5c0-1.2.4-2.3 1.1-3.2L9 7V3Zm2 2v2.55l-1.35 2.28A3.5 3.5 0 1 0 14.5 12.5c0-.76-.24-1.46-.65-2.03L12.5 8.2V5H11Zm6.2 11.2.8-1.7 1.7-.8-1.7-.8-.8-1.7-.8 1.7-1.7.8 1.7.8.8 1.7Z"
-                            />
-                          </svg>
-                          {aiPlanSuggestLoading ? "AI 초안…" : "AI 초안"}
-                        </button>
                       </div>
                       {aiPlanSuggestError ? (
                           <p className="text-[12px] text-rose-600">{aiPlanSuggestError}</p>
@@ -4764,6 +4765,24 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     <div className="flex items-center gap-1">
                       <button
                           type="button"
+                          onClick={handleLoadAiDayFeedback}
+                          disabled={dailyStats.loading || aiDayFeedbackLoading}
+                          className={[
+                            UI_AI_BUTTON,
+                            "h-8 px-2.5 text-[11px]",
+                            aiDayFeedbackLoading ? "cursor-wait opacity-70" : "",
+                          ].join(" ")}
+                      >
+                        <svg aria-hidden viewBox="0 0 24 24" className="h-3 w-3 shrink-0">
+                          <path
+                              fill="currentColor"
+                              d="M9 3h6v2l-1.3 2.2A5.5 5.5 0 1 1 7 12.5c0-1.2.4-2.3 1.1-3.2L9 7V3Zm2 2v2.55l-1.35 2.28A3.5 3.5 0 1 0 14.5 12.5c0-.76-.24-1.46-.65-2.03L12.5 8.2V5H11Zm6.2 11.2.8-1.7 1.7-.8-1.7-.8-.8-1.7-.8 1.7-1.7.8 1.7.8.8 1.7Z"
+                          />
+                        </svg>
+                        {aiDayFeedbackLoading ? "AI…" : "AI 피드백"}
+                      </button>
+                      <button
+                          type="button"
                           aria-label="이전 날"
                           onClick={() => setStatsDayYmd((prev) => addDaysToYmd(prev, -1))}
                           className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60"
@@ -4794,25 +4813,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]"
                   >
                     <div className="space-y-5">
-                      <div className="flex items-center justify-end">
-                        <button
-                            type="button"
-                            onClick={handleLoadAiDayFeedback}
-                            disabled={dailyStats.loading || aiDayFeedbackLoading}
-                            className={[
-                              UI_AI_BUTTON,
-                              aiDayFeedbackLoading ? "cursor-wait opacity-70" : "",
-                            ].join(" ")}
-                        >
-                          <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0">
-                            <path
-                                fill="currentColor"
-                                d="M9 3h6v2l-1.3 2.2A5.5 5.5 0 1 1 7 12.5c0-1.2.4-2.3 1.1-3.2L9 7V3Zm2 2v2.55l-1.35 2.28A3.5 3.5 0 1 0 14.5 12.5c0-.76-.24-1.46-.65-2.03L12.5 8.2V5H11Zm6.2 11.2.8-1.7 1.7-.8-1.7-.8-.8-1.7-.8 1.7-1.7.8 1.7.8.8 1.7Z"
-                            />
-                          </svg>
-                          {aiDayFeedbackLoading ? "AI 분석…" : "AI 피드백"}
-                        </button>
-                      </div>
                       {aiDayFeedbackError ? (
                           <p className="text-[12px] text-rose-600">{aiDayFeedbackError}</p>
                       ) : null}
