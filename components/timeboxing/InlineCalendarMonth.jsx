@@ -15,24 +15,25 @@ export const InlineCalendarMonth = memo(function InlineCalendarMonth({
   return (
     <div
       id={`cal-month-${ym}`}
-      className="mb-6 last:mb-2"
+      className="mb-6 w-full max-w-full min-w-0 overflow-x-hidden last:mb-2"
       style={{
         contentVisibility: "auto",
-        containIntrinsicSize: "320px",
+        // content-visibility 사용 시 레이아웃 점프를 줄이되, 가로(inline) 크기는 예약하지 않도록 최소값으로 둔다.
+        containIntrinsicSize: "1px 320px",
       }}
     >
       <h3 className="mb-2 text-center text-sm font-semibold text-slate-700">{title}</h3>
-      <div className="grid grid-cols-7 gap-1.5 text-center text-[12px] font-semibold text-slate-400">
+      <div className="grid w-full grid-cols-7 gap-1 text-center text-[12px] font-semibold text-slate-400">
         {["일", "월", "화", "수", "목", "금", "토"].map((d) => (
-          <div key={`${ym}_${d}`} className="py-1">
+          <div key={`${ym}_${d}`} className="min-w-0 py-1">
             {d}
           </div>
         ))}
       </div>
-      <div className="mt-1 grid grid-cols-7 gap-y-1.5">
+      <div className="mt-1 grid w-full grid-cols-7 gap-1">
         {cells.map((cell, idx) => {
           if (!cell) {
-            return <div key={`${ym}_e_${idx}`} className="min-h-[48px]" />;
+            return <div key={`${ym}_e_${idx}`} className="min-w-0 aspect-square w-full" />;
           }
 
           const isSelected = cell.dateYmd === selectedDate;
@@ -41,13 +42,13 @@ export const InlineCalendarMonth = memo(function InlineCalendarMonth({
           return (
             <div
               key={cell.dateYmd}
-              className="flex min-h-[48px] flex-col items-center justify-start"
+              className="flex w-full min-w-0 flex-col items-center justify-start"
             >
               <button
                 type="button"
                 onClick={() => onSelectDate(cell.dateYmd)}
                 className={[
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-medium transition-colors",
+                  "flex aspect-square w-full min-w-0 max-w-10 items-center justify-center rounded-full text-sm font-medium transition-colors",
                   isSelected
                     ? "bg-orange-600 text-white"
                     : "bg-transparent text-slate-700 hover:bg-black/[0.04]",

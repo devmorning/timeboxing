@@ -7,7 +7,6 @@ import {
   useMemo,
   useRef,
   useState,
-  startTransition,
 } from "react";
 import TextInput from "../components/textinput/TextInput.jsx";
 import { InlineCalendarMonth } from "../components/timeboxing/InlineCalendarMonth.jsx";
@@ -862,6 +861,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       ym: dt.toLocaleDateString("ko-KR", { year: "numeric", month: "long" }),
     };
   }, [selectedDate]);
+
+  const todayShortLabel = useMemo(() => {
+    const dt = new Date();
+    return dt.toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+  }, []);
+
+  const selectedIsToday = useMemo(
+      () => selectedDate === toLocalYmd(new Date()),
+      [selectedDate]
+  );
 
   const peekPrevYmd = useMemo(() => addDaysToYmd(selectedDate, -1), [selectedDate]);
   const peekNextYmd = useMemo(() => addDaysToYmd(selectedDate, 1), [selectedDate]);
@@ -2097,13 +2106,20 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const handlePickCalendarDate = useCallback(
-      (dateYmd) => {
-        setSelectedDate(dateYmd);
-        closeInlineCalendar();
-      },
-      [closeInlineCalendar]
-  );
+  const [showJumpedToTodayNotice, setShowJumpedToTodayNotice] = useState(false);
+
+  const handleGoToday = useCallback(() => {
+    const today = toLocalYmd(new Date());
+    setSelectedDate(today);
+    closeInlineCalendar();
+    setShowJumpedToTodayNotice(true);
+  }, [closeInlineCalendar]);
+
+  useEffect(() => {
+    if (!showJumpedToTodayNotice) return;
+    const t = setTimeout(() => setShowJumpedToTodayNotice(false), 3200);
+    return () => clearTimeout(t);
+  }, [showJumpedToTodayNotice]);
 
   const openInlineCalendar = (event) => {
     event?.preventDefault();
@@ -2119,11 +2135,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     // 입력 포커스/키보드 닫힘 중 레이아웃 흔들림을 피하려고 즉시 상단 이동 후 캘린더를 연다.
     window.scrollTo({ top: 0, behavior: "auto" });
-    // 무거운 월 목록 렌더는 transition으로 분리해 메인 스레드 블로킹 완화
-    startTransition(() => {
-      setCalendarMonthRange(buildMonthKeys(selectedDate.slice(0, 7), 12, 12));
-    });
     requestAnimationFrame(() => {
+      const centerYm = /^\d{4}-\d{2}-\d{2}$/.test(selectedDate)
+        ? selectedDate.slice(0, 7)
+        : toLocalYmd(new Date()).slice(0, 7);
+      setCalendarMonthRange(buildMonthKeys(centerYm, 6, 6));
       setIsDatePickerOpen(true);
     });
   };
@@ -3250,108 +3266,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       <main className="min-h-[100dvh] w-full min-w-0 bg-stone-200">
         {/* 하단 고정 탭바가 main overflow에 잘리지 않도록 스크롤 영역만 overflow-x 숨김 */}
         <div className="w-full min-w-0 overflow-x-clip">
-        <header
-            className={[
-              "fixed inset-x-0 top-0 z-50 bg-stone-200/90 backdrop-blur-md transition-opacity duration-200",
-              isReportOpen ? "pointer-events-none opacity-0" : "opacity-100",
-              !isDatePickerOpen ? "hidden" : "",
-            ].join(" ")}
-        >
-          <div className="mx-auto w-full max-w-md px-0 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-            {isDatePickerOpen ? (
-              <div className="flex w-full flex-col gap-2">
-                <div
-                    className={[
-                      "grid h-10 w-full grid-cols-[minmax(44px,auto)_1fr_minmax(44px,auto)] items-center",
-                      "gap-0",
-                    ].join(" ")}
-                >
-                  <button
-                      type="button"
-                      aria-label="오늘 날짜로 이동"
-                      disabled={isDateTransitionLoading}
-                      onClick={() => {
-                        const today = toLocalYmd(new Date());
-                        setSelectedDate(today);
-                        closeInlineCalendar();
-                      }}
-                      className={[
-                        "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-md bg-transparent text-orange-700 active:opacity-60",
-                        "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-                        isDateTransitionLoading ? "cursor-wait opacity-40" : "",
-                      ].join(" ")}
-                  >
-                    <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
-                      ◎
-                    </span>
-                    <span className="sr-only">오늘</span>
-                  </button>
-                  <button
-                      type="button"
-                      aria-label="캘린더 닫기"
-                      onClick={closeInlineCalendar}
-                      className={[
-                        "min-w-0 justify-self-stretch rounded-md px-2 py-1 text-center text-sm font-semibold tracking-tight text-slate-600",
-                        "active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25",
-                      ].join(" ")}
-                      suppressHydrationWarning
-                  >
-                    <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
-                  </button>
-                  <div className="flex min-w-[44px] items-center justify-end">
-                    <button
-                        type="button"
-                        aria-label="로그아웃"
-                        onClick={handleLogout}
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-transparent text-slate-500 active:opacity-60 focus:outline-none focus:ring-2 focus:ring-orange-500/25"
-                    >
-                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]">
-                        <path
-                            fill="currentColor"
-                            d="M10 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3v-2H7V6h3zm5.59 3.41L14.17 8.83 16.34 11H9v2h7.34l-2.17 2.17 1.42 1.42L20.17 12z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <div
-                data-testid="inline-calendar-panel"
-                className={[
-                  "overflow-hidden transition-[max-height,opacity,padding-top] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
-                  isDatePickerOpen
-                      ? "flex max-h-[calc(100dvh-4rem)] flex-col opacity-100 pt-3"
-                      : "max-h-0 opacity-0 pt-0",
-                ].join(" ")}
-            >
-              <section
-                  className={[
-                    "flex min-h-0 flex-1 flex-col rounded-2xl bg-transparent px-1 py-2",
-                    "transition-[transform,opacity] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
-                    isDatePickerOpen ? "translate-y-0 scale-100" : "-translate-y-1 scale-[0.98]",
-                  ].join(" ")}
-              >
-                {calendarMonthRange ? (
-                    <div
-                        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] px-0.5 pb-1"
-                    >
-                      {calendarMonthRange.map((ym) => (
-                          <InlineCalendarMonth
-                              key={ym}
-                              ym={ym}
-                              selectedDate={selectedDate}
-                              markedDates={markedDates}
-                              onSelectDate={handlePickCalendarDate}
-                          />
-                      ))}
-                    </div>
-                ) : null}
-              </section>
-            </div>
-          </div>
-        </header>
 
         <EmptyDayLockScreen
             visible={showEmptyDayLock}
@@ -3370,10 +3284,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         />
 
         <div
-            className={[
-              "mx-auto w-full min-w-0 max-w-md px-0 pb-[max(6.5rem,calc(4.15rem+env(safe-area-inset-bottom)))] transition-[padding-top] duration-300 ease-out",
-              isDatePickerOpen ? "pt-[calc(100dvh-4rem)]" : "pt-[max(1rem,env(safe-area-inset-top)+0.75rem)]",
-            ].join(" ")}
+            className="mx-auto w-full min-w-0 max-w-md px-0 pb-[max(6.5rem,calc(4.15rem+env(safe-area-inset-bottom)))] pt-[max(1rem,env(safe-area-inset-top)+0.75rem)]"
         >
           <div
               ref={daySwipeViewportRef}
@@ -3477,31 +3388,281 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 >
                   <div className="relative">
                     <div
-                        className="mb-3.5 rounded-3xl border border-white/65 bg-white/55 px-4 py-3 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl"
-                        aria-label={`선택한 날짜 ${selectedDateLabel}`}
+                        className={[
+                          "group relative mb-3.5 overflow-hidden rounded-3xl border border-white/65 bg-white/55 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
+                          "transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                          isDatePickerOpen
+                            ? "ring-2 ring-orange-400/35 ring-offset-2 ring-offset-transparent shadow-[0_18px_44px_-22px_rgba(251,146,60,0.22),inset_0_1px_0_rgba(255,255,255,0.9)]"
+                            : "hover:border-white/75 hover:shadow-[0_14px_36px_-20px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.88)]",
+                          isDateTransitionLoading ? "opacity-60" : "",
+                        ].join(" ")}
                         style={
                           !prefersReducedMotion
                             ? {
                                 transform: `translate3d(${daySwipePullX * 0.05}px, 0, 0)`,
                                 transition: daySwipeTransition
-                                  ? "transform 0.26s cubic-bezier(0.22,1,0.36,1)"
-                                  : "none",
+                                  ? "transform 0.26s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease"
+                                  : undefined,
                               }
                             : undefined
                         }
                     >
-                      <p className="text-[11px] font-semibold tracking-[0.18em] text-orange-700/80">
-                        {selectedDateDisplay.weekday.toUpperCase()}
-                      </p>
-                      <div className="mt-1 flex items-end justify-between">
-                        <p className="font-sans text-[2.45rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums">
-                          {selectedDateDisplay.day}
-                        </p>
-                        <p className="text-[13px] font-semibold tracking-tight text-stone-600">
-                          {selectedDateDisplay.ym}
-                        </p>
+                      {isDatePickerOpen && !prefersReducedMotion ? (
+                          <div
+                              aria-hidden
+                              className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-3xl"
+                          >
+                            <div
+                                className={[
+                                  "main-date-sheen-track absolute -top-px left-0 h-[calc(100%+2px)] w-[42%]",
+                                  "bg-gradient-to-r from-transparent via-white/45 to-transparent opacity-55 mix-blend-overlay",
+                                ].join(" ")}
+                            />
+                          </div>
+                      ) : null}
+                      <div className="relative z-10 flex w-full items-start gap-1.5 px-4 py-2">
+                        {isDatePickerOpen ? (
+                            <div className="flex min-w-0 flex-1 items-start gap-2">
+                              <div className="relative min-h-0 min-w-0 flex-1">
+                                <button
+                                    type="button"
+                                    disabled={isDateTransitionLoading}
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      closeInlineCalendar();
+                                    }}
+                                    className={[
+                                      "block w-full bg-transparent text-left",
+                                      "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500/30",
+                                      "active:scale-[0.992]",
+                                      isDateTransitionLoading ? "cursor-wait" : "",
+                                    ].join(" ")}
+                                    aria-label={`날짜 패널 접기 — ${selectedDateLabel}`}
+                                >
+                                  <p className="text-[9px] font-semibold tracking-[0.18em] text-orange-700/80">
+                                    {selectedDateDisplay.weekday.toUpperCase()}
+                                  </p>
+                                  <div className="mt-1 flex items-end gap-2">
+                                    <p className="font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums">
+                                      {selectedDateDisplay.day}
+                                    </p>
+                                  </div>
+                                </button>
+                              </div>
+                              <button
+                                  type="button"
+                                  aria-label={
+                                    selectedIsToday
+                                      ? "이미 오늘 날짜가 선택되어 있습니다"
+                                      : `오늘 날짜로 이동${todayShortLabel ? ` (${todayShortLabel})` : ""}`
+                                  }
+                                  title={
+                                    selectedIsToday
+                                      ? "이미 오늘 날짜입니다"
+                                      : `오늘로 이동${todayShortLabel ? ` (${todayShortLabel})` : ""}`
+                                  }
+                                  disabled={isDateTransitionLoading || selectedIsToday}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    handleGoToday();
+                                  }}
+                                  className={[
+                                    "group mt-[1.05rem] inline-flex shrink-0 items-center gap-2 rounded-full border border-orange-300/45 bg-gradient-to-r from-orange-50/95 to-amber-50/80 px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_6px_18px_-12px_rgba(251,146,60,0.35)]",
+                                    "transition-[transform,box-shadow,opacity] duration-250 ease-out",
+                                    "hover:border-orange-400/55 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_22px_-10px_rgba(251,146,60,0.4)]",
+                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40",
+                                    "active:scale-[0.99]",
+                                    isDateTransitionLoading || selectedIsToday ? "cursor-not-allowed opacity-45" : "",
+                                  ].join(" ")}
+                              >
+                                <span className="text-[11px] font-extrabold tracking-tight text-orange-800">
+                                  오늘
+                                </span>
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    className="h-4 w-4 shrink-0 text-orange-700 transition-transform duration-250 ease-out group-hover:translate-x-[1px]"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.25"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden
+                                >
+                                  <path d="M5 12h14M13 6l6 6-6 6" />
+                                </svg>
+                              </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                id="main-date-expand-toggle"
+                                aria-expanded={false}
+                                aria-controls="main-date-expand-slot"
+                                disabled={isDateTransitionLoading}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  openInlineCalendar(event);
+                                }}
+                                className={[
+                                  "flex min-w-0 flex-1 cursor-pointer items-start gap-2 bg-transparent text-left",
+                                  "transition-[transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                                  "focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-500/30",
+                                  "active:scale-[0.992]",
+                                  isDateTransitionLoading ? "cursor-wait" : "",
+                                ].join(" ")}
+                                aria-label={`날짜 선택 열기 — ${selectedDateLabel}`}
+                            >
+                              <div className="relative min-h-0 min-w-0 flex-1">
+                                <p
+                                    className={[
+                                      "text-[9px] font-semibold tracking-[0.18em] text-orange-700/80",
+                                      "transition-colors duration-300 ease-out",
+                                      "group-hover:text-orange-600",
+                                    ].join(" ")}
+                                >
+                                  {selectedDateDisplay.weekday.toUpperCase()}
+                                </p>
+                                <div className="mt-1 flex items-end justify-between gap-2">
+                                  <p
+                                      className={[
+                                        "font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums",
+                                        "transition-[transform,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                                        "group-hover:scale-[1.015] motion-reduce:group-hover:scale-100",
+                                      ].join(" ")}
+                                  >
+                                    {selectedDateDisplay.day}
+                                  </p>
+                                  <p className="text-[11px] font-semibold tracking-tight text-stone-600 transition-colors duration-300 group-hover:text-stone-700">
+                                    {selectedDateDisplay.ym}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            aria-expanded={isDatePickerOpen}
+                            aria-controls="main-date-expand-slot"
+                            disabled={isDateTransitionLoading}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              if (isDatePickerOpen) {
+                                closeInlineCalendar();
+                              } else {
+                                openInlineCalendar(event);
+                              }
+                            }}
+                            className={[
+                              "mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/55 bg-white/40 text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-sm",
+                              "transition-[transform,background-color,color,box-shadow] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+                              "hover:border-orange-200/50 hover:bg-orange-50/50 hover:text-orange-600/90 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_4px_14px_-6px_rgba(251,146,60,0.35)]",
+                              "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30",
+                              "active:scale-[0.95]",
+                              !prefersReducedMotion && "hover:-translate-y-px",
+                              isDatePickerOpen ? "text-orange-600" : "",
+                              isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                            ].join(" ")}
+                            aria-label={
+                              isDatePickerOpen
+                                ? "날짜 패널 접기"
+                                : "날짜 패널 펼치기"
+                            }
+                        >
+                          <svg
+                              viewBox="0 0 24 24"
+                              className={[
+                                "h-4 w-4 transition-transform duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)]",
+                                isDatePickerOpen ? "rotate-180" : "",
+                              ].join(" ")}
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden
+                          >
+                            <path d="M6 9l6 6 6-6" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {showJumpedToTodayNotice ? (
+                          <div
+                              className={[
+                                "border-t border-orange-200/45 bg-gradient-to-r from-orange-50/90 to-amber-50/70 px-4 py-2 text-center",
+                                !prefersReducedMotion && "transition-opacity duration-300 ease-out",
+                              ]
+                                .filter(Boolean)
+                                .join(" ")}
+                              role="status"
+                              aria-live="polite"
+                          >
+                            <p className="text-[12px] font-semibold tracking-tight text-orange-800">
+                              오늘 날짜로 이동했어요
+                            </p>
+                          </div>
+                      ) : null}
+
+                      <div
+                          id="main-date-expand-slot"
+                          data-testid="inline-calendar-panel"
+                          className={[
+                            "relative z-10 overflow-hidden",
+                            !prefersReducedMotion
+                              ? "transition-[max-height,opacity] duration-[480ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                              : "",
+                            isDatePickerOpen
+                              ? "max-h-[min(72vh,560px)] opacity-100"
+                              : "pointer-events-none max-h-0 opacity-0",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                          aria-hidden={!isDatePickerOpen}
+                      >
+                        <div
+                            className={[
+                              "mx-4 mb-4 max-h-[min(72vh,560px)] overflow-hidden rounded-2xl border border-white/55 bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-md",
+                              !prefersReducedMotion
+                                ? "transition-[transform,opacity] duration-[460ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                                : "",
+                              isDatePickerOpen && !prefersReducedMotion ? "main-date-slot-glow" : "",
+                              isDatePickerOpen ? "translate-y-0 scale-100 opacity-100" : "-translate-y-1.5 scale-[0.985] opacity-0",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            aria-label="날짜 선택 확장 영역"
+                        >
+                          <div className="min-h-0 max-h-[min(72vh,560px)] overflow-x-hidden overflow-y-auto overscroll-y-contain px-3 py-3 scrollbar-none touch-pan-y [-webkit-overflow-scrolling:touch]">
+                            {calendarMonthRange?.length ? (
+                                <div className="mx-auto w-full max-w-md min-w-0">
+                                  {calendarMonthRange.map((ym) => (
+                                      <InlineCalendarMonth
+                                          key={ym}
+                                          ym={ym}
+                                          selectedDate={selectedDate}
+                                          markedDates={markedDates}
+                                          onSelectDate={(ymd) => {
+                                            setSelectedDate(ymd);
+                                            closeInlineCalendar();
+                                          }}
+                                      />
+                                  ))}
+                                </div>
+                            ) : (
+                                <div className="flex min-h-[min(72vh,560px)] items-center justify-center">
+                                  <p className="text-sm font-semibold text-stone-500">캘린더를 불러오는 중…</p>
+                                </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
+
                     <div
                         ref={mainChapterScrollRef}
                         onScroll={onMainChapterScroll}
