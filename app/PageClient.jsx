@@ -1278,7 +1278,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           setAiFeedbackListsVisible(true);
         }, 120);
       }
-    }, 14);
+    }, 20);
 
     return () => {
       if (aiFeedbackTypeTimerRef.current) {
