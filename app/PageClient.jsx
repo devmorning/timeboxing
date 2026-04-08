@@ -51,7 +51,7 @@ const UI_SURFACE_PX4 =
   "w-full overflow-hidden rounded-xl bg-stone-50/96 px-4 py-4 shadow-[0_1px_0_rgba(15,23,42,0.03),0_24px_56px_-28px_rgba(15,23,42,0.1)] backdrop-blur-md";
 /** 메인 원-캔버스: 2026 웜 스톤 소프트 글래스 */
 const UI_CANVAS =
-  "w-full overflow-hidden rounded-3xl border border-white/55 bg-white/55 shadow-[0_18px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-2xl";
+  "w-full max-h-[calc(100dvh-8.25rem-env(safe-area-inset-bottom))] overflow-hidden rounded-3xl border border-white/55 bg-white/55 shadow-[0_18px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-2xl";
 const UI_CANVAS_INSET =
   "w-full overflow-hidden rounded-2xl border border-white/60 bg-stone-50/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]";
 /** 가장 중요한 일 우선순위 번호(1–3): 얕은 그라데이션 웰 */
@@ -3716,7 +3716,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         ref={mainChapterScrollRef}
                         onScroll={onMainChapterScroll}
                         className={[
-                          "h-[min(calc(100dvh-11.5rem-env(safe-area-inset-bottom)),760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 scrollbar-none",
+                          "h-[min(calc(100dvh-8.25rem-env(safe-area-inset-bottom)),760px)] overflow-y-auto overscroll-y-contain snap-y snap-proximity space-y-8 pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scrollbar-none",
                           !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
@@ -3867,7 +3867,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       <section
                           aria-label="일정 목록"
                           data-main-chapter
-                          className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24"
+                          className="relative min-h-[min(56vh,520px)] scroll-mt-24 scroll-mb-24"
                       >
                         <div
                             aria-hidden
@@ -3886,7 +3886,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         <div
                             className={UI_CANVAS_INSET}
                         >
-                          <div className="px-3 py-3">
+                          <div className="px-3 pt-3 pb-[max(2rem,calc(1rem+env(safe-area-inset-bottom)))]">
                             {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
                             {displayItemsMerged.length > 0 ? (
                                 <div className="space-y-2.5">
