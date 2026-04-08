@@ -3567,6 +3567,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         ref={mainChapterScrollRef}
                         className={[
                           "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 scrollbar-none",
+                          /* 스크롤 끝에서 마지막 챕터(일정)가 고정 탭바에 가리지 않도록 */
+                          "pb-[max(6.5rem,calc(4.15rem+env(safe-area-inset-bottom)+0.5rem))]",
                           !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
