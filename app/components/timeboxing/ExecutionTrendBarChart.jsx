@@ -44,7 +44,8 @@ export function ExecutionTrendDayList({ points, formatDuration }) {
 export default function ExecutionTrendBarChart({ points, formatDuration, period = "month" }) {
   const isWeek = period === "week";
   const maxSec = points.reduce((m, p) => Math.max(m, p.seconds), 1);
-  const monthTrackMinWidth = `calc(100% * ${Math.max(points.length, 1)} / 7)`;
+  const monthViewportDays = 14;
+  const monthTrackMinWidth = `calc(100% * ${Math.max(points.length, 1)} / ${monthViewportDays})`;
 
   return (
     <div
