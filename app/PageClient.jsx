@@ -3716,7 +3716,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         ref={mainChapterScrollRef}
                         onScroll={onMainChapterScroll}
                         className={[
-                          "h-[min(calc(100dvh-8.25rem-env(safe-area-inset-bottom)),760px)] overflow-y-auto overscroll-y-contain snap-y snap-proximity space-y-8 pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scrollbar-none",
+                          "h-[min(calc(100dvh-8.25rem-env(safe-area-inset-bottom)),760px)] overflow-y-auto overscroll-y-contain snap-y snap-proximity space-y-8 pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scroll-pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scrollbar-none",
                           !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
@@ -3867,7 +3867,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       <section
                           aria-label="일정 목록"
                           data-main-chapter
-                          className="relative min-h-[min(56vh,520px)] scroll-mt-24 scroll-mb-24"
+                          className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24 scroll-mb-24"
                       >
                         <div
                             aria-hidden
