@@ -44,12 +44,18 @@ export function ExecutionTrendDayList({ points, formatDuration }) {
 export default function ExecutionTrendBarChart({ points, formatDuration, period = "month" }) {
   const isWeek = period === "week";
   const maxSec = points.reduce((m, p) => Math.max(m, p.seconds), 1);
+  const monthTrackMinWidth = `calc(100% * ${Math.max(points.length, 1)} / 7)`;
 
   return (
-    <div className="w-full pb-2">
+    <div
+      className={
+        isWeek ? "w-full pb-2" : "w-full overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]"
+      }
+    >
       <div
         className="grid min-h-[140px] items-end gap-1 px-0.5 pt-2"
         style={{ gridTemplateColumns: `repeat(${Math.max(points.length, 1)}, minmax(0, 1fr))` }}
+        {...(!isWeek ? { minWidth: monthTrackMinWidth } : {})}
       >
         {points.map(({ ymd, seconds }) => {
           const day = Number(ymd.slice(8, 10));
