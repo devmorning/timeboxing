@@ -38,26 +38,46 @@ export function ExecutionTrendDayList({ points, formatDuration }) {
 }
 
 /**
- * 일별 실행 시간(초) 막대 — 가로 스크롤, 높이는 기간 내 최댓값 대비 비율
+ * 일별 실행 시간(초) 막대 — 높이는 기간 내 최댓값 대비 비율
+ * - month: 가로 스크롤 허용
+ * - week: 7칸 그리드로 화면 폭에 맞춰 꽉 채움
  */
-export default function ExecutionTrendBarChart({ points, formatDuration }) {
+export default function ExecutionTrendBarChart({ points, formatDuration, period = "month" }) {
+  const isWeek = period === "week";
   const maxSec = points.reduce((m, p) => Math.max(m, p.seconds), 1);
 
   return (
-    <div className="w-full overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]">
-      <div className="flex min-h-[140px] min-w-max items-end gap-1 px-0.5 pt-2">
+    <div
+      className={
+        isWeek
+          ? "w-full pb-2"
+          : "w-full overflow-x-auto pb-2 [-webkit-overflow-scrolling:touch]"
+      }
+    >
+      <div
+        className={
+          isWeek
+            ? "grid min-h-[140px] grid-cols-7 items-end gap-1 px-0.5 pt-2"
+            : "flex min-h-[140px] min-w-max items-end gap-1 px-0.5 pt-2"
+        }
+      >
         {points.map(({ ymd, seconds }) => {
           const day = Number(ymd.slice(8, 10));
-          const h = maxSec > 0 ? Math.max(4, (seconds / maxSec) * 112) : 4;
+          const isZeroValue = seconds <= 0;
+          const h = isZeroValue ? 2 : maxSec > 0 ? Math.max(4, (seconds / maxSec) * 112) : 2;
           return (
             <div
               key={ymd}
-              className="flex w-7 shrink-0 flex-col items-center gap-1"
+              className={isWeek ? "flex min-w-0 flex-col items-center gap-1" : "flex w-7 shrink-0 flex-col items-center gap-1"}
               title={`${ymd}: ${formatDuration(seconds)}`}
             >
               <div className="flex h-[112px] w-full items-end justify-center">
                 <div
-                  className="w-4 rounded-t bg-orange-500/90 transition-[height] duration-300"
+                  className={[
+                    isWeek ? "w-[calc(100%-2px)]" : "w-4",
+                    isZeroValue ? "rounded-full bg-orange-400/85" : "rounded-t bg-orange-500/90",
+                    "transition-[height] duration-300",
+                  ].join(" ")}
                   style={{ height: `${h}px` }}
                 />
               </div>

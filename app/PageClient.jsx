@@ -5104,6 +5104,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             <ExecutionTrendBarChart
                                 points={trendSeries.points}
                                 formatDuration={formatSecondsAsDurationKo}
+                                period={trendPeriod}
                             />
                             <ExecutionTrendDayList
                                 points={trendSeries.points}
