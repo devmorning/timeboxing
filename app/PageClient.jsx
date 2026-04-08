@@ -4655,16 +4655,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         <div
                             className={[
                               UI_SURFACE_PX4,
-                              "ring-1 ring-emerald-200/40",
+                              "ring-1 ring-stone-200/60",
                             ].join(" ")}
                         >
-                          <p className="text-[12px] font-medium text-emerald-700">실행 기록 합</p>
-                          <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-emerald-800">
+                          <p className="text-[12px] font-medium text-stone-700">실행 기록 합</p>
+                          <p className="mt-2 text-lg font-semibold tracking-[-0.04em] text-stone-800">
                             {dailyStats.loading
                               ? "…"
                               : formatSecondsAsDurationKo(dailyStats.totalExecutedSeconds)}
                           </p>
-                          <p className="mt-1 text-[11px] text-emerald-600/80">스와이프로 누적한 실행 시간</p>
+                          <p className="mt-1 text-[11px] text-stone-500">스와이프로 누적한 실행 시간</p>
                         </div>
                       </div>
 
@@ -4827,7 +4827,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       </div>
                                       <div className="shrink-0 text-right">
                                         {row.achievementPercent != null ? (
-                                            <span className="text-sm font-semibold tabular-nums text-emerald-700">
+                                            <span className="text-sm font-semibold tabular-nums text-emerald-700/85">
                                               {row.achievementPercent.toFixed(1)}%
                                             </span>
                                         ) : (
@@ -4838,7 +4838,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     <div className="mt-2 space-y-1">
                                       <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                                         <div
-                                            className="h-2 rounded-full bg-emerald-500 transition-[width]"
+                                            className="h-2 rounded-full bg-emerald-500/85 transition-[width]"
                                             style={{
                                               width:
                                                   row.achievementPercent != null
