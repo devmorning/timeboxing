@@ -3670,7 +3670,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           className={[
                             "relative z-10 grid overflow-hidden",
                             !prefersReducedMotion
-                              ? "transition-[grid-template-rows,opacity] duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                              ? "transition-[grid-template-rows,opacity] ease-[cubic-bezier(0.22,1,0.36,1)]"
                               : "",
                             isDatePickerOpen
                               ? "grid-rows-[1fr] opacity-100"
@@ -3678,18 +3678,28 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           ]
                             .filter(Boolean)
                             .join(" ")}
+                          style={
+                            !prefersReducedMotion
+                              ? { transitionDuration: isDatePickerOpen ? "320ms" : "240ms" }
+                              : undefined
+                          }
                           aria-hidden={!isDatePickerOpen}
                       >
                         <div
                             className={[
                               "mx-4 mb-4 min-h-0 max-h-[min(72vh,560px)] overflow-hidden rounded-2xl border border-white/55 bg-white/35 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] will-change-[transform,opacity]",
                               !prefersReducedMotion
-                                ? "transition-[transform,opacity] duration-[440ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                                ? "transition-[transform,opacity] ease-[cubic-bezier(0.22,1,0.36,1)]"
                                 : "",
                               isDatePickerOpen ? "translate-y-0 scale-100 opacity-100" : "-translate-y-1.5 scale-[0.985] opacity-0",
                             ]
                               .filter(Boolean)
                               .join(" ")}
+                            style={
+                              !prefersReducedMotion
+                                ? { transitionDuration: isDatePickerOpen ? "380ms" : "280ms" }
+                                : undefined
+                            }
                             aria-label="날짜 선택 확장 영역"
                         >
                           <div
