@@ -68,6 +68,8 @@ const UI_CANVAS_INSET =
 /** 가장 중요한 일 우선순위 번호(1–3): 얕은 그라데이션 웰 */
 const UI_PIN_WELL =
   "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-100/95 to-amber-50/70 text-orange-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]";
+const UI_AI_BUTTON =
+  "inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-orange-200/60 bg-gradient-to-r from-orange-50/95 to-amber-50/85 px-3 text-[12px] font-semibold text-orange-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_20px_-14px_rgba(251,146,60,0.55)] transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-orange-500/25 active:opacity-70";
 
 function secondsToHHMM(totalSeconds) {
   const s = ((Math.floor(totalSeconds) % SECONDS_PER_DAY) + SECONDS_PER_DAY) % SECONDS_PER_DAY;
@@ -4421,13 +4423,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             onClick={handleApplyAiPlanSuggestion}
                             disabled={isDatePickerOpen || aiPlanSuggestLoading}
                             className={[
-                              "inline-flex h-9 items-center justify-center rounded-xl border border-white/60 bg-white/55 px-3 text-[12px] font-semibold",
-                              "text-stone-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]",
-                              "focus:outline-none focus:ring-2 focus:ring-orange-500/25 active:opacity-60",
+                              UI_AI_BUTTON,
                               aiPlanSuggestLoading ? "cursor-wait opacity-70" : "",
                               isDatePickerOpen ? "cursor-not-allowed opacity-45" : "",
                             ].join(" ")}
                         >
+                          <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0">
+                            <path
+                                fill="currentColor"
+                                d="M12 3.5c.27 0 .52.15.64.39l1.66 3.39 3.74.54c.56.08.79.77.38 1.17l-2.7 2.63.64 3.72c.1.56-.49 1-.99.74L12 14.33l-3.35 1.76c-.5.26-1.09-.18-.99-.74l.64-3.72-2.7-2.63c-.41-.4-.18-1.09.38-1.17l3.74-.54 1.66-3.39c.12-.24.37-.39.64-.39Z"
+                            />
+                          </svg>
                           {aiPlanSuggestLoading ? "AI 초안 생성 중…" : "AI로 일정 초안 생성"}
                         </button>
                       </div>
@@ -4794,12 +4800,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             onClick={handleLoadAiDayFeedback}
                             disabled={dailyStats.loading || aiDayFeedbackLoading}
                             className={[
-                              "inline-flex h-9 items-center justify-center rounded-xl border border-white/60 bg-white/55 px-3 text-[12px] font-semibold",
-                              "text-stone-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]",
-                              "focus:outline-none focus:ring-2 focus:ring-orange-500/25 active:opacity-60",
+                              UI_AI_BUTTON,
                               aiDayFeedbackLoading ? "cursor-wait opacity-70" : "",
                             ].join(" ")}
                         >
+                          <svg aria-hidden viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0">
+                            <path
+                                fill="currentColor"
+                                d="M12 3.5c.27 0 .52.15.64.39l1.66 3.39 3.74.54c.56.08.79.77.38 1.17l-2.7 2.63.64 3.72c.1.56-.49 1-.99.74L12 14.33l-3.35 1.76c-.5.26-1.09-.18-.99-.74l.64-3.72-2.7-2.63c-.41-.4-.18-1.09.38-1.17l3.74-.54 1.66-3.39c.12-.24.37-.39.64-.39Z"
+                            />
+                          </svg>
                           {aiDayFeedbackLoading ? "AI 피드백 분석 중…" : "AI 피드백 보기"}
                         </button>
                       </div>
