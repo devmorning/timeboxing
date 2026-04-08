@@ -52,6 +52,18 @@ const UI_CANVAS =
   "w-full overflow-hidden rounded-3xl border border-white/55 bg-white/55 shadow-[0_18px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-2xl";
 const UI_CANVAS_INSET =
   "w-full overflow-hidden rounded-2xl border border-white/60 bg-stone-50/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]";
+/** 메인 원-캔버스 내부 면 — 날짜 카드·캘린더 모달 등 동일 톤 */
+const UI_CANVAS_INNER_BG = [
+  "radial-gradient(ellipse 90% 65% at 12% 0%, rgba(255,255,255,0.72), transparent 56%)",
+  "radial-gradient(ellipse 70% 55% at 92% 18%, rgba(251,146,60,0.12), transparent 54%)",
+  "radial-gradient(ellipse 70% 55% at 10% 92%, rgba(120,113,108,0.10), transparent 54%)",
+].join(", ");
+/** 캘린더 등 모달 딤 — stone-200 베이스 위 웜 뉴트럴 (차가운 slate 톤 지양) */
+const UI_MODAL_SCRIM_BG = [
+  "linear-gradient(165deg, rgba(41,37,36,0.38) 0%, rgba(28,25,23,0.5) 100%)",
+  "radial-gradient(ellipse 92% 58% at 50% 108%, rgba(255,255,255,0.07), transparent 56%)",
+  "radial-gradient(ellipse 70% 50% at 8% 12%, rgba(251,146,60,0.06), transparent 48%)",
+].join(", ");
 /** 가장 중요한 일 우선순위 번호(1–3): 얕은 그라데이션 웰 */
 const UI_PIN_WELL =
   "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-100/95 to-amber-50/70 text-orange-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]";
@@ -2815,7 +2827,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         !isTemplatesOpen &&
         !isTrendOpen &&
         !isScheduleComposerModalOpen &&
-        !showEmptyDayLock
+        !showEmptyDayLock &&
+        !isDatePickerOpen
     )
       return;
 
@@ -2851,6 +2864,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     isTrendOpen,
     isScheduleComposerModalOpen,
     showEmptyDayLock,
+    isDatePickerOpen,
   ]);
 
   useEffect(() => {
@@ -3363,11 +3377,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 <div
                     className="px-4 py-4"
                     style={{
-                      background: [
-                        "radial-gradient(ellipse 90% 65% at 12% 0%, rgba(255,255,255,0.72), transparent 56%)",
-                        "radial-gradient(ellipse 70% 55% at 92% 18%, rgba(251,146,60,0.12), transparent 54%)",
-                        "radial-gradient(ellipse 70% 55% at 10% 92%, rgba(120,113,108,0.10), transparent 54%)",
-                      ].join(", "),
+                      background: UI_CANVAS_INNER_BG,
                     }}
                 >
                   <div className="relative">
@@ -3406,108 +3416,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </p>
                       </div>
                     </button>
-
-                    <div
-                        data-testid="inline-calendar-panel"
-                        className={[
-                          "overflow-hidden",
-                          !prefersReducedMotion
-                            ? "transition-[max-height,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-                            : "",
-                          isDatePickerOpen
-                            ? "max-h-[min(72vh,560px)] opacity-100"
-                            : "pointer-events-none max-h-0 opacity-0",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        aria-hidden={!isDatePickerOpen}
-                    >
-                      <div
-                          className={[
-                            "mt-2 rounded-3xl border border-white/65 bg-white/55 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
-                            "mb-3.5 flex min-h-0 flex-col px-3 pb-2 pt-2",
-                          ].join(" ")}
-                          style={{
-                            background: [
-                              "linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.2) 100%)",
-                              "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(251,146,60,0.08), transparent 55%)",
-                            ].join(", "),
-                          }}
-                      >
-                        <div
-                            className={[
-                              "grid h-10 w-full shrink-0 grid-cols-[minmax(44px,auto)_1fr_minmax(44px,auto)] items-center gap-0",
-                              "border-b border-stone-200/60 pb-2",
-                            ].join(" ")}
-                        >
-                          <button
-                              type="button"
-                              aria-label="오늘 날짜로 이동"
-                              disabled={isDateTransitionLoading}
-                              onClick={() => {
-                                const today = toLocalYmd(new Date());
-                                setSelectedDate(today);
-                                closeInlineCalendar();
-                              }}
-                              className={[
-                                "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-xl bg-transparent text-orange-700 active:opacity-60",
-                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
-                                isDateTransitionLoading ? "cursor-wait opacity-40" : "",
-                              ].join(" ")}
-                          >
-                            <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
-                              ◎
-                            </span>
-                            <span className="sr-only">오늘</span>
-                          </button>
-                          <button
-                              type="button"
-                              aria-label="캘린더 닫기"
-                              onClick={closeInlineCalendar}
-                              className={[
-                                "min-w-0 justify-self-stretch rounded-xl px-2 py-1 text-center text-sm font-semibold tracking-tight text-stone-600",
-                                "active:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
-                              ].join(" ")}
-                              suppressHydrationWarning
-                          >
-                            <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
-                          </button>
-                          <div className="flex min-w-[44px] items-center justify-end">
-                            <button
-                                type="button"
-                                aria-label="로그아웃"
-                                onClick={handleLogout}
-                                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-transparent text-stone-500 active:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25"
-                            >
-                              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]">
-                                <path
-                                    fill="currentColor"
-                                    d="M10 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3v-2H7V6h3zm5.59 3.41L14.17 8.83 16.34 11H9v2h7.34l-2.17 2.17 1.42 1.42L20.17 12z"
-                                />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                        {calendarMonthRange ? (
-                            <div
-                                className={[
-                                  "min-h-0 max-h-[min(56vh,480px)] overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] px-0.5 pb-1 pt-2",
-                                  "[&_h3]:text-stone-700",
-                                ].join(" ")}
-                            >
-                              {calendarMonthRange.map((ym) => (
-                                  <InlineCalendarMonth
-                                      key={ym}
-                                      ym={ym}
-                                      selectedDate={selectedDate}
-                                      markedDates={markedDates}
-                                      onSelectDate={handlePickCalendarDate}
-                                  />
-                              ))}
-                            </div>
-                        ) : null}
-                      </div>
-                    </div>
 
                     <div
                         ref={mainChapterScrollRef}
@@ -3818,6 +3726,115 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           </div>
         </div>
         </div>
+
+        {isDatePickerOpen ? (
+            <div
+                className="fixed inset-0 z-[50] flex flex-col items-stretch justify-start px-4 pt-[max(5rem,env(safe-area-inset-top)+3rem)] pb-8"
+                role="dialog"
+                aria-modal="true"
+                aria-label="날짜 선택"
+            >
+              <button
+                  type="button"
+                  className="absolute inset-0 z-0 backdrop-blur-[3px]"
+                  style={{ background: UI_MODAL_SCRIM_BG }}
+                  aria-label="캘린더 닫기"
+                  onClick={closeInlineCalendar}
+              />
+              <div
+                  data-testid="inline-calendar-panel"
+                  className={[
+                    UI_CANVAS,
+                    "relative z-10 mx-auto mb-3.5 flex w-full max-w-md min-h-0 max-h-[min(72vh,560px)] flex-col overflow-hidden",
+                    !prefersReducedMotion
+                      ? "transition-[max-height,opacity] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+                      : "",
+                    "opacity-100",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={(e) => e.stopPropagation()}
+              >
+                <div
+                    className="flex min-h-0 min-w-0 flex-1 flex-col px-3 pb-2 pt-2"
+                    style={{ background: UI_CANVAS_INNER_BG }}
+                >
+                <div
+                    className={[
+                      "grid h-10 w-full shrink-0 grid-cols-[minmax(44px,auto)_1fr_minmax(44px,auto)] items-center gap-0",
+                      "border-b border-stone-200/60 pb-2",
+                    ].join(" ")}
+                >
+                  <button
+                      type="button"
+                      aria-label="오늘 날짜로 이동"
+                      disabled={isDateTransitionLoading}
+                      onClick={() => {
+                        const today = toLocalYmd(new Date());
+                        setSelectedDate(today);
+                        closeInlineCalendar();
+                      }}
+                      className={[
+                        "flex h-10 w-full min-w-[44px] shrink-0 items-center justify-center rounded-xl bg-transparent text-orange-700 active:opacity-60",
+                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                        isDateTransitionLoading ? "cursor-wait opacity-40" : "",
+                      ].join(" ")}
+                  >
+                    <span className="inline-flex items-center justify-center text-[17px]" aria-hidden>
+                      ◎
+                    </span>
+                    <span className="sr-only">오늘</span>
+                  </button>
+                  <button
+                      type="button"
+                      aria-label="캘린더 닫기"
+                      onClick={closeInlineCalendar}
+                      className={[
+                        "min-w-0 justify-self-stretch rounded-xl px-2 py-1 text-center text-sm font-semibold tracking-tight text-stone-600",
+                        "active:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                      ].join(" ")}
+                      suppressHydrationWarning
+                  >
+                    <span className="inline-flex w-full items-center justify-center">{selectedDateLabel}</span>
+                  </button>
+                  <div className="flex min-w-[44px] items-center justify-end">
+                    <button
+                        type="button"
+                        aria-label="로그아웃"
+                        onClick={handleLogout}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-transparent text-stone-500 active:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25"
+                    >
+                      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[18px] w-[18px]">
+                        <path
+                            fill="currentColor"
+                            d="M10 4H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3v-2H7V6h3zm5.59 3.41L14.17 8.83 16.34 11H9v2h7.34l-2.17 2.17 1.42 1.42L20.17 12z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                {calendarMonthRange ? (
+                    <div
+                        className={[
+                          "min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch] px-0.5 pb-1 pt-2",
+                          "[&_h3]:text-stone-700",
+                        ].join(" ")}
+                    >
+                      {calendarMonthRange.map((ym) => (
+                          <InlineCalendarMonth
+                              key={ym}
+                              ym={ym}
+                              selectedDate={selectedDate}
+                              markedDates={markedDates}
+                              onSelectDate={handlePickCalendarDate}
+                          />
+                      ))}
+                    </div>
+                ) : null}
+                </div>
+              </div>
+            </div>
+        ) : null}
 
         {!isDatePickerOpen ? (
             <nav
