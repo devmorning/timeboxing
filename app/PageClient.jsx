@@ -385,6 +385,20 @@ function rubberDaySwipeDx(dx, maxAbs) {
   return sign * (maxAbs + Math.min(excess * 0.33, maxAbs * 0.55));
 }
 
+/** 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스 (captureCurrentChapterIdx와 동일 기준) */
+function getMainChapterIdxFromScrollRoot(root) {
+  if (!root) return 0;
+  const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
+  if (!chapters.length) return 0;
+  const top = root.scrollTop + 12;
+  let idx = 0;
+  for (let i = 0; i < chapters.length; i += 1) {
+    const el = chapters[i];
+    if (el instanceof HTMLElement && el.offsetTop <= top) idx = i;
+  }
+  return idx;
+}
+
 /**
  * 입력이 전혀 없는 날짜 — 잠금화면 스타일로 날짜만 강조 (2026 스톤·소프트 글래스 톤)
  */
@@ -1125,6 +1139,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const emptyDaySwipeSurfaceRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   const mainChapterScrollRef = useRef(null);
+  /** 0=중요3, 1=브레인덤프, 2=일정 — 스크롤 위치로 동기화, 이전 챕터 입력 영역 페이드아웃용 */
+  const [mainActiveChapterIdx, setMainActiveChapterIdx] = useState(0);
+  const mainChapterScrollSyncRafRef = useRef(null);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
@@ -2603,18 +2620,20 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   const captureCurrentChapterIdx = useCallback(() => {
-    const root = mainChapterScrollRef.current;
-    if (!root) return 0;
-    const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
-    if (!chapters.length) return 0;
-    const top = root.scrollTop + 12;
-    let idx = 0;
-    for (let i = 0; i < chapters.length; i += 1) {
-      const el = chapters[i];
-      if (el instanceof HTMLElement && el.offsetTop <= top) idx = i;
-    }
-    return idx;
+    return getMainChapterIdxFromScrollRoot(mainChapterScrollRef.current);
   }, []);
+
+  const syncMainActiveChapterIdx = useCallback(() => {
+    setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(mainChapterScrollRef.current));
+  }, []);
+
+  const onMainChapterScroll = useCallback(() => {
+    if (mainChapterScrollSyncRafRef.current != null) return;
+    mainChapterScrollSyncRafRef.current = requestAnimationFrame(() => {
+      mainChapterScrollSyncRafRef.current = null;
+      syncMainActiveChapterIdx();
+    });
+  }, [syncMainActiveChapterIdx]);
 
   const handleDaySwipeTouchEnd = useCallback(
       (event) => {
@@ -2773,6 +2792,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       if (daySwipePullXRafRef.current != null) {
         window.cancelAnimationFrame(daySwipePullXRafRef.current);
       }
+      if (mainChapterScrollSyncRafRef.current != null) {
+        window.cancelAnimationFrame(mainChapterScrollSyncRafRef.current);
+        mainChapterScrollSyncRafRef.current = null;
+      }
     };
   }, []);
 
@@ -2798,8 +2821,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       requestAnimationFrame(() => {
         root.scrollTop = target.offsetTop;
         pendingChapterIdxAfterDaySwipeRef.current = null;
+        setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(root));
       });
     });
+  }, [selectedDate, showDayPlanContent]);
+
+  useLayoutEffect(() => {
+    if (!showDayPlanContent) return;
+    const id = requestAnimationFrame(() => {
+      setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(mainChapterScrollRef.current));
+    });
+    return () => cancelAnimationFrame(id);
   }, [selectedDate, showDayPlanContent]);
 
   useEffect(() => {
@@ -3598,6 +3630,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     </div>
                     <div
                         ref={mainChapterScrollRef}
+                        onScroll={onMainChapterScroll}
                         className={[
                           "h-[min(78dvh,760px)] overflow-y-auto overscroll-y-contain snap-y snap-mandatory space-y-8 scrollbar-none",
                           !prefersReducedMotion ? "scroll-smooth" : "",
@@ -3631,7 +3664,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         <div
                             className={[
                               UI_CANVAS_INSET,
-                            ].join(" ")}
+                              mainActiveChapterIdx >= 1 && "pointer-events-none select-none opacity-0",
+                              mainActiveChapterIdx >= 1 &&
+                                !prefersReducedMotion &&
+                                "transition-opacity duration-300 ease-out",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            aria-hidden={mainActiveChapterIdx >= 1}
                         >
                           <div className="divide-y divide-stone-200/35 px-2.5 py-2">
                             {important3.map((v, idx) => (
@@ -3700,7 +3740,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           <span className="text-[12px] font-semibold text-stone-500">메모</span>
                         </div>
                         <div
-                            className={UI_CANVAS_INSET}
+                            className={[
+                              UI_CANVAS_INSET,
+                              mainActiveChapterIdx >= 2 && "pointer-events-none select-none opacity-0",
+                              mainActiveChapterIdx >= 2 &&
+                                !prefersReducedMotion &&
+                                "transition-opacity duration-300 ease-out",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            aria-hidden={mainActiveChapterIdx >= 2}
                         >
                           <div className="px-2.5 py-2.5">
                             <textarea
