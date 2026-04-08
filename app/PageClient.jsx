@@ -4993,10 +4993,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     }}
                     style={{ touchAction: "pan-y" }}
                 >
-                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-black/[0.06] px-5 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+                  <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/60 bg-white/40 px-5 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold leading-snug text-slate-700">내용별 실행 추이</p>
-                      <p className="mt-0.5 text-[12px] text-slate-400">
+                      <p className="text-sm font-semibold leading-snug text-stone-800">내용별 실행 추이</p>
+                      <p className="mt-0.5 text-[12px] text-stone-500">
                         일정 내용에 키워드가 포함된 항목만, 해당 날짜에 실행된 시간을 합산합니다. 자정 넘김·전날
                         이어짐은 일자별 통계와 동일하게 나눕니다.
                       </p>
@@ -5005,7 +5005,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         type="button"
                         aria-label="실행 추이 닫기"
                         onClick={closeTrendModal}
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60"
                     >
                       ✕
                     </button>
@@ -5016,15 +5016,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-5 py-4 [-webkit-overflow-scrolling:touch]"
                   >
                     <div className="space-y-4">
-                      <div className="flex rounded-lg bg-slate-100/80 p-0.5">
+                      <div className="flex rounded-xl border border-white/60 bg-white/50 p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
                         <button
                             type="button"
                             onClick={() => handleTrendPeriodChange("month")}
                             className={[
                               "min-w-0 flex-1 rounded-md px-2 py-1.5 text-xs font-semibold",
                               trendPeriod === "month"
-                                ? "bg-white text-slate-800 shadow-sm"
-                                : "text-slate-500",
+                                ? "bg-white text-stone-800 shadow-sm"
+                                : "text-stone-500",
                             ].join(" ")}
                         >
                           월
@@ -5035,8 +5035,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             className={[
                               "min-w-0 flex-1 rounded-md px-2 py-1.5 text-xs font-semibold",
                               trendPeriod === "week"
-                                ? "bg-white text-slate-800 shadow-sm"
-                                : "text-slate-500",
+                                ? "bg-white text-stone-800 shadow-sm"
+                                : "text-stone-500",
                             ].join(" ")}
                         >
                           주
@@ -5050,11 +5050,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             onClick={() =>
                               trendPeriod === "week" ? shiftTrendWeek(-1) : shiftTrendMonth(-1)
                             }
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60"
                         >
                           ‹
                         </button>
-                        <p className="min-w-0 flex-1 text-center text-sm font-semibold text-slate-800">
+                        <p className="min-w-0 flex-1 text-center text-sm font-semibold text-stone-800">
                           {trendPeriod === "week" ? trendWeekTitle : trendYmTitle}
                         </p>
                         <button
@@ -5063,7 +5063,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             onClick={() =>
                               trendPeriod === "week" ? shiftTrendWeek(1) : shiftTrendMonth(1)
                             }
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-transparent text-[18px] font-semibold leading-none text-slate-500 active:opacity-60"
+                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/60 bg-white/55 text-[18px] font-semibold leading-none text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] active:opacity-60"
                         >
                           ›
                         </button>
@@ -5096,7 +5096,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       {!trendSeries.loading && !trendSeries.error && trendSeries.points.length > 0 ? (
                           <div className="space-y-3">
-                            <p className="text-[13px] font-medium text-slate-600">일별 실행 시간</p>
+                            <p className="text-[13px] font-medium text-stone-600">일별 실행 시간</p>
                             <ExecutionTrendBarChart
                                 points={trendSeries.points}
                                 formatDuration={formatSecondsAsDurationKo}
