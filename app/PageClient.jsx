@@ -400,6 +400,7 @@ function EmptyDayLockScreen({
   swipePullX = 0,
   swipeTransition = false,
   prefersReducedMotion = false,
+  touchSurfaceRef = null,
 }) {
   const parts = useMemo(() => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) return null;
@@ -445,6 +446,7 @@ function EmptyDayLockScreen({
 
   return (
     <div
+        ref={touchSurfaceRef}
         className={[
           "fixed inset-0 z-[39] flex cursor-default flex-col items-center justify-center overflow-hidden px-6",
           "pb-[max(5.5rem,calc(4.25rem+env(safe-area-inset-bottom)))] pt-[max(3.5rem,env(safe-area-inset-top)+2.25rem)]",
@@ -1119,6 +1121,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     horizontalLocked: false,
   });
   const daySwipeViewportRef = useRef(null);
+  /** 빈 날 잠금 화면 — 날짜 스와이프 시 세로 스크롤 방지용 네이티브 touchmove 연결 */
+  const emptyDaySwipeSurfaceRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   const mainChapterScrollRef = useRef(null);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
@@ -2733,6 +2737,34 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     }
   }, []);
 
+  /** React touchmove는 passive인 경우가 많아 preventDefault가 무시됨 — 가로 스와이프 중 세로 스크롤만 막기 */
+  useLayoutEffect(() => {
+    const onTouchMoveCapture = (e) => {
+      const g = daySwipeRef.current;
+      if (!g.tracking) return;
+      const touch = e.touches?.[0];
+      if (!touch) return;
+      const dx = touch.clientX - g.startX;
+      const dy = touch.clientY - g.startY;
+      if (g.horizontalLocked) {
+        e.preventDefault();
+        return;
+      }
+      if (Math.abs(dx) < 8) return;
+      if (Math.abs(dx) <= Math.abs(dy)) return;
+      e.preventDefault();
+    };
+    const opts = { passive: false, capture: true };
+    const viewport = daySwipeViewportRef.current;
+    const emptySurface = emptyDaySwipeSurfaceRef.current;
+    if (viewport) viewport.addEventListener("touchmove", onTouchMoveCapture, opts);
+    if (emptySurface) emptySurface.addEventListener("touchmove", onTouchMoveCapture, opts);
+    return () => {
+      if (viewport) viewport.removeEventListener("touchmove", onTouchMoveCapture, opts);
+      if (emptySurface) emptySurface.removeEventListener("touchmove", onTouchMoveCapture, opts);
+    };
+  }, [showEmptyDayLock, showDayPlanContent]);
+
   useEffect(() => {
     return () => {
       if (daySwipeCommitTimerRef.current != null) {
@@ -3428,6 +3460,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             swipePullX={daySwipePullX}
             swipeTransition={daySwipeTransition}
             prefersReducedMotion={prefersReducedMotion}
+            touchSurfaceRef={emptyDaySwipeSurfaceRef}
         />
 
         <div
