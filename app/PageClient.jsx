@@ -3630,16 +3630,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </div>
                         <div
                             className={[
-                              UI_CANVAS_INSET,
-                              mainActiveChapterIdx >= 1 && "pointer-events-none select-none opacity-0",
-                              mainActiveChapterIdx >= 1 &&
-                                !prefersReducedMotion &&
-                                "transition-opacity duration-300 ease-out",
+                              "overflow-hidden",
+                              !prefersReducedMotion && "transition-[max-height,opacity] duration-300 ease-out",
+                              mainActiveChapterIdx >= 1
+                                ? "pointer-events-none max-h-0 select-none opacity-0"
+                                : "max-h-[2000px] opacity-100",
                             ]
                               .filter(Boolean)
                               .join(" ")}
                             aria-hidden={mainActiveChapterIdx >= 1}
                         >
+                          <div className={UI_CANVAS_INSET}>
                           <div className="divide-y divide-stone-200/35 px-2.5 py-2">
                             {important3.map((v, idx) => (
                                 <div
@@ -3683,6 +3684,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                 </div>
                             ))}
                           </div>
+                          </div>
                         </div>
                       </section>
 
@@ -3708,37 +3710,39 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         </div>
                         <div
                             className={[
-                              UI_CANVAS_INSET,
-                              mainActiveChapterIdx >= 2 && "pointer-events-none select-none opacity-0",
-                              mainActiveChapterIdx >= 2 &&
-                                !prefersReducedMotion &&
-                                "transition-opacity duration-300 ease-out",
+                              "overflow-hidden",
+                              !prefersReducedMotion && "transition-[max-height,opacity] duration-300 ease-out",
+                              mainActiveChapterIdx >= 2
+                                ? "pointer-events-none max-h-0 select-none opacity-0"
+                                : "max-h-[2000px] opacity-100",
                             ]
                               .filter(Boolean)
                               .join(" ")}
                             aria-hidden={mainActiveChapterIdx >= 2}
                         >
-                          <div className="px-2.5 py-2.5">
-                            <textarea
-                                ref={brainDumpTextareaRef}
-                                id="brain_dump"
-                                aria-label="브레인 덤프"
-                                value={brainDump}
-                                disabled={isDatePickerOpen}
-                                onChange={(e) => setBrainDump(e.target.value)}
-                                placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
-                                className={[
-                                  "block w-full min-h-[1.75rem] resize-none overflow-hidden rounded-none border-0 bg-transparent px-0 py-0 text-[15px] leading-relaxed tracking-[-0.01em] text-stone-800",
-                                  "placeholder:text-stone-400",
-                                  "focus:bg-transparent focus:outline-none focus:ring-0",
-                                  !prefersReducedMotion
-                                      ? "transition-[filter] duration-200 ease-out focus:drop-shadow-[0_8px_20px_rgba(251,146,60,0.12)]"
-                                      : "",
-                                  "disabled:cursor-not-allowed disabled:bg-transparent disabled:text-stone-400",
-                                ]
-                                    .filter(Boolean)
-                                    .join(" ")}
-                            />
+                          <div className={UI_CANVAS_INSET}>
+                            <div className="px-2.5 py-2.5">
+                              <textarea
+                                  ref={brainDumpTextareaRef}
+                                  id="brain_dump"
+                                  aria-label="브레인 덤프"
+                                  value={brainDump}
+                                  disabled={isDatePickerOpen}
+                                  onChange={(e) => setBrainDump(e.target.value)}
+                                  placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
+                                  className={[
+                                    "block w-full min-h-[1.75rem] resize-none overflow-hidden rounded-none border-0 bg-transparent px-0 py-0 text-[15px] leading-relaxed tracking-[-0.01em] text-stone-800",
+                                    "placeholder:text-stone-400",
+                                    "focus:bg-transparent focus:outline-none focus:ring-0",
+                                    !prefersReducedMotion
+                                        ? "transition-[filter] duration-200 ease-out focus:drop-shadow-[0_8px_20px_rgba(251,146,60,0.12)]"
+                                        : "",
+                                    "disabled:cursor-not-allowed disabled:bg-transparent disabled:text-stone-400",
+                                  ]
+                                      .filter(Boolean)
+                                      .join(" ")}
+                              />
+                            </div>
                           </div>
                         </div>
                       </section>
