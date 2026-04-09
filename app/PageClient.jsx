@@ -1307,6 +1307,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
   const [daySwipePullX, setDaySwipePullX] = useState(0);
+  /** 좌우 날짜 스와이프가 가로로 잠긴 동안 메인 챕터 세로 스크롤 억제 */
+  const [daySwipeLocksVerticalScroll, setDaySwipeLocksVerticalScroll] = useState(false);
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
   const daySwipePullXRafRef = useRef(null);
   const daySwipePullXPendingRef = useRef(0);
@@ -2919,6 +2921,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const handleDaySwipeTouchStart = useCallback(
       (event) => {
+        setDaySwipeLocksVerticalScroll(false);
         if (isDatePickerOpen) return;
         if (isReportOpen || isStatsOpen || isTemplatesOpen || isTrendOpen || isScheduleComposerModalOpen)
           return;
@@ -2961,12 +2964,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       if (Math.abs(dx) < 12) return;
       if ((Math.abs(dy) > 6 && Math.abs(dy) >= Math.abs(dx) * 0.8) || Math.abs(dx) < Math.abs(dy) * 1.35) {
         g.tracking = false;
+        setDaySwipeLocksVerticalScroll(false);
         setDaySwipeTransition(true);
         setDaySwipePullX(0);
         window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
         return;
       }
       g.horizontalLocked = true;
+      setDaySwipeLocksVerticalScroll(true);
     }
     const w =
         typeof window !== "undefined"
@@ -3019,6 +3024,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           tracking: false,
           horizontalLocked: false,
         };
+        setDaySwipeLocksVerticalScroll(false);
 
         if (!touch || !wasTracking) return;
 
@@ -3136,6 +3142,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       tracking: false,
       horizontalLocked: false,
     };
+    setDaySwipeLocksVerticalScroll(false);
     setDaySwipeTransition(false);
     setDaySwipePullX(0);
     if (daySwipePullXRafRef.current != null) {
@@ -4187,7 +4194,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         onScroll={onMainChapterScroll}
                         className={[
                           // proximity: 터치 관성·가벼운 스크롤에 맞춤 (mandatory+min-h-full+scroll-smooth는 네이티브 스냅과 잘 충돌)
-                          "h-[min(calc(100dvh-8.25rem-env(safe-area-inset-bottom)),760px)] overflow-y-auto overscroll-y-contain snap-y snap-proximity space-y-8 pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scroll-pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scrollbar-none",
+                          "h-[min(calc(100dvh-8.25rem-env(safe-area-inset-bottom)),760px)] snap-y snap-proximity space-y-8 pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scroll-pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scrollbar-none",
+                          daySwipeLocksVerticalScroll
+                            ? "overflow-y-hidden overscroll-y-none touch-none"
+                            : "overflow-y-auto overscroll-y-contain",
                         ].join(" ")}
                     >
                       <section
