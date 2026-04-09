@@ -291,6 +291,13 @@ const DAY_SWIPE_TRANSITION_MS = 260;
 /** 캐러셀 트랙이 한 열 폭만큼 미끄러지는 시간(날짜 state 변경 직전) */
 const DAY_SWIPE_CAROUSEL_TRANSITION_MS = 380;
 
+/** 메인 날짜 블록 상단과 동일 — 리퀴드 글래스 캔버스(방사형 레이어) */
+const MAIN_DATE_CANVAS_BACKGROUND = [
+  "radial-gradient(ellipse 90% 65% at 12% 0%, rgba(255,255,255,0.72), transparent 56%)",
+  "radial-gradient(ellipse 70% 55% at 92% 18%, rgba(251,146,60,0.12), transparent 54%)",
+  "radial-gradient(ellipse 70% 55% at 10% 92%, rgba(120,113,108,0.10), transparent 54%)",
+].join(", ");
+
 /**
  * 좌우 날짜 스와이프: 3열 트랙(이전·현재·다음) + translate로 캐러셀 느낌.
  * 비활성 시 기존 단일 열만 렌더(접근성 감소 모션 등).
@@ -315,7 +322,11 @@ function DaySwipeCarouselTrack({
   return (
     <div className={[gridCell, "w-full min-w-0 overflow-hidden"].join(" ")}>
       <div className="flex min-h-0 w-[300%] min-w-0 touch-pan-y" style={trackStyle}>
-        <aside className="box-border min-h-0 w-[33.333333%] min-w-0 shrink-0 px-1" aria-hidden>
+        {/* 빈 날 오버레이(z-39)보다 위에 그려져 전·다음날 프리뷰(날짜 카드)가 가려지지 않게 함 */}
+        <aside
+            className="relative z-[41] box-border min-h-0 w-[33.333333%] min-w-0 shrink-0 px-1"
+            aria-hidden
+        >
           {prevSlot}
         </aside>
         <div className="box-border min-h-0 w-[33.333333%] min-w-0 shrink-0">
@@ -323,7 +334,10 @@ function DaySwipeCarouselTrack({
             {children}
           </div>
         </div>
-        <aside className="box-border min-h-0 w-[33.333333%] min-w-0 shrink-0 px-1" aria-hidden>
+        <aside
+            className="relative z-[41] box-border min-h-0 w-[33.333333%] min-w-0 shrink-0 px-1"
+            aria-hidden
+        >
           {nextSlot}
         </aside>
       </div>
@@ -695,8 +709,83 @@ function EmptyScheduleListBlock({ variant = "interactive" }) {
   );
 }
 
+function getPeekDateDisplayParts(ymd) {
+  if (typeof ymd !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+    return { day: "", weekday: "", ym: "", label: "" };
+  }
+  const [y, m, d] = ymd.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  const day = String(d);
+  const weekday = dt.toLocaleDateString("ko-KR", { weekday: "long" });
+  const ym = dt.toLocaleDateString("ko-KR", { year: "numeric", month: "long" });
+  const label = dt.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  });
+  return { day, weekday, ym, label };
+}
+
+/** 인접 날 캐러셀 — 메인 날짜와 동일 캔버스 + 카드 셸, 읽기 전용 */
+function AdjacentPeekDateCard({ ymd }) {
+  const parts = useMemo(() => getPeekDateDisplayParts(ymd), [ymd]);
+  if (!parts.day) return null;
+  return (
+      <div
+          className="mb-3.5 rounded-[1.35rem] px-2 py-2 sm:px-3"
+          style={{ background: MAIN_DATE_CANVAS_BACKGROUND }}
+      >
+        <div
+            className={[
+              "group relative overflow-hidden rounded-3xl border border-white/65 bg-white/55",
+              "shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
+            ].join(" ")}
+            aria-label={`날짜 미리보기 — ${parts.label}`}
+        >
+        <div className="relative z-10 flex w-full items-start gap-1.5 px-4 py-2">
+          <div className="relative min-h-0 min-w-0 flex-1">
+            <p className="text-[9px] font-semibold tracking-[0.18em] text-orange-700/80">
+              {parts.weekday.toUpperCase()}
+            </p>
+            <div className="mt-1 flex items-end justify-between gap-2">
+              <p
+                  className={[
+                    "font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums",
+                  ].join(" ")}
+              >
+                {parts.day}
+              </p>
+              <p className="text-[11px] font-semibold tracking-tight text-stone-600">
+                {parts.ym}
+              </p>
+            </div>
+          </div>
+          <div
+              className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/55 bg-white/40 text-stone-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-sm"
+              aria-hidden
+          >
+            <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4 opacity-50"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            >
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </div>
+        </div>
+        </div>
+      </div>
+  );
+}
+
 /**
  * 좌우 스와이프 시 옆에서 보이는 이전/다음 날 — 가운데 열과 동일 블록(읽기 전용, 입력·실행 UI 없음)
+ * peekYmd: 인접 날짜(날짜 카드 표시)
  */
 function AdjacentDayStaticColumn({
   plan,
@@ -704,6 +793,8 @@ function AdjacentDayStaticColumn({
   activeChapterIdx = 0,
   daySwipePullX = 0,
   prefersReducedMotion = false,
+  peekYmd = "",
+  mainChapterParallaxYs = [0, 0, 0],
 }) {
   const columnRootRef = useRef(null);
   const chapterRefs = [useRef(null), useRef(null), useRef(null)];
@@ -732,14 +823,16 @@ function AdjacentDayStaticColumn({
 
   if (plan === null) {
     return (
-      <div className="pointer-events-none w-full min-w-0 space-y-5 animate-pulse pb-5 pt-1">
-        <section aria-hidden>
-          <div className={UI_SURFACE_P4}>
-            <div className="divide-y divide-stone-200/80">
+      <div className="pointer-events-none w-full min-w-0 space-y-8 animate-pulse pb-5 pt-4">
+        <AdjacentPeekDateCard ymd={peekYmd} />
+        <section aria-hidden className="relative">
+          <div className="mb-2.5 h-14 rounded-2xl bg-stone-200/50" />
+          <div className={UI_CANVAS_INSET}>
+            <div className="divide-y divide-stone-200/35 px-2.5 py-2">
               {[0, 1, 2].map((i) => (
                 <div
                     key={i}
-                    className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0"
+                    className="flex items-center gap-3 rounded-xl px-1 py-2 first:pt-0 last:pb-0"
                 >
                   <div className="h-10 w-10 shrink-0 rounded-2xl bg-stone-200/80" />
                   <div className="min-w-0 flex-1">
@@ -750,16 +843,20 @@ function AdjacentDayStaticColumn({
             </div>
           </div>
         </section>
-        <section>
-          <div className={UI_SURFACE_P4}>
-            <div className="min-h-[1.75rem] rounded-xl bg-stone-200/35" />
+        <section className="relative">
+          <div className="mb-2.5 h-14 rounded-2xl bg-stone-200/50" />
+          <div className={UI_CANVAS_INSET}>
+            <div className="px-2.5 py-2.5">
+              <div className="min-h-[1.75rem] rounded-xl bg-stone-200/35" />
+            </div>
           </div>
         </section>
-        <section>
-          <div className={UI_SURFACE_P4}>
-            <div className="space-y-3 border-t border-slate-100 pt-4">
-              <div className="h-14 rounded-xl bg-slate-200/60" />
-              <div className="h-14 rounded-xl bg-slate-200/60" />
+        <section className="relative">
+          <div className="mb-2.5 h-14 rounded-2xl bg-stone-200/50" />
+          <div className={UI_CANVAS_INSET}>
+            <div className="space-y-2.5 px-3 pt-3 pb-4">
+              <div className="h-[3.25rem] rounded-2xl bg-slate-200/60" />
+              <div className="h-[3.25rem] rounded-2xl bg-slate-200/60" />
             </div>
           </div>
         </section>
@@ -768,29 +865,56 @@ function AdjacentDayStaticColumn({
   }
 
   return (
-    <div
-        ref={columnRootRef}
-        className="pointer-events-none w-full min-w-0 select-none space-y-5 pb-5 pt-1"
-        style={
-          !prefersReducedMotion
-            ? {
-                transform: `translate3d(0, ${previewTranslateY}px, 0)`,
-                transition: "transform 0.2s ease-out",
-                willChange: Math.abs(daySwipePullX) > 0 ? "transform" : "auto",
-              }
-            : undefined
-        }
-    >
-      <section aria-label="가장 중요한 3가지">
-        <div ref={chapterRefs[0]} />
-        <div className={UI_SURFACE_P4}>
-          <div className="divide-y divide-stone-200/80">
+    <div className="pointer-events-none w-full min-w-0 select-none pb-5 pt-4">
+      <AdjacentPeekDateCard ymd={peekYmd} />
+      <div
+          ref={columnRootRef}
+          className="pointer-events-none w-full min-w-0 space-y-8"
+          style={
+            !prefersReducedMotion
+              ? {
+                  transform: `translate3d(0, ${previewTranslateY}px, 0)`,
+                  transition: "transform 0.2s ease-out",
+                  willChange: Math.abs(daySwipePullX) > 0 ? "transform" : "auto",
+                }
+              : undefined
+          }
+      >
+      <section ref={chapterRefs[0]} aria-label="가장 중요한 3가지" className="relative">
+        <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-36 rounded-[2rem] opacity-70 blur-2xl"
+            style={{
+              background:
+                  "radial-gradient(ellipse 70% 60% at 30% 20%, rgba(251,146,60,0.22), transparent 58%), radial-gradient(ellipse 70% 60% at 70% 40%, rgba(255,255,255,0.55), transparent 62%)",
+              ...(!prefersReducedMotion
+                ? {
+                    transform: `translate3d(0, ${mainChapterParallaxYs[0] ?? 0}px, 0)`,
+                    willChange: "transform",
+                  }
+                : {}),
+            }}
+        />
+        <div
+            className={[
+              "sticky top-2 z-10 mb-2.5 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-2.5 py-1.5",
+              "shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl",
+            ].join(" ")}
+        >
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-orange-700/70">CHAPTER 01</p>
+            <p className="mt-1 text-base font-semibold tracking-tight text-stone-800">가장 중요한 일</p>
+          </div>
+          <span className="text-[12px] font-semibold text-stone-500">3개</span>
+        </div>
+        <div className={UI_CANVAS_INSET}>
+          <div className="divide-y divide-stone-200/35 px-2.5 py-2">
             {important3.map((v, idx) => (
               <div
                   key={idx}
                   role="group"
                   aria-label={`가장 중요한 일 ${idx + 1}`}
-                  className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0"
+                  className="flex items-center gap-3 rounded-xl px-1 py-2 first:pt-0 last:pb-0"
               >
                 <span className={UI_PIN_WELL} aria-hidden>
                   <span className="text-[15px] font-semibold tabular-nums leading-none">
@@ -811,26 +935,67 @@ function AdjacentDayStaticColumn({
         </div>
       </section>
 
-      <section>
-        <div ref={chapterRefs[1]} />
-        <div className={UI_SURFACE_P4}>
-          <div
-              className={[
-                "min-h-[1.75rem] whitespace-pre-wrap border-0 bg-transparent px-0 py-0 text-base leading-relaxed tracking-[-0.01em]",
-                brainDump.trim() ? "text-stone-800" : "text-stone-400",
-              ].join(" ")}
-          >
-            {brainDump.trim() ? brainDump : "예: 회의 준비, 이메일 확인, 아이디어 메모..."}
+      <section ref={chapterRefs[1]} className="relative">
+        <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-36 rounded-[2rem] opacity-70 blur-2xl"
+            style={{
+              background:
+                  "radial-gradient(ellipse 70% 60% at 40% 30%, rgba(255,255,255,0.6), transparent 60%), radial-gradient(ellipse 70% 60% at 70% 45%, rgba(120,113,108,0.16), transparent 62%)",
+              ...(!prefersReducedMotion
+                ? {
+                    transform: `translate3d(0, ${mainChapterParallaxYs[1] ?? 0}px, 0)`,
+                    willChange: "transform",
+                  }
+                : {}),
+            }}
+        />
+        <div className="sticky top-2 z-10 mb-2.5 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-2.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-stone-500/90">CHAPTER 02</p>
+            <p className="mt-1 text-base font-semibold tracking-tight text-stone-800">브레인 덤프</p>
+          </div>
+          <span className="text-[12px] font-semibold text-stone-500">메모</span>
+        </div>
+        <div className={UI_CANVAS_INSET}>
+          <div className="px-2.5 py-2.5">
+            <div
+                className={[
+                  "min-h-[1.75rem] whitespace-pre-wrap text-[15px] leading-relaxed tracking-[-0.01em]",
+                  brainDump.trim() ? "text-stone-800" : "text-stone-400",
+                ].join(" ")}
+            >
+              {brainDump.trim() ? brainDump : "예: 회의 준비, 이메일 확인, 아이디어 메모..."}
+            </div>
           </div>
         </div>
       </section>
 
-      <section aria-label="일정 목록">
-        <div ref={chapterRefs[2]} />
-        <div className={UI_SURFACE_P4}>
-          <div className="space-y-4">
+      <section ref={chapterRefs[2]} aria-label="일정 목록" className="relative">
+        <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 h-36 rounded-[2rem] opacity-70 blur-2xl"
+            style={{
+              background:
+                  "radial-gradient(ellipse 70% 60% at 55% 25%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(ellipse 70% 60% at 20% 55%, rgba(255,255,255,0.55), transparent 62%)",
+              ...(!prefersReducedMotion
+                ? {
+                    transform: `translate3d(0, ${mainChapterParallaxYs[2] ?? 0}px, 0)`,
+                    willChange: "transform",
+                  }
+                : {}),
+            }}
+        />
+        <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold tracking-[0.14em] text-orange-700/70">CHAPTER 03</p>
+            <p className="mt-1 text-base font-semibold tracking-tight text-stone-800">내용</p>
+          </div>
+        </div>
+        <div className={UI_CANVAS_INSET}>
+          <div className="px-3 pt-3 pb-[max(2rem,calc(1rem+env(safe-area-inset-bottom)))]">
             {rows.length > 0 ? (
-                <div className="space-y-3 border-t border-slate-100 pt-4">
+                <div className="space-y-2.5">
                   {rows.map((it) => {
                     const isCarry = Boolean(it._isCarryover);
                     const rowKey = isCarry ? `carry_${it._carryFromYmd}_${it.id}` : it.id;
@@ -843,7 +1008,7 @@ function AdjacentDayStaticColumn({
                         <div
                             key={rowKey}
                             className={[
-                              "rounded-xl px-2 py-2 outline-none",
+                              "rounded-2xl px-2.5 py-2.5 outline-none",
                               isCarry
                                 ? "border border-dashed border-orange-200/80 bg-orange-50/40"
                                 : "",
@@ -885,6 +1050,7 @@ function AdjacentDayStaticColumn({
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }
@@ -1134,11 +1300,29 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [daySwipeTransition, setDaySwipeTransition] = useState(false);
   const daySwipePullXRafRef = useRef(null);
   const daySwipePullXPendingRef = useRef(0);
+  /** 캐러셀 트랙 translate — % 기준은 flex 폭 계산과 어긋날 수 있어 뷰포트 px와 터치의 w를 통일 */
+  const [daySwipeViewportWidthPx, setDaySwipeViewportWidthPx] = useState(0);
   /** 좌우 피크 패널용 인접 날 플랜(null이면 스켈레톤) */
   const [peekPrevPlan, setPeekPrevPlan] = useState(null);
   const [peekNextPlan, setPeekNextPlan] = useState(null);
   /** peekPrev 날의 전날 이어짐(자정 넘김)용 — 전전날 플랜 */
   const [peekPrevPrevPlan, setPeekPrevPrevPlan] = useState(null);
+
+  useLayoutEffect(() => {
+    const el = daySwipeViewportRef.current;
+    if (!el) return;
+    if (typeof ResizeObserver === "undefined") {
+      setDaySwipeViewportWidthPx(el.offsetWidth);
+      return;
+    }
+    const ro = new ResizeObserver(() => {
+      setDaySwipeViewportWidthPx(el.offsetWidth);
+    });
+    ro.observe(el);
+    setDaySwipeViewportWidthPx(el.offsetWidth);
+    return () => ro.disconnect();
+  }, []);
+
   const canAdd = useMemo(() => {
     return newContent.trim().length > 0;
   }, [newContent]);
@@ -3644,7 +3828,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 trackStyle={
                   !prefersReducedMotion
                     ? {
-                        transform: `translate3d(calc(-100% / 3 + ${daySwipePullX}px), 0, 0)`,
+                        transform:
+                            daySwipeViewportWidthPx > 0
+                              ? `translate3d(${-daySwipeViewportWidthPx + daySwipePullX}px, 0, 0)`
+                              : `translate3d(calc(-100% / 3 + ${daySwipePullX}px), 0, 0)`,
                         transition: daySwipeTransition
                           ? `transform ${DAY_SWIPE_CAROUSEL_TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
                           : "none",
@@ -3690,6 +3877,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       activeChapterIdx={mainActiveChapterIdx}
                       daySwipePullX={daySwipePullX}
                       prefersReducedMotion={prefersReducedMotion}
+                      peekYmd={peekPrevYmd}
+                      mainChapterParallaxYs={mainChapterParallaxYs}
                   />
                 }
                 nextSlot={
@@ -3699,20 +3888,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       activeChapterIdx={mainActiveChapterIdx}
                       daySwipePullX={daySwipePullX}
                       prefersReducedMotion={prefersReducedMotion}
+                      peekYmd={peekNextYmd}
+                      mainChapterParallaxYs={mainChapterParallaxYs}
                   />
                 }
             >
               <section aria-label="오늘 기록" className={[UI_CANVAS, "max-h-none"].join(" ")}>
-                <div
-                    className="px-4 py-4"
-                    style={{
-                      background: [
-                        "radial-gradient(ellipse 90% 65% at 12% 0%, rgba(255,255,255,0.72), transparent 56%)",
-                        "radial-gradient(ellipse 70% 55% at 92% 18%, rgba(251,146,60,0.12), transparent 54%)",
-                        "radial-gradient(ellipse 70% 55% at 10% 92%, rgba(120,113,108,0.10), transparent 54%)",
-                      ].join(", "),
-                    }}
-                >
+                <div className="px-4 py-4" style={{ background: MAIN_DATE_CANVAS_BACKGROUND }}>
                   <div className="relative z-[41] pointer-events-auto">
                     <div
                         className={[
