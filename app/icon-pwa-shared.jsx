@@ -51,19 +51,19 @@ export function TimeboxingPwaIconElement({ size }) {
           }}
       />
 
-      {/* 리퀴드 글래스 패널 */}
+      {/* 리퀴드 글래스 패널 — 아이콘 가장자리에 가깝게(최대 크기) */}
       <div
           style={{
             position: "relative",
-            width: "78%",
-            height: "78%",
-            borderRadius: px(36),
+            width: "90%",
+            height: "90%",
+            borderRadius: px(40),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             background:
                 "linear-gradient(165deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.14) 42%, rgba(255,255,255,0.22) 100%)",
-            border: `${px(2)} solid rgba(255,255,255,0.68)`,
+            border: `${px(2.5)} solid rgba(255,255,255,0.72)`,
             boxShadow: [
               `inset 0 ${px(2)} ${px(14)} rgba(255,255,255,0.55)`,
               `inset 0 ${px(-2)} ${px(10)} rgba(251,146,60,0.12)`,
