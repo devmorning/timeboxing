@@ -1371,20 +1371,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 선택일과 state가 맞을 때만 본문 표시 — 날짜 전환 직전 프레임에 이전 날 입력이 보이는 현상 방지 */
   const planDisplayMatchesSelection = readyDate === selectedDate;
 
-  /** 날짜가 바뀌고 해당 날 데이터가 준비된 뒤 입력 블록에 짧은 하이라이트(초기 로드 1회 제외) */
-  const [dayPlanInputsFlash, setDayPlanInputsFlash] = useState(false);
-  const dayPlanInputsFlashInitialSyncRef = useRef(false);
-  useEffect(() => {
-    if (readyDate !== selectedDate || readyDate === "") return;
-    if (!dayPlanInputsFlashInitialSyncRef.current) {
-      dayPlanInputsFlashInitialSyncRef.current = true;
-      return;
-    }
-    if (prefersReducedMotion) return;
-    setDayPlanInputsFlash(true);
-    const t = window.setTimeout(() => setDayPlanInputsFlash(false), 720);
-    return () => clearTimeout(t);
-  }, [readyDate, selectedDate, prefersReducedMotion]);
   const displayImportant3 = planDisplayMatchesSelection ? important3 : ["", "", ""];
   const displayBrainDump = planDisplayMatchesSelection ? brainDump : "";
 
@@ -4316,8 +4302,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           daySwipeLocksVerticalScroll
                             ? "overflow-y-hidden overscroll-y-none touch-none"
                             : "overflow-y-auto overscroll-y-contain",
-                          dayPlanInputsFlash ? "day-plan-inputs-flash" : "",
-                        ].filter(Boolean).join(" ")}
+                        ].join(" ")}
                     >
                       <section
                           aria-label="가장 중요한 3가지"
