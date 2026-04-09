@@ -13,6 +13,7 @@ import { InlineCalendarMonth } from "../components/timeboxing/InlineCalendarMont
 import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/utils/calendarMonth.js";
 import { addDaysToYmd, getSundayOfWeekForYmd } from "../components/timeboxing/utils/dateYmd.js";
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
+import AnimatedDayNumber from "./components/timeboxing/AnimatedDayNumber.jsx";
 import ComposerContentInput from "./components/timeboxing/ComposerContentInput.jsx";
 import ExecutionTrendBarChart, {
   ExecutionTrendDayList,
@@ -581,10 +582,13 @@ function EmptyDayLockScreen({
           <p className="text-[13px] font-medium uppercase tracking-[0.22em] text-stone-400">
             {parts.weekday}
           </p>
-          <p
-              className="mt-1 font-sans text-[clamp(4.25rem,20vw,6.75rem)] font-extralight leading-[0.92] tracking-[-0.085em] text-stone-800 tabular-nums"
-          >
-            {parts.dayNum}
+          <p className="mt-1 leading-[0.92]">
+            <AnimatedDayNumber
+                value={parts.dayNum}
+                dateKey={selectedDate}
+                prefersReducedMotion={prefersReducedMotion}
+                className="font-sans text-[clamp(4.25rem,20vw,6.75rem)] font-extralight leading-[0.92] tracking-[-0.085em] text-stone-800"
+            />
           </p>
           <p className="mt-5 text-xl font-medium tracking-tight text-stone-700">{parts.monthLine}</p>
           <p className="mt-1 text-[13px] font-medium text-stone-400">{parts.year}년</p>
@@ -4073,8 +4077,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     {selectedDateDisplay.weekday.toUpperCase()}
                                   </p>
                                   <div className="mt-1 flex items-end gap-2">
-                                    <p className="font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums">
-                                      {selectedDateDisplay.day}
+                                    <p className="m-0 leading-none">
+                                      <AnimatedDayNumber
+                                          value={Number(selectedDateDisplay.day)}
+                                          dateKey={selectedDate}
+                                          prefersReducedMotion={prefersReducedMotion}
+                                          className="font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900"
+                                      />
                                     </p>
                                   </div>
                                 </button>
@@ -4157,12 +4166,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                 <div className="mt-1 flex items-end justify-between gap-2">
                                   <p
                                       className={[
-                                        "font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums",
+                                        "m-0 leading-none",
                                         "transition-[transform,color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                                         "group-hover:scale-[1.015] motion-reduce:group-hover:scale-100",
                                       ].join(" ")}
                                   >
-                                    {selectedDateDisplay.day}
+                                    <AnimatedDayNumber
+                                        value={Number(selectedDateDisplay.day)}
+                                        dateKey={selectedDate}
+                                        prefersReducedMotion={prefersReducedMotion}
+                                        className="font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900"
+                                    />
                                   </p>
                                   <p className="text-[11px] font-semibold tracking-tight text-stone-600 transition-colors duration-300 group-hover:text-stone-700">
                                     {selectedDateDisplay.ym}
