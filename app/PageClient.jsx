@@ -942,7 +942,7 @@ function AdjacentDayStaticColumn({
                 <div
                     role="group"
                     aria-label={`가장 중요한 일 ${idx + 1}`}
-                    className="flex items-center gap-3 rounded-xl px-1 py-2 first:pt-0 last:pb-0"
+                    className="flex items-center gap-3 rounded-xl px-1 py-2"
                 >
                   <span className={UI_PIN_WELL} aria-hidden>
                     <span className="text-[15px] font-semibold tabular-nums leading-none">
@@ -4376,7 +4376,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     staggerMs={idx * 48}
                                 >
                                   <div
-                                      className="group flex items-center gap-3 rounded-xl px-1 py-2 transition-colors first:pt-0 last:pb-0 focus-within:bg-white/55"
+                                      className="group flex items-center gap-3 rounded-xl px-1 py-2 transition-colors focus-within:bg-white/55"
                                   >
                                     <span
                                         className={[
@@ -4867,7 +4867,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     prefersReducedMotion={prefersReducedMotion}
                                     staggerMs={idx * 48}
                                 >
-                                  <div className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0">
+                                  <div className="flex items-center gap-3 py-3.5">
                                     <span className={UI_PIN_WELL} aria-hidden>
                                       <span className="text-[15px] font-semibold tabular-nums leading-none">
                                         {idx + 1}

@@ -27,7 +27,16 @@ export default function SmoothEnter({
   }, [prefersReducedMotion]);
 
   return (
-    <div className={["min-w-0", className].filter(Boolean).join(" ")}>
+    <div
+        className={[
+          "min-w-0 w-full",
+          /** divide-y 리스트의 직접 자식으로 쓸 때만 — 행이 래퍼 안 단일 자식이 되어 first/last가 깨지지 않게 */
+          "first:[&>div>*]:pt-0 last:[&>div>*]:pb-0",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
+    >
       <div
           className={[
             "transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
