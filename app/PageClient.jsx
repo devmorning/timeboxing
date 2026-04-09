@@ -52,6 +52,13 @@ const BRAIN_DUMP_TEXTAREA_MIN_HEIGHT_PX = 28;
 const COMPOSER_BRAIN_DUMP_MAX_LINES = 7;
 /** false: 좌우 인접 날 캐러셀·프리뷰 열 비활성(단일 열만, peek API 호출 생략) */
 const ENABLE_DAY_SWIPE_ADJACENT_PEEK = false;
+/**
+ * 실험: 메인 챕터 세로 스크롤을 1→2→3→1… 순환처럼 느끼게 함.
+ * - 하단 끝에 도달하면 맨 위로 점프(터치/관성 스크롤)
+ * - 휠: 하단에서 아래·상단에서 위로 이어질 때 점프
+ * ROLLBACK: 사용자가 "순환 테스트 복구" 요청 시 이 플래그를 false로 두고, chapterLoopJumpingRef·prevMainChapterScrollRef·휠 useEffect·onMainChapterScroll 내 순환 분기 제거.
+ */
+const ENABLE_MAIN_CHAPTER_SCROLL_LOOP = true;
 
 function getTextareaMaxHeightByLines(el, maxLines) {
   if (!el) return Number.MAX_SAFE_INTEGER;
@@ -1322,6 +1329,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 챕터별 글로우 패럴렉스 translateY(px) — 스크롤 픽셀마다 갱신 */
   const [mainChapterParallaxYs, setMainChapterParallaxYs] = useState(() => [0, 0, 0]);
   const mainChapterScrollSyncRafRef = useRef(null);
+  /** 순환 점프 중 중복 점프·패럴렉스 깜빡임 방지 */
+  const chapterLoopJumpingRef = useRef(false);
+  /** 순환: 직전 scrollTop — 하단 경계 교차 감지용 */
+  const prevMainChapterScrollTopRef = useRef(0);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   /** 드래그 오프셋(px) — 캐러셀에서 인접 날 미리보기 */
@@ -3092,12 +3103,101 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, []);
 
   const onMainChapterScroll = useCallback(() => {
+    const root = mainChapterScrollRef.current;
+    if (
+      ENABLE_MAIN_CHAPTER_SCROLL_LOOP &&
+      !prefersReducedMotion &&
+      root &&
+      !chapterLoopJumpingRef.current &&
+      !daySwipeLocksVerticalScroll &&
+      !isDatePickerOpen
+    ) {
+      const max = root.scrollHeight - root.clientHeight;
+      if (max > 0) {
+        const st = root.scrollTop;
+        const prev = prevMainChapterScrollTopRef.current;
+        if (st >= max - 1 && prev < max - 1) {
+          chapterLoopJumpingRef.current = true;
+          root.scrollTop = 0;
+          prevMainChapterScrollTopRef.current = 0;
+          requestAnimationFrame(() => {
+            chapterLoopJumpingRef.current = false;
+            syncMainChapterScrollState();
+          });
+          return;
+        }
+        prevMainChapterScrollTopRef.current = st;
+      }
+    }
     if (mainChapterScrollSyncRafRef.current != null) return;
     mainChapterScrollSyncRafRef.current = requestAnimationFrame(() => {
       mainChapterScrollSyncRafRef.current = null;
       syncMainChapterScrollState();
     });
-  }, [syncMainChapterScrollState]);
+  }, [
+    syncMainChapterScrollState,
+    prefersReducedMotion,
+    daySwipeLocksVerticalScroll,
+    isDatePickerOpen,
+  ]);
+
+  useEffect(() => {
+    prevMainChapterScrollTopRef.current = 0;
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (!ENABLE_MAIN_CHAPTER_SCROLL_LOOP) return;
+    let detach = null;
+    const rafId = requestAnimationFrame(() => {
+      const root = mainChapterScrollRef.current;
+      if (!root) return;
+      const onWheel = (e) => {
+        if (prefersReducedMotion) return;
+        if (chapterLoopJumpingRef.current) return;
+        if (daySwipeLocksVerticalScroll) return;
+        if (isDatePickerOpen) return;
+        const max = root.scrollHeight - root.clientHeight;
+        if (max <= 0) return;
+        const st = root.scrollTop;
+        const atBottom = st >= max - 3;
+        const atTop = st <= 3;
+        if (atBottom && e.deltaY > 0) {
+          e.preventDefault();
+          chapterLoopJumpingRef.current = true;
+          const first = root.querySelector("[data-main-chapter]");
+          root.scrollTop =
+            first instanceof HTMLElement ? getScrollContentOffsetTop(root, first) : 0;
+          prevMainChapterScrollTopRef.current = root.scrollTop;
+          requestAnimationFrame(() => {
+            chapterLoopJumpingRef.current = false;
+            syncMainChapterScrollState();
+          });
+        } else if (atTop && e.deltaY < 0) {
+          e.preventDefault();
+          chapterLoopJumpingRef.current = true;
+          root.scrollTop = max;
+          prevMainChapterScrollTopRef.current = max;
+          requestAnimationFrame(() => {
+            chapterLoopJumpingRef.current = false;
+            syncMainChapterScrollState();
+          });
+        }
+      };
+      root.addEventListener("wheel", onWheel, { passive: false });
+      detach = () => root.removeEventListener("wheel", onWheel);
+    });
+    return () => {
+      cancelAnimationFrame(rafId);
+      detach?.();
+    };
+  }, [
+    prefersReducedMotion,
+    daySwipeLocksVerticalScroll,
+    isDatePickerOpen,
+    syncMainChapterScrollState,
+    showDayPlanContent,
+    selectedDate,
+  ]);
 
   const handleDaySwipeTouchEnd = useCallback(
       (event) => {

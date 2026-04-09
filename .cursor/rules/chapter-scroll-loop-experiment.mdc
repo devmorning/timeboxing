@@ -1,0 +1,10 @@
+---
+description: 메인 챕터 세로 스크롤 순환 실험 롤백 트리거
+globs: app/PageClient.jsx
+alwaysApply: false
+---
+
+사용자가 **「순환 테스트 복구」**라고 하면, `ENABLE_MAIN_CHAPTER_SCROLL_LOOP` 실험을 되돌린다.
+
+- `app/PageClient.jsx`에서 `ENABLE_MAIN_CHAPTER_SCROLL_LOOP`를 `false`로 두고, `chapterLoopJumpingRef`·`prevMainChapterScrollTopRef`·순환 관련 `useEffect`(휠)·`onMainChapterScroll` 내 순환 분기·`selectedDate`로 `prevMainChapterScrollTopRef` 초기화하는 `useEffect`를 제거하거나, 해당 기능을 넣은 **커밋을 `git revert`** 한다.
+- 주석에 적힌 ROLLBACK 지시와 동일한 범위를 복구한다.
