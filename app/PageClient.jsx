@@ -35,6 +35,11 @@ import {
   hasDayPlanContent,
   normalizeDayPlan,
 } from "../components/timeboxing/storage/dayPlan.schema.js";
+import {
+  ADJACENT_DAY_SWIPE_PARALLAX_Y_PER_PX,
+  getMainChapterIdxFromScrollRoot,
+  getScrollContentOffsetTop,
+} from "../components/timeboxing/utils/chapterScrollGeometry.js";
 
 const SECONDS_PER_DAY = 86400;
 const THIRTY_MIN_SECONDS = 1800;
@@ -401,32 +406,6 @@ function rubberDaySwipeDx(dx, maxAbs) {
 }
 
 /**
- * 스크롤 컨테이너 기준으로 el 상단까지의 콘텐츠 오프셋(px).
- * HTMLElement.offsetTop은 offsetParent 기준이라 래퍼·포지셔닝에 따라 깨지므로 통일한다.
- */
-function getScrollContentOffsetTop(root, el) {
-  if (!root || !el || !(el instanceof HTMLElement) || !root.contains(el)) return 0;
-  return (
-    root.scrollTop +
-    (el.getBoundingClientRect().top - root.getBoundingClientRect().top)
-  );
-}
-
-/** 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스 (captureCurrentChapterIdx와 동일 기준) */
-function getMainChapterIdxFromScrollRoot(root) {
-  if (!root) return 0;
-  const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
-  if (!chapters.length) return 0;
-  const probeTop = root.scrollTop + 12;
-  let idx = 0;
-  for (let i = 0; i < chapters.length; i += 1) {
-    const el = chapters[i];
-    if (el instanceof HTMLElement && getScrollContentOffsetTop(root, el) <= probeTop) idx = i;
-  }
-  return idx;
-}
-
-/**
  * 입력이 전혀 없는 날짜 — 잠금화면 스타일로 날짜만 강조 (2026 스톤·소프트 글래스 톤)
  */
 function EmptyDayLockScreen({
@@ -728,7 +707,7 @@ function AdjacentDayStaticColumn({
   }, [activeChapterIdx, prefersReducedMotion]);
 
   const previewTranslateY = !prefersReducedMotion
-    ? chapterAlignedOffsetY + daySwipePullX * 0.03
+    ? chapterAlignedOffsetY + daySwipePullX * ADJACENT_DAY_SWIPE_PARALLAX_Y_PER_PX
     : 0;
 
   return (
@@ -3872,8 +3851,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         ref={mainChapterScrollRef}
                         onScroll={onMainChapterScroll}
                         className={[
+                          // proximity: 터치 관성·가벼운 스크롤에 맞춤 (mandatory+min-h-full+scroll-smooth는 네이티브 스냅과 잘 충돌)
                           "h-[min(calc(100dvh-8.25rem-env(safe-area-inset-bottom)),760px)] overflow-y-auto overscroll-y-contain snap-y snap-proximity space-y-8 pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scroll-pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scrollbar-none",
-                          !prefersReducedMotion ? "scroll-smooth" : "",
                         ].join(" ")}
                     >
                       <section
