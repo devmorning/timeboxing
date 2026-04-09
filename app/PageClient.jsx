@@ -313,6 +313,8 @@ function DaySwipeCarouselTrack({
   prevSlot,
   nextSlot,
   children,
+  /** 가로 스와이프 중 세로 팬이 트랙에 먹지 않도록 */
+  trackTouchLock = false,
 }) {
   const gridCell = "col-start-1 row-start-1";
   if (!enabled) {
@@ -324,7 +326,13 @@ function DaySwipeCarouselTrack({
   }
   return (
     <div className={[gridCell, "w-full min-w-0 overflow-hidden"].join(" ")}>
-      <div className="flex min-h-0 w-[300%] min-w-0 touch-pan-y" style={trackStyle}>
+      <div
+          className={[
+            "flex min-h-0 w-[300%] min-w-0",
+            trackTouchLock ? "touch-none" : "touch-pan-y",
+          ].join(" ")}
+          style={trackStyle}
+      >
         {/* 빈 날 오버레이(z-39)보다 위에 그려져 전·다음날 프리뷰(날짜 카드)가 가려지지 않게 함 */}
         <aside
             className="relative z-[41] box-border min-h-0 w-[33.333333%] min-w-0 shrink-0 px-1"
@@ -2940,8 +2948,36 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return false;
   }, []);
 
+  /** setState만으로는 같은 프레임에 overflow가 막히지 않는 경우가 있어 DOM에 즉시 반영 */
+  const applyDaySwipeScrollLock = useCallback(() => {
+    const root = mainChapterScrollRef.current;
+    if (root) {
+      root.style.setProperty("overflow-y", "hidden");
+      root.style.setProperty("touch-action", "none");
+      root.style.setProperty("overscroll-behavior-y", "none");
+    }
+    const vp = daySwipeViewportRef.current;
+    if (vp) {
+      vp.style.setProperty("touch-action", "none");
+    }
+  }, []);
+
+  const releaseDaySwipeScrollLock = useCallback(() => {
+    const root = mainChapterScrollRef.current;
+    if (root) {
+      root.style.removeProperty("overflow-y");
+      root.style.removeProperty("touch-action");
+      root.style.removeProperty("overscroll-behavior-y");
+    }
+    const vp = daySwipeViewportRef.current;
+    if (vp) {
+      vp.style.removeProperty("touch-action");
+    }
+  }, []);
+
   const handleDaySwipeTouchStart = useCallback(
       (event) => {
+        releaseDaySwipeScrollLock();
         setDaySwipeLocksVerticalScroll(false);
         if (isDatePickerOpen) return;
         if (isReportOpen || isStatsOpen || isTemplatesOpen || isTrendOpen || isScheduleComposerModalOpen)
@@ -2971,6 +3007,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         isScheduleComposerModalOpen,
         isDateTransitionLoading,
         isDaySwipeIgnoredTarget,
+        releaseDaySwipeScrollLock,
       ]
   );
 
@@ -2981,17 +3018,29 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     const dx = touch.clientX - g.startX;
     const dy = touch.clientY - g.startY;
     if (!g.horizontalLocked) {
-      // 세로 스크롤 중에는 가로 스와이프를 잠그지 않는다.
-      if (Math.abs(dx) < 12) return;
-      if ((Math.abs(dy) > 6 && Math.abs(dy) >= Math.abs(dx) * 0.8) || Math.abs(dx) < Math.abs(dy) * 1.35) {
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+
+      // 세로가 분명히 우세하면 가로 추적 종료
+      if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx) * 1.12) {
         g.tracking = false;
+        releaseDaySwipeScrollLock();
         setDaySwipeLocksVerticalScroll(false);
         setDaySwipeTransition(true);
         setDaySwipePullX(0);
         window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
         return;
       }
+
+      // 가로 우선: dx가 dy보다 크거나(비율), 또는 가로 12px 이상 — 예전엔 dx<12면 무조건 return 해 세로가 이김
+      const horizontalDominant =
+          Math.abs(dx) >= 6 && Math.abs(dx) >= Math.abs(dy) * 0.75;
+      const strongHorizontal = Math.abs(dx) >= 12;
+      if (!horizontalDominant && !strongHorizontal) {
+        return;
+      }
+
       g.horizontalLocked = true;
+      applyDaySwipeScrollLock();
       setDaySwipeLocksVerticalScroll(true);
     }
     const w =
@@ -3005,7 +3054,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       daySwipePullXRafRef.current = null;
       setDaySwipePullX(daySwipePullXPendingRef.current);
     });
-  }, []);
+  }, [applyDaySwipeScrollLock, releaseDaySwipeScrollLock]);
 
   const captureCurrentChapterIdx = useCallback(() => {
     return getMainChapterIdxFromScrollRoot(mainChapterScrollRef.current);
@@ -3032,6 +3081,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const handleDaySwipeTouchEnd = useCallback(
       (event) => {
+        releaseDaySwipeScrollLock();
+        setDaySwipeLocksVerticalScroll(false);
         const touch = event.changedTouches?.[0];
         const prev = daySwipeRef.current;
         const wasTracking = prev.tracking;
@@ -3045,7 +3096,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           tracking: false,
           horizontalLocked: false,
         };
-        setDaySwipeLocksVerticalScroll(false);
 
         if (!touch || !wasTracking) return;
 
@@ -3149,7 +3199,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         }
         window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
       },
-      [captureCurrentChapterIdx, prefersReducedMotion, setSelectedDate, showDayPlanContent, showEmptyDayLock]
+      [captureCurrentChapterIdx, prefersReducedMotion, releaseDaySwipeScrollLock, setSelectedDate, showDayPlanContent, showEmptyDayLock]
   );
 
   const handleDaySwipeTouchCancel = useCallback(() => {
@@ -3163,6 +3213,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       tracking: false,
       horizontalLocked: false,
     };
+    releaseDaySwipeScrollLock();
     setDaySwipeLocksVerticalScroll(false);
     setDaySwipeTransition(false);
     setDaySwipePullX(0);
@@ -3170,7 +3221,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       window.cancelAnimationFrame(daySwipePullXRafRef.current);
       daySwipePullXRafRef.current = null;
     }
-  }, []);
+  }, [releaseDaySwipeScrollLock]);
 
   useEffect(() => {
     return () => {
@@ -3184,13 +3235,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         window.cancelAnimationFrame(mainChapterScrollSyncRafRef.current);
         mainChapterScrollSyncRafRef.current = null;
       }
+      releaseDaySwipeScrollLock();
     };
-  }, []);
+  }, [releaseDaySwipeScrollLock]);
 
   useEffect(() => {
+    releaseDaySwipeScrollLock();
     setDaySwipePullX(0);
     setDaySwipeTransition(false);
-  }, [selectedDate]);
+  }, [releaseDaySwipeScrollLock, selectedDate]);
 
   useLayoutEffect(() => {
     if (!showDayPlanContent) return;
@@ -3865,6 +3918,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             ) : null}
             <DaySwipeCarouselTrack
                 enabled={daySwipeCarouselEnabled}
+                trackTouchLock={
+                  daySwipeLocksVerticalScroll || Math.abs(daySwipePullX) > 0 || daySwipeTransition
+                }
                 trackStyle={
                   !prefersReducedMotion
                     ? {
