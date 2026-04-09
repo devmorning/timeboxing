@@ -1359,8 +1359,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     });
   }, []);
 
+  /** 선택일과 state가 맞을 때만 본문 표시 — 날짜 전환 직전 프레임에 이전 날 입력이 보이는 현상 방지 */
+  const planDisplayMatchesSelection = readyDate === selectedDate;
+  const displayImportant3 = planDisplayMatchesSelection ? important3 : ["", "", ""];
+  const displayBrainDump = planDisplayMatchesSelection ? brainDump : "";
+
   /** 당일 목록·리포트: 전날 이어짐 + 당일 일정 (시간순) */
   const displayItemsMerged = useMemo(() => {
+    if (!planDisplayMatchesSelection) return [];
     const from = carryOverItems.map((x) => ({ ...x, _isCarryover: true }));
     const fromDay = items.map((it) => ({ ...it, _isCarryover: false }));
     const all = [...from, ...fromDay];
@@ -1381,7 +1387,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       return 0;
     });
     return all;
-  }, [carryOverItems, items]);
+  }, [planDisplayMatchesSelection, carryOverItems, items]);
 
   /** 인접 ‘이전 날’ 패널: 전전날→전날 이어짐 + 전날 일정 */
   const peekPrevDisplayRows = useMemo(() => {
@@ -1401,13 +1407,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const peekNextDisplayRows = useMemo(() => {
     if (!peekNextPlan) return null;
     const carry = [];
-    for (const raw of sortItemsByTimeAsc(items)) {
-      const b = buildCarryOverDisplayItem(raw, selectedDate);
-      if (b) carry.push(b);
+    if (planDisplayMatchesSelection) {
+      for (const raw of sortItemsByTimeAsc(items)) {
+        const b = buildCarryOverDisplayItem(raw, selectedDate);
+        if (b) carry.push(b);
+      }
     }
     const dayItems = sortItemsByTimeAsc(normalizeDayPlan(peekNextPlan).items);
     return mergeAdjacentDisplayRows(carry, dayItems);
-  }, [peekNextPlan, items, selectedDate, sortItemsByTimeAsc]);
+  }, [peekNextPlan, items, selectedDate, sortItemsByTimeAsc, planDisplayMatchesSelection]);
 
   const serializePlan = useCallback(
       (plan) =>
@@ -1430,8 +1438,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   );
 
   const filledImportant3 = useMemo(
-      () => important3.map((v) => v.trim()).filter(Boolean),
-      [important3]
+      () =>
+          (planDisplayMatchesSelection ? important3 : ["", "", ""])
+              .map((v) => v.trim())
+              .filter(Boolean),
+      [important3, planDisplayMatchesSelection]
   );
 
   const templateDraftCanSave = useMemo(() => templateDraftContent.trim().length > 0, [templateDraftContent]);
@@ -2658,7 +2669,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     };
   }, [dayPlanRepository, initialSelectedDate, serializePlan, sortItemsByTimeAsc]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!authReady || !authUser?.id) return;
 
     if (skippedInitialLoadRef.current && initialSelectedDate === selectedDate) {
@@ -4285,9 +4296,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         >
                           <div className={UI_CANVAS_INSET}>
                           <div className="divide-y divide-stone-200/35 px-2.5 py-2">
-                            {important3.map((v, idx) => (
+                            {displayImportant3.map((v, idx) => (
                                 <div
-                                    key={idx}
+                                    key={`${selectedDate}-imp-${idx}`}
                                     className="group flex items-center gap-3 rounded-xl px-1 py-2 transition-colors first:pt-0 last:pb-0 focus-within:bg-white/55"
                                 >
                                   <span
@@ -4375,7 +4386,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   ref={brainDumpTextareaRef}
                                   id="brain_dump"
                                   aria-label="브레인 덤프"
-                                  value={brainDump}
+                                  value={displayBrainDump}
                                   disabled={isDatePickerOpen}
                                   onChange={(e) => setBrainDump(e.target.value)}
                                   placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
@@ -4769,9 +4780,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       <section aria-label="가장 중요한 3가지">
                         <div className={UI_SURFACE_P4}>
                           <div className="divide-y divide-stone-200/80">
-                            {important3.map((v, idx) => (
+                            {displayImportant3.map((v, idx) => (
                                 <div
-                                    key={idx}
+                                    key={`${selectedDate}-composer-imp-${idx}`}
                                     className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0"
                                 >
                                   <span className={UI_PIN_WELL} aria-hidden>
@@ -4811,7 +4822,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               ref={composerBrainDumpRef}
                               id="brain_dump_schedule_modal"
                               aria-label="브레인 덤프"
-                              value={brainDump}
+                              value={displayBrainDump}
                               disabled={isDatePickerOpen}
                               onChange={(e) => setBrainDump(e.target.value)}
                               placeholder="예: 회의 준비, 이메일 확인, 아이디어 메모..."
@@ -5546,9 +5557,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       <div>
                         <h3 className="text-[13px] font-semibold text-slate-500">브레인 덤프</h3>
-                        {brainDump.trim() ? (
+                        {displayBrainDump.trim() ? (
                             <p className="mt-2 whitespace-pre-wrap break-words text-sm text-slate-900">
-                              {brainDump.trim()}
+                              {displayBrainDump.trim()}
                             </p>
                         ) : (
                             <p className="mt-2 text-sm text-slate-400">작성된 내용이 없습니다.</p>
