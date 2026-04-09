@@ -34,3 +34,24 @@ export function getMainChapterIdxFromScrollRoot(root) {
 
 /** 날짜 스와이프 중 옆 열에 더해지는 세로 패럴렉스 — 가로 당김(px)당 세로 이동 비율 */
 export const ADJACENT_DAY_SWIPE_PARALLAX_Y_PER_PX = 0.03;
+
+/**
+ * 메인 챕터 상단 글로우 레이어: 본문보다 약간 느리게 움직이는 느낌(세로 패럴렉스).
+ * 계수를 크게 잡아 짧은 터치 스크롤에도 체감되게 한다.
+ */
+export const MAIN_CHAPTER_BLUR_PARALLAX_FACTOR = 0.28;
+
+/**
+ * @param {HTMLElement} scrollRoot
+ * @param {HTMLElement} sectionEl - [data-main-chapter] 섹션
+ */
+export function getChapterBlurParallaxTranslateY(
+  scrollRoot,
+  sectionEl,
+  factor = MAIN_CHAPTER_BLUR_PARALLAX_FACTOR
+) {
+  if (!scrollRoot || !sectionEl || !(sectionEl instanceof HTMLElement)) return 0;
+  const st = scrollRoot.scrollTop;
+  const sectionStart = getScrollContentOffsetTop(scrollRoot, sectionEl);
+  return -(st - sectionStart) * factor;
+}

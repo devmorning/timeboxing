@@ -37,6 +37,7 @@ import {
 } from "../components/timeboxing/storage/dayPlan.schema.js";
 import {
   ADJACENT_DAY_SWIPE_PARALLAX_Y_PER_PX,
+  getChapterBlurParallaxTranslateY,
   getMainChapterIdxFromScrollRoot,
   getScrollContentOffsetTop,
 } from "../components/timeboxing/utils/chapterScrollGeometry.js";
@@ -1068,6 +1069,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const mainChapterScrollRef = useRef(null);
   /** 0=중요3, 1=브레인덤프, 2=일정 — 스크롤 위치로 동기화, 이전 챕터 입력 영역 페이드아웃용 */
   const [mainActiveChapterIdx, setMainActiveChapterIdx] = useState(0);
+  /** 챕터별 글로우 패럴렉스 translateY(px) — 스크롤 픽셀마다 갱신 */
+  const [mainChapterParallaxYs, setMainChapterParallaxYs] = useState(() => [0, 0, 0]);
   const mainChapterScrollSyncRafRef = useRef(null);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   /** 날씨 앱처럼 드래그에 따라 화면이 밀리는 시각 피드백 */
@@ -2732,17 +2735,24 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return getMainChapterIdxFromScrollRoot(mainChapterScrollRef.current);
   }, []);
 
-  const syncMainActiveChapterIdx = useCallback(() => {
-    setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(mainChapterScrollRef.current));
+  const syncMainChapterScrollState = useCallback(() => {
+    const root = mainChapterScrollRef.current;
+    if (!root) return;
+    const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
+    const ys = chapters.map((el) =>
+      el instanceof HTMLElement ? getChapterBlurParallaxTranslateY(root, el) : 0
+    );
+    setMainChapterParallaxYs(ys.length ? ys : [0, 0, 0]);
+    setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(root));
   }, []);
 
   const onMainChapterScroll = useCallback(() => {
     if (mainChapterScrollSyncRafRef.current != null) return;
     mainChapterScrollSyncRafRef.current = requestAnimationFrame(() => {
       mainChapterScrollSyncRafRef.current = null;
-      syncMainActiveChapterIdx();
+      syncMainChapterScrollState();
     });
-  }, [syncMainActiveChapterIdx]);
+  }, [syncMainChapterScrollState]);
 
   const handleDaySwipeTouchEnd = useCallback(
       (event) => {
@@ -2906,18 +2916,26 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       requestAnimationFrame(() => {
         root.scrollTop = getScrollContentOffsetTop(root, target);
         pendingChapterIdxAfterDaySwipeRef.current = null;
-        setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(root));
+        syncMainChapterScrollState();
       });
     });
-  }, [selectedDate, showDayPlanContent]);
+  }, [selectedDate, showDayPlanContent, syncMainChapterScrollState]);
 
   useLayoutEffect(() => {
     if (!showDayPlanContent) return;
     const id = requestAnimationFrame(() => {
-      setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(mainChapterScrollRef.current));
+      syncMainChapterScrollState();
     });
     return () => cancelAnimationFrame(id);
-  }, [selectedDate, showDayPlanContent]);
+  }, [selectedDate, showDayPlanContent, syncMainChapterScrollState]);
+
+  useLayoutEffect(() => {
+    if (!showDayPlanContent) return;
+    const id = requestAnimationFrame(() => {
+      syncMainChapterScrollState();
+    });
+    return () => cancelAnimationFrame(id);
+  }, [mainActiveChapterIdx, showDayPlanContent, syncMainChapterScrollState]);
 
   useEffect(() => {
     if (!authUser?.id) {
@@ -3866,6 +3884,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 30% 20%, rgba(251,146,60,0.22), transparent 58%), radial-gradient(ellipse 70% 60% at 70% 40%, rgba(255,255,255,0.55), transparent 62%)",
+                              ...(!prefersReducedMotion
+                                ? {
+                                    transform: `translate3d(0, ${mainChapterParallaxYs[0] ?? 0}px, 0)`,
+                                    willChange: "transform",
+                                  }
+                                : {}),
                             }}
                         />
                         <div
@@ -3951,6 +3975,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 40% 30%, rgba(255,255,255,0.6), transparent 60%), radial-gradient(ellipse 70% 60% at 70% 45%, rgba(120,113,108,0.16), transparent 62%)",
+                              ...(!prefersReducedMotion
+                                ? {
+                                    transform: `translate3d(0, ${mainChapterParallaxYs[1] ?? 0}px, 0)`,
+                                    willChange: "transform",
+                                  }
+                                : {}),
                             }}
                         />
                         <div className="sticky top-2 z-10 mb-2.5 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-2.5 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
@@ -4010,6 +4040,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                             style={{
                               background:
                                   "radial-gradient(ellipse 70% 60% at 55% 25%, rgba(251,146,60,0.16), transparent 60%), radial-gradient(ellipse 70% 60% at 20% 55%, rgba(255,255,255,0.55), transparent 62%)",
+                              ...(!prefersReducedMotion
+                                ? {
+                                    transform: `translate3d(0, ${mainChapterParallaxYs[2] ?? 0}px, 0)`,
+                                    willChange: "transform",
+                                  }
+                                : {}),
                             }}
                         />
                         <div className="sticky top-2 z-10 mb-3 flex items-end justify-between rounded-2xl border border-white/60 bg-white/55 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-xl">
