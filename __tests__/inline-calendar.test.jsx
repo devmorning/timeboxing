@@ -111,7 +111,7 @@ describe("인라인 캘린더 열기", () => {
     fireEvent.click(goTodayBtn);
 
     await waitFor(() => {
-      expect(screen.getByLabelText("일정 불러오는 중")).toBeInTheDocument();
+      expect(screen.getByRole("status", { name: "하루 불러오는 중" })).toBeInTheDocument();
     });
 
     await act(async () => {
@@ -119,7 +119,7 @@ describe("인라인 캘린더 열기", () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByLabelText("일정 불러오는 중")).not.toBeInTheDocument();
+      expect(screen.queryByRole("status", { name: "하루 불러오는 중" })).not.toBeInTheDocument();
     });
 
     global.fetch = originalFetch;

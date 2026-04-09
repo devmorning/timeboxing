@@ -2868,6 +2868,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       readyDate !== "" &&
       readyDate !== selectedDate &&
       !hasCachedSelectedPlan;
+  /** 첫 부트스트랩·스켈레톤 지연 — 날짜만 바꾼 로딩과 구분 */
+  const isInitialPlanLoading = useMemo(
+      () =>
+          !authReady ||
+          (Boolean(authUser?.id) && (readyDate === "" || !isInitialSkeletonDelayDone)),
+      [authReady, authUser?.id, readyDate, isInitialSkeletonDelayDone]
+  );
+  /** 캐러셀 등으로 날짜만 바뀐 뒤 API 로딩 — 본문 전체 blur 대신 오버레이만 */
+  const showDateTransitionOverlay =
+      isDateTransitionLoading && !isInitialPlanLoading;
   const isDayPlanLoading =
       !authReady ||
       (authUser?.id &&
@@ -3275,8 +3285,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   useEffect(() => {
     if (isDayPlanLoading) {
-      setShowDayPlanSkeleton(true);
-      setShowDayPlanContent(false);
+      setShowDayPlanSkeleton(isInitialPlanLoading);
+      if (isInitialPlanLoading) {
+        setShowDayPlanContent(false);
+      }
       return;
     }
 
@@ -3292,7 +3304,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       clearTimeout(contentTimer);
       clearTimeout(skeletonTimer);
     };
-  }, [isDayPlanLoading]);
+  }, [isDayPlanLoading, isInitialPlanLoading]);
 
   const [showAuthTransitionContent, setShowAuthTransitionContent] = useState(Boolean(initialAuthUser?.id));
 
@@ -3918,7 +3930,35 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   </section>
                 }
             >
-              <section aria-label="오늘 기록" className={[UI_CANVAS, "max-h-none"].join(" ")}>
+              <section
+                  aria-label="오늘 기록"
+                  className={[UI_CANVAS, "max-h-none relative"].join(" ")}
+              >
+                {showDateTransitionOverlay ? (
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        aria-busy="true"
+                        aria-label="하루 불러오는 중"
+                        className={[
+                          "pointer-events-auto absolute inset-0 z-[50] flex flex-col items-center justify-center gap-2 rounded-3xl",
+                          "bg-white/50 backdrop-blur-[3px]",
+                        ].join(" ")}
+                    >
+                      {!prefersReducedMotion ? (
+                          <div
+                              className="h-9 w-9 shrink-0 rounded-full border-2 border-orange-200/90 border-t-orange-600 motion-safe:animate-spin"
+                              aria-hidden
+                          />
+                      ) : (
+                          <div
+                              className="h-2 w-2 shrink-0 rounded-full bg-orange-500/80"
+                              aria-hidden
+                          />
+                      )}
+                      <span className="text-[12px] font-medium text-stone-500">하루 불러오는 중…</span>
+                    </div>
+                ) : null}
                 <div className="px-4 py-4" style={{ background: MAIN_DATE_CANVAS_BACKGROUND }}>
                   <div className="relative z-[41] pointer-events-auto">
                     <div
@@ -3928,7 +3968,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           isDatePickerOpen
                             ? "shadow-[0_18px_44px_-22px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.9)]"
                             : "hover:border-white/75 hover:shadow-[0_14px_36px_-20px_rgba(15,23,42,0.18),inset_0_1px_0_rgba(255,255,255,0.88)]",
-                          isDateTransitionLoading ? "opacity-60" : "",
+                          isDateTransitionLoading && !showDateTransitionOverlay ? "opacity-60" : "",
                         ].join(" ")}
                         style={
                           !prefersReducedMotion
