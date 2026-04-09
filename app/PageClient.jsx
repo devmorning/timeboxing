@@ -69,6 +69,9 @@ const UI_SURFACE_PX4 =
 /** 메인 원-캔버스: 2026 웜 스톤 소프트 글래스 */
 const UI_CANVAS =
   "w-full max-h-[calc(100dvh-8.25rem-env(safe-area-inset-bottom))] overflow-hidden rounded-3xl border border-white/55 bg-white/55 shadow-[0_18px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-2xl";
+/** 좌우 날짜 프리뷰: 메인과 동일 바깥 테두리·섀도(세로는 본문 높이만큼, overflow-visible로 챕터 잘림 방지) */
+const UI_CANVAS_PEEK =
+  "w-full max-h-none overflow-visible rounded-3xl border border-white/55 bg-white/55 shadow-[0_18px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-2xl";
 const UI_CANVAS_INSET =
   "w-full overflow-hidden rounded-2xl border border-white/60 bg-stone-50/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]";
 /** 가장 중요한 일 우선순위 번호(1–3): 얕은 그라데이션 웰 */
@@ -732,10 +735,7 @@ function AdjacentPeekDateCard({ ymd }) {
   const parts = useMemo(() => getPeekDateDisplayParts(ymd), [ymd]);
   if (!parts.day) return null;
   return (
-      <div
-          className="mb-3.5 rounded-[1.35rem] px-2 py-2 sm:px-3"
-          style={{ background: MAIN_DATE_CANVAS_BACKGROUND }}
-      >
+      <div className="relative z-[41] mb-3.5">
         <div
             className={[
               "group relative overflow-hidden rounded-3xl border border-white/65 bg-white/55",
@@ -823,7 +823,7 @@ function AdjacentDayStaticColumn({
 
   if (plan === null) {
     return (
-      <div className="pointer-events-none w-full min-w-0 space-y-8 animate-pulse pb-5 pt-4">
+      <div className="pointer-events-none w-full min-w-0 space-y-8 animate-pulse pb-5">
         <AdjacentPeekDateCard ymd={peekYmd} />
         <section aria-hidden className="relative">
           <div className="mb-2.5 h-14 rounded-2xl bg-stone-200/50" />
@@ -865,7 +865,7 @@ function AdjacentDayStaticColumn({
   }
 
   return (
-    <div className="pointer-events-none w-full min-w-0 select-none pb-5 pt-4">
+    <div className="pointer-events-none w-full min-w-0 select-none pb-5">
       <AdjacentPeekDateCard ymd={peekYmd} />
       <div
           ref={columnRootRef}
@@ -3871,26 +3871,34 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                     : undefined
                 }
                 prevSlot={
-                  <AdjacentDayStaticColumn
-                      plan={peekPrevPlan}
-                      displayRows={peekPrevDisplayRows}
-                      activeChapterIdx={mainActiveChapterIdx}
-                      daySwipePullX={daySwipePullX}
-                      prefersReducedMotion={prefersReducedMotion}
-                      peekYmd={peekPrevYmd}
-                      mainChapterParallaxYs={mainChapterParallaxYs}
-                  />
+                  <section aria-hidden className={UI_CANVAS_PEEK}>
+                    <div className="px-4 py-4" style={{ background: MAIN_DATE_CANVAS_BACKGROUND }}>
+                      <AdjacentDayStaticColumn
+                          plan={peekPrevPlan}
+                          displayRows={peekPrevDisplayRows}
+                          activeChapterIdx={mainActiveChapterIdx}
+                          daySwipePullX={daySwipePullX}
+                          prefersReducedMotion={prefersReducedMotion}
+                          peekYmd={peekPrevYmd}
+                          mainChapterParallaxYs={mainChapterParallaxYs}
+                      />
+                    </div>
+                  </section>
                 }
                 nextSlot={
-                  <AdjacentDayStaticColumn
-                      plan={peekNextPlan}
-                      displayRows={peekNextDisplayRows}
-                      activeChapterIdx={mainActiveChapterIdx}
-                      daySwipePullX={daySwipePullX}
-                      prefersReducedMotion={prefersReducedMotion}
-                      peekYmd={peekNextYmd}
-                      mainChapterParallaxYs={mainChapterParallaxYs}
-                  />
+                  <section aria-hidden className={UI_CANVAS_PEEK}>
+                    <div className="px-4 py-4" style={{ background: MAIN_DATE_CANVAS_BACKGROUND }}>
+                      <AdjacentDayStaticColumn
+                          plan={peekNextPlan}
+                          displayRows={peekNextDisplayRows}
+                          activeChapterIdx={mainActiveChapterIdx}
+                          daySwipePullX={daySwipePullX}
+                          prefersReducedMotion={prefersReducedMotion}
+                          peekYmd={peekNextYmd}
+                          mainChapterParallaxYs={mainChapterParallaxYs}
+                      />
+                    </div>
+                  </section>
                 }
             >
               <section aria-label="오늘 기록" className={[UI_CANVAS, "max-h-none"].join(" ")}>
