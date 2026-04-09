@@ -18,10 +18,21 @@ export function TimeboxingPwaIconElement({ size }) {
           justifyContent: "center",
           overflow: "hidden",
           borderRadius: px(44),
-          background:
-              "linear-gradient(158deg, #fafaf9 0%, #fff7ed 20%, #fed7aa 48%, #fdba74 72%, #fb923c 100%)",
+          background: "transparent",
         }}
     >
+      {/* 메인 웜 그라데이션 — 50% 불투명(반투명 배경) */}
+      <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: px(44),
+            background:
+                "linear-gradient(158deg, #fafaf9 0%, #fff7ed 20%, #fed7aa 48%, #fdba74 72%, #fb923c 100%)",
+            opacity: 0.5,
+          }}
+      />
       {/* 상단 소프트 하이라이트 (글래스 상단 광택) */}
       <div
           style={{
@@ -55,9 +66,9 @@ export function TimeboxingPwaIconElement({ size }) {
       <div
           style={{
             position: "relative",
-            width: "96%",
-            height: "96%",
-            borderRadius: px(42),
+            width: "98%",
+            height: "98%",
+            borderRadius: px(43),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
