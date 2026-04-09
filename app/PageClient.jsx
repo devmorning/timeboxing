@@ -15,6 +15,7 @@ import { addDaysToYmd, getSundayOfWeekForYmd } from "../components/timeboxing/ut
 import { getDayPlanRepository } from "../components/timeboxing/storage/dayPlan.repository.js";
 import AnimatedDayNumber from "./components/timeboxing/AnimatedDayNumber.jsx";
 import ComposerContentInput from "./components/timeboxing/ComposerContentInput.jsx";
+import SmoothEnter from "./components/timeboxing/SmoothEnter.jsx";
 import ExecutionTrendBarChart, {
   ExecutionTrendDayList,
 } from "./components/timeboxing/ExecutionTrendBarChart.jsx";
@@ -933,26 +934,31 @@ function AdjacentDayStaticColumn({
         <div className={UI_CANVAS_INSET}>
           <div className="divide-y divide-stone-200/35 px-2.5 py-2">
             {important3.map((v, idx) => (
-              <div
-                  key={idx}
-                  role="group"
-                  aria-label={`가장 중요한 일 ${idx + 1}`}
-                  className="flex items-center gap-3 rounded-xl px-1 py-2 first:pt-0 last:pb-0"
+              <SmoothEnter
+                  key={`${peekYmd}-imp-${idx}`}
+                  prefersReducedMotion={prefersReducedMotion}
+                  staggerMs={idx * 48}
               >
-                <span className={UI_PIN_WELL} aria-hidden>
-                  <span className="text-[15px] font-semibold tabular-nums leading-none">
-                    {idx + 1}
-                  </span>
-                </span>
                 <div
-                    className={[
-                      "min-h-[40px] min-w-0 flex-1 whitespace-pre-wrap text-base leading-relaxed tracking-[-0.01em]",
-                      v.trim() ? "text-stone-800" : "text-stone-400",
-                    ].join(" ")}
+                    role="group"
+                    aria-label={`가장 중요한 일 ${idx + 1}`}
+                    className="flex items-center gap-3 rounded-xl px-1 py-2 first:pt-0 last:pb-0"
                 >
-                  {v.trim() || `가장 중요한 일 ${idx + 1}`}
+                  <span className={UI_PIN_WELL} aria-hidden>
+                    <span className="text-[15px] font-semibold tabular-nums leading-none">
+                      {idx + 1}
+                    </span>
+                  </span>
+                  <div
+                      className={[
+                        "min-h-[40px] min-w-0 flex-1 whitespace-pre-wrap text-base leading-relaxed tracking-[-0.01em]",
+                        v.trim() ? "text-stone-800" : "text-stone-400",
+                      ].join(" ")}
+                  >
+                    {v.trim() || `가장 중요한 일 ${idx + 1}`}
+                  </div>
                 </div>
-              </div>
+              </SmoothEnter>
             ))}
           </div>
         </div>
@@ -4364,45 +4370,53 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           <div className={UI_CANVAS_INSET}>
                           <div className="divide-y divide-stone-200/35 px-2.5 py-2">
                             {displayImportant3.map((v, idx) => (
-                                <div
-                                    key={`${selectedDate}-imp-${idx}`}
-                                    className="group flex items-center gap-3 rounded-xl px-1 py-2 transition-colors first:pt-0 last:pb-0 focus-within:bg-white/55"
+                                <SmoothEnter
+                                    key={`${selectedDate}-imp-${idx}-${planDisplayMatchesSelection}`}
+                                    prefersReducedMotion={prefersReducedMotion}
+                                    staggerMs={idx * 48}
                                 >
-                                  <span
-                                      className={[
-                                        UI_PIN_WELL,
-                                        !prefersReducedMotion
-                                            ? "transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-focus-within:scale-[1.03]"
-                                            : "",
-                                      ].join(" ")}
-                                      aria-hidden
+                                  <div
+                                      className="group flex items-center gap-3 rounded-xl px-1 py-2 transition-colors first:pt-0 last:pb-0 focus-within:bg-white/55"
                                   >
-                                    <span className="text-[15px] font-semibold tabular-nums leading-none">
-                                      {idx + 1}
+                                    <span
+                                        className={[
+                                          UI_PIN_WELL,
+                                          !prefersReducedMotion
+                                              ? "transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-focus-within:scale-[1.03]"
+                                              : "",
+                                        ].join(" ")}
+                                        aria-hidden
+                                    >
+                                      <span className="text-[15px] font-semibold tabular-nums leading-none">
+                                        {idx + 1}
+                                      </span>
                                     </span>
-                                  </span>
-                                  <TextInput
-                                      className="min-w-0 flex-1"
-                                      inputRef={idx === 0 ? scheduleComposerFirstImportantInputRef : null}
-                                      ariaLabel={`가장 중요한 일 ${idx + 1}`}
-                                      value={v}
-                                      placeholder={`가장 중요한 일 ${idx + 1}`}
-                                      disabled={isDatePickerOpen}
-                                      inputClassName={[
-                                        "!h-10 !min-h-[2.5rem] !rounded-none !border-0 !border-b-0 !bg-transparent !px-0 !py-0 !text-base !leading-[2.5rem] !tracking-[-0.01em] !text-stone-800 !shadow-none !ring-0",
-                                        "placeholder:text-stone-400",
-                                        "focus:!border-0 focus:!bg-transparent focus:!outline-none focus:!ring-0",
-                                        "disabled:!cursor-not-allowed disabled:!bg-transparent disabled:!text-stone-400",
-                                      ].join(" ")}
-                                      onChange={(next) =>
-                                          setImportant3((prev) => {
-                                            const copy = [...prev];
-                                            copy[idx] = next;
-                                            return copy;
-                                          })
-                                      }
-                                  />
-                                </div>
+                                    <TextInput
+                                        className="min-w-0 flex-1"
+                                        inputRef={idx === 0 ? scheduleComposerFirstImportantInputRef : null}
+                                        ariaLabel={`가장 중요한 일 ${idx + 1}`}
+                                        value={v}
+                                        placeholder={`가장 중요한 일 ${idx + 1}`}
+                                        disabled={isDatePickerOpen}
+                                        inputClassName={[
+                                          "!h-10 !min-h-[2.5rem] !rounded-none !border-0 !border-b-0 !bg-transparent !px-0 !py-0 !text-base !leading-[2.5rem] !tracking-[-0.01em] !text-stone-800 !shadow-none !ring-0",
+                                          "placeholder:text-stone-400",
+                                          "focus:!border-0 focus:!bg-transparent focus:!outline-none focus:!ring-0",
+                                          "disabled:!cursor-not-allowed disabled:!bg-transparent disabled:!text-stone-400",
+                                          !prefersReducedMotion
+                                              ? "transition-[color] duration-200 ease-out"
+                                              : "",
+                                        ].join(" ")}
+                                        onChange={(next) =>
+                                            setImportant3((prev) => {
+                                              const copy = [...prev];
+                                              copy[idx] = next;
+                                              return copy;
+                                            })
+                                        }
+                                    />
+                                  </div>
+                                </SmoothEnter>
                             ))}
                           </div>
                           </div>
@@ -4848,36 +4862,42 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         <div className={UI_SURFACE_P4}>
                           <div className="divide-y divide-stone-200/80">
                             {displayImportant3.map((v, idx) => (
-                                <div
-                                    key={`${selectedDate}-composer-imp-${idx}`}
-                                    className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0"
+                                <SmoothEnter
+                                    key={`${selectedDate}-composer-imp-${idx}-${planDisplayMatchesSelection}`}
+                                    prefersReducedMotion={prefersReducedMotion}
+                                    staggerMs={idx * 48}
                                 >
-                                  <span className={UI_PIN_WELL} aria-hidden>
-                                    <span className="text-[15px] font-semibold tabular-nums leading-none">
-                                      {idx + 1}
+                                  <div className="flex items-center gap-3 py-3.5 first:pt-0 last:pb-0">
+                                    <span className={UI_PIN_WELL} aria-hidden>
+                                      <span className="text-[15px] font-semibold tabular-nums leading-none">
+                                        {idx + 1}
+                                      </span>
                                     </span>
-                                  </span>
-                                  <TextInput
-                                      className="min-w-0 flex-1"
-                                      ariaLabel={`가장 중요한 일 ${idx + 1}`}
-                                      value={v}
-                                      placeholder={`가장 중요한 일 ${idx + 1}`}
-                                      disabled={isDatePickerOpen}
-                                      inputClassName={[
-                                        "!h-10 !min-h-[2.5rem] !rounded-none !border-0 !border-b-0 !bg-transparent !px-0 !py-0 !text-base !leading-[2.5rem] !tracking-[-0.01em] !text-stone-800 !shadow-none !ring-0",
-                                        "placeholder:text-stone-400",
-                                        "focus:!border-0 focus:!bg-transparent focus:!outline-none focus:!ring-0",
-                                        "disabled:!cursor-not-allowed disabled:!bg-transparent disabled:!text-stone-400",
-                                      ].join(" ")}
-                                      onChange={(next) =>
-                                          setImportant3((prev) => {
-                                            const copy = [...prev];
-                                            copy[idx] = next;
-                                            return copy;
-                                          })
-                                      }
-                                  />
-                                </div>
+                                    <TextInput
+                                        className="min-w-0 flex-1"
+                                        ariaLabel={`가장 중요한 일 ${idx + 1}`}
+                                        value={v}
+                                        placeholder={`가장 중요한 일 ${idx + 1}`}
+                                        disabled={isDatePickerOpen}
+                                        inputClassName={[
+                                          "!h-10 !min-h-[2.5rem] !rounded-none !border-0 !border-b-0 !bg-transparent !px-0 !py-0 !text-base !leading-[2.5rem] !tracking-[-0.01em] !text-stone-800 !shadow-none !ring-0",
+                                          "placeholder:text-stone-400",
+                                          "focus:!border-0 focus:!bg-transparent focus:!outline-none focus:!ring-0",
+                                          "disabled:!cursor-not-allowed disabled:!bg-transparent disabled:!text-stone-400",
+                                          !prefersReducedMotion
+                                              ? "transition-[color] duration-200 ease-out"
+                                              : "",
+                                        ].join(" ")}
+                                        onChange={(next) =>
+                                            setImportant3((prev) => {
+                                              const copy = [...prev];
+                                              copy[idx] = next;
+                                              return copy;
+                                            })
+                                        }
+                                    />
+                                  </div>
+                                </SmoothEnter>
                             ))}
                           </div>
                         </div>
