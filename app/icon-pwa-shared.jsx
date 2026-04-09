@@ -55,9 +55,9 @@ export function TimeboxingPwaIconElement({ size }) {
       <div
           style={{
             position: "relative",
-            width: "90%",
-            height: "90%",
-            borderRadius: px(40),
+            width: "93%",
+            height: "93%",
+            borderRadius: px(41),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
