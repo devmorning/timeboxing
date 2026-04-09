@@ -48,6 +48,8 @@ const THIRTY_MIN_SECONDS = 1800;
 const BRAIN_DUMP_TEXTAREA_MIN_HEIGHT_PX = 28;
 /** 일정 추가 모달 브레인 덤프 textarea 최대 줄 수 */
 const COMPOSER_BRAIN_DUMP_MAX_LINES = 7;
+/** false: 좌우 인접 날 캐러셀·프리뷰 열 비활성(단일 열만, peek API 호출 생략) */
+const ENABLE_DAY_SWIPE_ADJACENT_PEEK = false;
 
 function getTextareaMaxHeightByLines(el, maxLines) {
   if (!el) return Number.MAX_SAFE_INTEGER;
@@ -1368,6 +1370,21 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   /** 선택일과 state가 맞을 때만 본문 표시 — 날짜 전환 직전 프레임에 이전 날 입력이 보이는 현상 방지 */
   const planDisplayMatchesSelection = readyDate === selectedDate;
+
+  /** 날짜가 바뀌고 해당 날 데이터가 준비된 뒤 입력 블록에 짧은 하이라이트(초기 로드 1회 제외) */
+  const [dayPlanInputsFlash, setDayPlanInputsFlash] = useState(false);
+  const dayPlanInputsFlashInitialSyncRef = useRef(false);
+  useEffect(() => {
+    if (readyDate !== selectedDate || readyDate === "") return;
+    if (!dayPlanInputsFlashInitialSyncRef.current) {
+      dayPlanInputsFlashInitialSyncRef.current = true;
+      return;
+    }
+    if (prefersReducedMotion) return;
+    setDayPlanInputsFlash(true);
+    const t = window.setTimeout(() => setDayPlanInputsFlash(false), 720);
+    return () => clearTimeout(t);
+  }, [readyDate, selectedDate, prefersReducedMotion]);
   const displayImportant3 = planDisplayMatchesSelection ? important3 : ["", "", ""];
   const displayBrainDump = planDisplayMatchesSelection ? brainDump : "";
 
@@ -2940,7 +2957,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   ]);
 
   const daySwipeCarouselEnabled = useMemo(
-      () => !prefersReducedMotion && (showDayPlanContent || showEmptyDayLock),
+      () =>
+          ENABLE_DAY_SWIPE_ADJACENT_PEEK &&
+          !prefersReducedMotion &&
+          (showDayPlanContent || showEmptyDayLock),
       [prefersReducedMotion, showDayPlanContent, showEmptyDayLock]
   );
 
@@ -3295,6 +3315,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, [mainActiveChapterIdx, showDayPlanContent, syncMainChapterScrollState]);
 
   useEffect(() => {
+    if (!ENABLE_DAY_SWIPE_ADJACENT_PEEK) {
+      setPeekPrevPlan(null);
+      setPeekNextPlan(null);
+      return;
+    }
     if (!authUser?.id) {
       setPeekPrevPlan(null);
       setPeekNextPlan(null);
@@ -3330,6 +3355,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, [peekPrevYmd, peekNextYmd, authUser?.id, dayPlanRepository]);
 
   useEffect(() => {
+    if (!ENABLE_DAY_SWIPE_ADJACENT_PEEK) {
+      setPeekPrevPrevPlan(null);
+      return;
+    }
     if (!authUser?.id) {
       setPeekPrevPrevPlan(null);
       return;
@@ -4287,7 +4316,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           daySwipeLocksVerticalScroll
                             ? "overflow-y-hidden overscroll-y-none touch-none"
                             : "overflow-y-auto overscroll-y-contain",
-                        ].join(" ")}
+                          dayPlanInputsFlash ? "day-plan-inputs-flash" : "",
+                        ].filter(Boolean).join(" ")}
                     >
                       <section
                           aria-label="가장 중요한 3가지"
