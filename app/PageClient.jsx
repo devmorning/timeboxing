@@ -288,6 +288,55 @@ function isDayPlanItemUuid(id) {
 const MODAL_CLOSE_MS = 480;
 /** 날짜 스와이프 전환 — 챕터 스냅처럼 과한 탄성 없이 매끈하게 */
 const DAY_SWIPE_TRANSITION_MS = 260;
+/** 캐러셀 트랙이 한 열 폭만큼 미끄러지는 시간(날짜 state 변경 직전) */
+const DAY_SWIPE_CAROUSEL_TRANSITION_MS = 380;
+
+/**
+ * 좌우 날짜 스와이프: 3열 트랙(이전·현재·다음) + translate로 캐러셀 느낌.
+ * 비활성 시 기존 단일 열만 렌더(접근성 감소 모션 등).
+ */
+function DaySwipeCarouselTrack({
+  enabled,
+  trackStyle,
+  surfaceClassName,
+  surfaceStyle,
+  prevSlot,
+  nextSlot,
+  children,
+}) {
+  const gridCell = "col-start-1 row-start-1";
+  if (!enabled) {
+    return (
+      <div className={[gridCell, surfaceClassName].join(" ")} style={surfaceStyle}>
+        {children}
+      </div>
+    );
+  }
+  return (
+    <div className={[gridCell, "w-full min-w-0 overflow-hidden"].join(" ")}>
+      <div className="flex min-h-0 w-[300%] min-w-0 touch-pan-y" style={trackStyle}>
+        <aside className="box-border min-h-0 w-[33.333333%] min-w-0 shrink-0 px-1" aria-hidden>
+          {prevSlot}
+        </aside>
+        <div className="box-border min-h-0 w-[33.333333%] min-w-0 shrink-0">
+          <div className={surfaceClassName} style={surfaceStyle}>
+            {children}
+          </div>
+        </div>
+        <aside className="box-border min-h-0 w-[33.333333%] min-w-0 shrink-0 px-1" aria-hidden>
+          {nextSlot}
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+/** 스크롤 중 등 `cancelable === false` 인 touch 이벤트에서 preventDefault 시 크롬 Intervention 경고 방지 */
+function preventDefaultIfCancelable(e) {
+  if (e && e.cancelable) {
+    e.preventDefault();
+  }
+}
 
 /** 인라인 캘린더 패널과 유사한 이징으로 모달 열림·닫힘 */
 function useModalOpenAnimation(isOpen, onFullyClosed) {
@@ -421,6 +470,8 @@ function EmptyDayLockScreen({
   swipePullX = 0,
   swipeTransition = false,
   prefersReducedMotion = false,
+  /** 메인 일정과 동일한 캐러셀 스와이프(1:1 px, 긴 전환) */
+  carouselSwipeEnabled = false,
 }) {
   const parts = useMemo(() => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) return null;
@@ -456,10 +507,12 @@ function EmptyDayLockScreen({
         onTouchCancel={onTouchCancel}
         style={{
           transform: !prefersReducedMotion
-            ? `translate3d(${swipePullX * 0.14}px, 0, 0)`
+            ? `translate3d(${carouselSwipeEnabled ? swipePullX : swipePullX * 0.14}px, 0, 0)`
             : undefined,
           transition: !prefersReducedMotion && swipeTransition
-            ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1)"
+            ? carouselSwipeEnabled
+              ? `transform ${DAY_SWIPE_CAROUSEL_TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
+              : "transform 0.26s cubic-bezier(0.2,0.8,0.2,1)"
             : "none",
           willChange:
             !prefersReducedMotion && (swipePullX !== 0 || swipeTransition)
@@ -487,9 +540,13 @@ function EmptyDayLockScreen({
             style={
               !prefersReducedMotion
                 ? {
-                    transform: `translate3d(${swipePullX * 0.18}px, 0, 0)`,
+                    transform: `translate3d(${
+                      carouselSwipeEnabled ? swipePullX : swipePullX * 0.18
+                    }px, 0, 0)`,
                     transition: swipeTransition
-                      ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1)"
+                      ? carouselSwipeEnabled
+                        ? `transform ${DAY_SWIPE_CAROUSEL_TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
+                        : "transform 0.26s cubic-bezier(0.2,0.8,0.2,1)"
                       : "none",
                   }
                 : undefined
@@ -649,9 +706,29 @@ function AdjacentDayStaticColumn({
   prefersReducedMotion = false,
 }) {
   const columnRootRef = useRef(null);
+  const chapterRefs = [useRef(null), useRef(null), useRef(null)];
+  const [chapterAlignedOffsetY, setChapterAlignedOffsetY] = useState(0);
+
   const norm = plan ? normalizeDayPlan(plan) : null;
   const important3 = norm?.important3 ?? ["", "", ""];
   const brainDump = norm?.brainDump ?? "";
+  const rows = displayRows ?? [];
+
+  useLayoutEffect(() => {
+    if (prefersReducedMotion || plan == null) {
+      setChapterAlignedOffsetY(0);
+      return;
+    }
+    const idx = Math.max(0, Math.min(2, activeChapterIdx ?? 0));
+    const target = chapterRefs[idx]?.current;
+    const root = columnRootRef.current;
+    if (!(target instanceof HTMLElement) || !root) return;
+    setChapterAlignedOffsetY(-getScrollContentOffsetTop(root, target));
+  }, [activeChapterIdx, prefersReducedMotion, plan]);
+
+  const previewTranslateY = !prefersReducedMotion && plan != null
+    ? chapterAlignedOffsetY + daySwipePullX * ADJACENT_DAY_SWIPE_PARALLAX_Y_PER_PX
+    : 0;
 
   if (plan === null) {
     return (
@@ -689,27 +766,6 @@ function AdjacentDayStaticColumn({
       </div>
     );
   }
-
-  const rows = displayRows ?? [];
-
-  const chapterRefs = [useRef(null), useRef(null), useRef(null)];
-  const [chapterAlignedOffsetY, setChapterAlignedOffsetY] = useState(0);
-
-  useLayoutEffect(() => {
-    if (prefersReducedMotion) {
-      setChapterAlignedOffsetY(0);
-      return;
-    }
-    const idx = Math.max(0, Math.min(2, activeChapterIdx ?? 0));
-    const target = chapterRefs[idx]?.current;
-    const root = columnRootRef.current;
-    if (!(target instanceof HTMLElement) || !root) return;
-    setChapterAlignedOffsetY(-getScrollContentOffsetTop(root, target));
-  }, [activeChapterIdx, prefersReducedMotion]);
-
-  const previewTranslateY = !prefersReducedMotion
-    ? chapterAlignedOffsetY + daySwipePullX * ADJACENT_DAY_SWIPE_PARALLAX_Y_PER_PX
-    : 0;
 
   return (
     <div
@@ -1984,7 +2040,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       const canClose = scrollTop <= 0;
       if (!canClose) return;
       closeReportModal();
-      event.preventDefault();
+      preventDefaultIfCancelable(event);
       event.stopPropagation();
       return;
     }
@@ -1995,13 +2051,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     if (dx <= -72) {
       setSelectedDate((d) => addDaysToYmd(d, 1));
-      event.preventDefault();
+      preventDefaultIfCancelable(event);
       event.stopPropagation();
       return;
     }
     if (dx >= 72) {
       setSelectedDate((d) => addDaysToYmd(d, -1));
-      event.preventDefault();
+      preventDefaultIfCancelable(event);
       event.stopPropagation();
     }
   };
@@ -2037,7 +2093,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           const canClose = scrollTop <= 0;
           if (!canClose) return;
           closeStatsModal();
-          event.preventDefault();
+          preventDefaultIfCancelable(event);
           event.stopPropagation();
         }
       },
@@ -2074,7 +2130,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           const canClose = scrollTop <= 0;
           if (!canClose) return;
           closeScheduleComposerModal();
-          event.preventDefault();
+          preventDefaultIfCancelable(event);
           event.stopPropagation();
         }
       },
@@ -2111,7 +2167,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           const canClose = scrollTop <= 0;
           if (!canClose) return;
           closeTrendModal();
-          event.preventDefault();
+          preventDefaultIfCancelable(event);
           event.stopPropagation();
         }
       },
@@ -2233,7 +2289,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           const canClose = scrollTop <= 0;
           if (!canClose) return;
           closeTemplatesModal();
-          event.preventDefault();
+          preventDefaultIfCancelable(event);
           event.stopPropagation();
         }
       },
@@ -2254,7 +2310,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, [closeInlineCalendar]);
 
   const openInlineCalendar = (event) => {
-    event?.preventDefault();
+    preventDefaultIfCancelable(event);
     event?.stopPropagation();
 
     const activeEl = document.activeElement;
@@ -2722,7 +2778,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         typeof window !== "undefined"
           ? daySwipeViewportRef.current?.offsetWidth ?? window.innerWidth
           : 400;
-    const maxPull = Math.min(w * 0.42, 300);
+    const maxPull = Math.min(w * 0.52, 520);
     daySwipePullXPendingRef.current = rubberDaySwipeDx(dx, maxPull);
     if (daySwipePullXRafRef.current != null) return;
     daySwipePullXRafRef.current = window.requestAnimationFrame(() => {
@@ -2805,45 +2861,61 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               ? daySwipeViewportRef.current?.offsetWidth ?? window.innerWidth
               : 400;
 
+        const useCarouselCommit =
+            !prefersReducedMotion && (showDayPlanContent || showEmptyDayLock);
+        const commitAnimMs = useCarouselCommit ? DAY_SWIPE_CAROUSEL_TRANSITION_MS : DAY_SWIPE_TRANSITION_MS;
+
         if (dx <= -72) {
           pendingChapterIdxAfterDaySwipeRef.current = captureCurrentChapterIdx();
           setDaySwipeTransition(true);
-          setDaySwipePullX(-Math.min(w * 0.4, 180));
+          setDaySwipePullX(useCarouselCommit ? -w : -Math.min(w * 0.4, 180));
           if (daySwipeCommitTimerRef.current != null) {
             window.clearTimeout(daySwipeCommitTimerRef.current);
           }
           daySwipeCommitTimerRef.current = window.setTimeout(() => {
             daySwipeCommitTimerRef.current = null;
+            if (useCarouselCommit) {
+              setDaySwipeTransition(false);
+              setDaySwipePullX(0);
+            }
             setSelectedDate((d) => addDaysToYmd(d, 1));
-            setDaySwipeTransition(false);
-            setDaySwipePullX(0);
+            if (!useCarouselCommit) {
+              setDaySwipeTransition(false);
+              setDaySwipePullX(0);
+            }
             if (daySwipePullXRafRef.current != null) {
               window.cancelAnimationFrame(daySwipePullXRafRef.current);
               daySwipePullXRafRef.current = null;
             }
-          }, DAY_SWIPE_TRANSITION_MS);
-          event.preventDefault();
+          }, commitAnimMs);
+          preventDefaultIfCancelable(event);
           event.stopPropagation();
           return;
         }
         if (dx >= 72) {
           pendingChapterIdxAfterDaySwipeRef.current = captureCurrentChapterIdx();
           setDaySwipeTransition(true);
-          setDaySwipePullX(Math.min(w * 0.4, 180));
+          setDaySwipePullX(useCarouselCommit ? w : Math.min(w * 0.4, 180));
           if (daySwipeCommitTimerRef.current != null) {
             window.clearTimeout(daySwipeCommitTimerRef.current);
           }
           daySwipeCommitTimerRef.current = window.setTimeout(() => {
             daySwipeCommitTimerRef.current = null;
+            if (useCarouselCommit) {
+              setDaySwipeTransition(false);
+              setDaySwipePullX(0);
+            }
             setSelectedDate((d) => addDaysToYmd(d, -1));
-            setDaySwipeTransition(false);
-            setDaySwipePullX(0);
+            if (!useCarouselCommit) {
+              setDaySwipeTransition(false);
+              setDaySwipePullX(0);
+            }
             if (daySwipePullXRafRef.current != null) {
               window.cancelAnimationFrame(daySwipePullXRafRef.current);
               daySwipePullXRafRef.current = null;
             }
-          }, DAY_SWIPE_TRANSITION_MS);
-          event.preventDefault();
+          }, commitAnimMs);
+          preventDefaultIfCancelable(event);
           event.stopPropagation();
           return;
         }
@@ -2856,7 +2928,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         }
         window.setTimeout(() => setDaySwipeTransition(false), DAY_SWIPE_TRANSITION_MS);
       },
-      [captureCurrentChapterIdx, setSelectedDate]
+      [captureCurrentChapterIdx, prefersReducedMotion, setSelectedDate, showDayPlanContent, showEmptyDayLock]
   );
 
   const handleDaySwipeTouchCancel = useCallback(() => {
@@ -3474,6 +3546,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     );
   }
 
+  /** 본문 로딩 전·빈 날 오버레이 등에서도 가로 스와이프 시 메인 트랙·커밋이 캐러셀과 동일하게 동작 */
+  const daySwipeCarouselEnabled =
+      !prefersReducedMotion && (showDayPlanContent || showEmptyDayLock);
+
   return (
       <main className="min-h-[100dvh] w-full min-w-0 overflow-hidden bg-stone-200">
         {/* 하단 고정 탭바가 main overflow에 잘리지 않도록 스크롤 영역만 overflow-x 숨김 */}
@@ -3493,6 +3569,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             swipePullX={daySwipePullX}
             swipeTransition={daySwipeTransition}
             prefersReducedMotion={prefersReducedMotion}
+            carouselSwipeEnabled={daySwipeCarouselEnabled}
         />
 
         <div
@@ -3562,29 +3639,67 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   </section>
                 </div>
             ) : null}
-            <div
-                className={[
-                  "col-start-1 row-start-1 space-y-4 transition-[opacity,transform,filter] duration-420 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            <DaySwipeCarouselTrack
+                enabled={daySwipeCarouselEnabled}
+                trackStyle={
+                  !prefersReducedMotion
+                    ? {
+                        transform: `translate3d(calc(-100% / 3 + ${daySwipePullX}px), 0, 0)`,
+                        transition: daySwipeTransition
+                          ? `transform ${DAY_SWIPE_CAROUSEL_TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1)`
+                          : "none",
+                        willChange:
+                          daySwipePullX !== 0 || daySwipeTransition ? "transform" : "auto",
+                      }
+                    : undefined
+                }
+                surfaceClassName={[
+                  "space-y-4 transition-[opacity,transform,filter] duration-420 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   showDayPlanContent
                     ? "opacity-100 translate-y-0 scale-100 blur-0"
                     : "pointer-events-none opacity-0 translate-y-1 scale-[0.998] blur-[2px]",
                 ].join(" ")}
-                style={
+                surfaceStyle={
                   !prefersReducedMotion
-                    ? {
-                        transform: `translate3d(${daySwipePullX * 0.18}px, 0, 0) scale(${Math.max(
-                          0.996,
-                          1 - Math.min(0.004, Math.abs(daySwipePullX) / 7600)
-                        )})`,
-                        opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(daySwipePullX) / 430)),
-                        filter: "none",
-                        transformOrigin: "center top",
-                        transition: daySwipeTransition
-                          ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease-out, filter 0.2s ease-out"
-                          : "none",
-                        willChange: daySwipePullX !== 0 ? "transform,opacity" : "auto",
-                      }
+                    ? daySwipeCarouselEnabled
+                      ? {
+                          transformOrigin: "center top",
+                          transition: daySwipeTransition
+                            ? "opacity 0.22s ease-out"
+                            : "none",
+                        }
+                      : {
+                          transform: `translate3d(${daySwipePullX * 0.18}px, 0, 0) scale(${Math.max(
+                            0.996,
+                            1 - Math.min(0.004, Math.abs(daySwipePullX) / 7600)
+                          )})`,
+                          opacity: Math.max(0.86, 1 - Math.min(0.14, Math.abs(daySwipePullX) / 430)),
+                          filter: "none",
+                          transformOrigin: "center top",
+                          transition: daySwipeTransition
+                            ? "transform 0.26s cubic-bezier(0.2,0.8,0.2,1), opacity 0.2s ease-out, filter 0.2s ease-out"
+                            : "none",
+                          willChange: daySwipePullX !== 0 ? "transform,opacity" : "auto",
+                        }
                     : undefined
+                }
+                prevSlot={
+                  <AdjacentDayStaticColumn
+                      plan={peekPrevPlan}
+                      displayRows={peekPrevDisplayRows}
+                      activeChapterIdx={mainActiveChapterIdx}
+                      daySwipePullX={daySwipePullX}
+                      prefersReducedMotion={prefersReducedMotion}
+                  />
+                }
+                nextSlot={
+                  <AdjacentDayStaticColumn
+                      plan={peekNextPlan}
+                      displayRows={peekNextDisplayRows}
+                      activeChapterIdx={mainActiveChapterIdx}
+                      daySwipePullX={daySwipePullX}
+                      prefersReducedMotion={prefersReducedMotion}
+                  />
                 }
             >
               <section aria-label="오늘 기록" className={[UI_CANVAS, "max-h-none"].join(" ")}>
@@ -3598,7 +3713,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       ].join(", "),
                     }}
                 >
-                  <div className="relative">
+                  <div className="relative z-[41] pointer-events-auto">
                     <div
                         className={[
                           "group relative mb-3.5 overflow-hidden rounded-3xl border border-white/65 bg-white/55 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
@@ -3611,7 +3726,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         style={
                           !prefersReducedMotion
                             ? {
-                                transform: `translate3d(${daySwipePullX * 0.05}px, 0, 0)`,
+                                transform: daySwipeCarouselEnabled
+                                  ? undefined
+                                  : `translate3d(${daySwipePullX * 0.05}px, 0, 0)`,
                                 transition: daySwipeTransition
                                   ? "transform 0.26s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s ease"
                                   : undefined,
@@ -4107,7 +4224,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 ? (e) => {
                                                     const moved = handleItemTouchEnd(it.id);
                                                     if (moved) {
-                                                      e.preventDefault();
+                                                      preventDefaultIfCancelable(e);
                                                       e.stopPropagation();
                                                     }
                                                   }
@@ -4186,7 +4303,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                   </div>
                 </div>
               </section>
-            </div>
+            </DaySwipeCarouselTrack>
           </div>
             </div>
           </div>
@@ -4712,7 +4829,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                       onTouchEnd={(e) => {
                                         const moved = handleTemplateTouchEnd(template.id);
                                         if (moved) {
-                                          e.preventDefault();
+                                          preventDefaultIfCancelable(e);
                                           e.stopPropagation();
                                         }
                                       }}

@@ -16,14 +16,18 @@ describe("인라인 캘린더 열기", () => {
   it("날짜 버튼 클릭 시 인라인 캘린더가 열린다", async () => {
     render(<PageClient {...initialProps} />);
 
-    const panel = screen.getByTestId("inline-calendar-panel");
-    expect(panel.className).toContain("grid-rows-[0fr]");
+    expect(screen.getByTestId("inline-calendar-panel").className).toContain("grid-rows-[0fr]");
 
-    fireEvent.click(screen.getByLabelText("날짜 패널 펼치기"));
+    const expandBtn = screen.getByLabelText("날짜 패널 펼치기");
+    expect(expandBtn).not.toBeDisabled();
 
-    await waitFor(() => {
-      expect(panel.className).toContain("grid-rows-[1fr]");
+    await act(async () => {
+      expandBtn.click();
+      // jest.setup.js: requestAnimationFrame → setTimeout(0)
+      await new Promise((r) => setTimeout(r, 0));
     });
+
+    expect(screen.getByTestId("inline-calendar-panel").className).toContain("grid-rows-[1fr]");
   });
 
   it("시간/내용 입력에 포커스 후에도 날짜 버튼으로 캘린더를 열 수 있다", async () => {
@@ -34,10 +38,9 @@ describe("인라인 캘린더 열기", () => {
     contentInput.focus();
     fireEvent.change(contentInput, { target: { value: "테스트 일정" } });
 
-    const panel = screen.getByTestId("inline-calendar-panel");
     fireEvent.click(screen.getByLabelText("날짜 패널 펼치기"));
     await waitFor(() => {
-      expect(panel.className).toContain("grid-rows-[1fr]");
+      expect(screen.getByTestId("inline-calendar-panel").className).toContain("grid-rows-[1fr]");
     });
   });
 
