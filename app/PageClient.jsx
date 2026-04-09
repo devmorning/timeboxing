@@ -730,54 +730,64 @@ function getPeekDateDisplayParts(ymd) {
   return { day, weekday, ym, label };
 }
 
-/** 인접 날 캐러셀 — 메인 날짜와 동일 캔버스 + 카드 셸, 읽기 전용 */
+/** 인접 날 캐러셀 — 메인과 동일한 리퀴드 글래스 캔버스(방사형) + 날짜 카드 셸, 읽기 전용 */
 function AdjacentPeekDateCard({ ymd }) {
   const parts = useMemo(() => getPeekDateDisplayParts(ymd), [ymd]);
   if (!parts.day) return null;
   return (
       <div className="relative z-[41] mb-3.5">
+        {/* 메인 날짜와 동일: 큰 캔버스 위에 한 겹 더 얹는 리퀴드 글래스(방사형 레이어) */}
         <div
-            className={[
-              "group relative overflow-hidden rounded-3xl border border-white/65 bg-white/55",
-              "shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
-            ].join(" ")}
-            aria-label={`날짜 미리보기 — ${parts.label}`}
+            className="rounded-[1.35rem] px-2 py-2 sm:px-3"
+            style={{ background: MAIN_DATE_CANVAS_BACKGROUND }}
         >
-        <div className="relative z-10 flex w-full items-start gap-1.5 px-4 py-2">
-          <div className="relative min-h-0 min-w-0 flex-1">
-            <p className="text-[9px] font-semibold tracking-[0.18em] text-orange-700/80">
-              {parts.weekday.toUpperCase()}
-            </p>
-            <div className="mt-1 flex items-end justify-between gap-2">
-              <p
+          <div
+              className={[
+                "group relative overflow-hidden rounded-3xl border border-white/65 bg-white/55",
+                "shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22),inset_0_1px_0_rgba(255,255,255,0.86)] backdrop-blur-xl",
+                "transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              ].join(" ")}
+              aria-label={`날짜 미리보기 — ${parts.label}`}
+          >
+            <div className="relative z-10 flex w-full items-start gap-1.5 px-4 py-2">
+              <div className="relative min-h-0 min-w-0 flex-1">
+                <p className="text-[9px] font-semibold tracking-[0.18em] text-orange-700/80">
+                  {parts.weekday.toUpperCase()}
+                </p>
+                <div className="mt-1 flex items-end justify-between gap-2">
+                  <p
+                      className={[
+                        "font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums",
+                      ].join(" ")}
+                  >
+                    {parts.day}
+                  </p>
+                  <p className="text-[11px] font-semibold tracking-tight text-stone-600">
+                    {parts.ym}
+                  </p>
+                </div>
+              </div>
+              {/* 메인 상단 날짜 카드의 펼치기 버튼과 동일 셸(프리뷰는 스와이프 가로채기 방지로 비활성) */}
+              <div
                   className={[
-                    "font-sans text-[1.875rem] font-light leading-none tracking-[-0.07em] text-stone-900 tabular-nums",
+                    "pointer-events-none mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/55 bg-white/40 text-stone-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-sm",
                   ].join(" ")}
+                  aria-hidden
               >
-                {parts.day}
-              </p>
-              <p className="text-[11px] font-semibold tracking-tight text-stone-600">
-                {parts.ym}
-              </p>
+                <svg
+                    viewBox="0 0 24 24"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
             </div>
           </div>
-          <div
-              className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-white/55 bg-white/40 text-stone-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-sm"
-              aria-hidden
-          >
-            <svg
-                viewBox="0 0 24 24"
-                className="h-4 w-4 opacity-50"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </div>
-        </div>
         </div>
       </div>
   );
