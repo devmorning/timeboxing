@@ -19,7 +19,7 @@ export function TimeboxingPwaIconElement({ size }) {
           overflow: "hidden",
           borderRadius: px(44),
           background:
-              "linear-gradient(158deg, #f5f5f4 0%, #ffedd5 22%, #fdba74 52%, #fb923c 78%, #ea580c 100%)",
+              "linear-gradient(158deg, #fafaf9 0%, #fff7ed 20%, #fed7aa 48%, #fdba74 72%, #fb923c 100%)",
         }}
     >
       {/* 상단 소프트 하이라이트 (글래스 상단 광택) */}
@@ -33,8 +33,8 @@ export function TimeboxingPwaIconElement({ size }) {
             height: "48%",
             borderRadius: "50%",
             background:
-                "linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.08) 55%, transparent 100%)",
-            opacity: 0.85,
+                "linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.1) 55%, transparent 100%)",
+            opacity: 0.88,
           }}
       />
       {/* 하단 웜 글로우 (Satori 호환: linear만 사용) */}
@@ -46,8 +46,8 @@ export function TimeboxingPwaIconElement({ size }) {
             width: "100%",
             height: "46%",
             background:
-                "linear-gradient(0deg, rgba(251,146,60,0.28) 0%, rgba(253,186,116,0.12) 45%, transparent 100%)",
-            opacity: 0.95,
+                "linear-gradient(0deg, rgba(253,186,116,0.22) 0%, rgba(254,215,170,0.1) 48%, transparent 100%)",
+            opacity: 0.9,
           }}
       />
 
@@ -55,19 +55,19 @@ export function TimeboxingPwaIconElement({ size }) {
       <div
           style={{
             position: "relative",
-            width: "93%",
-            height: "93%",
-            borderRadius: px(41),
+            width: "96%",
+            height: "96%",
+            borderRadius: px(42),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             background:
-                "linear-gradient(165deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.14) 42%, rgba(255,255,255,0.22) 100%)",
-            border: `${px(2.5)} solid rgba(255,255,255,0.72)`,
+                "linear-gradient(165deg, rgba(255,255,255,0.66) 0%, rgba(255,255,255,0.2) 42%, rgba(255,255,255,0.3) 100%)",
+            border: `${px(2.5)} solid rgba(255,255,255,0.8)`,
             boxShadow: [
-              `inset 0 ${px(2)} ${px(14)} rgba(255,255,255,0.55)`,
-              `inset 0 ${px(-2)} ${px(10)} rgba(251,146,60,0.12)`,
-              `0 ${px(4)} ${px(22)} rgba(15,23,42,0.12)`,
+              `inset 0 ${px(2)} ${px(14)} rgba(255,255,255,0.62)`,
+              `inset 0 ${px(-2)} ${px(10)} rgba(254,215,170,0.14)`,
+              `0 ${px(4)} ${px(22)} rgba(15,23,42,0.1)`,
             ].join(", "),
           }}
       >
