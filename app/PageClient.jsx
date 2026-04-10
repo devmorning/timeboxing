@@ -2108,11 +2108,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   );
 
   /**
-   * 오늘 날짜 플랜만: 현재 시각이 계획 종료(또는 시작+30분 기본)보다 늦으면 종료 시각을 지금으로 맞춘다.
-   * 자정 넘김 일정은 구간 정의가 달라 별도 처리하지 않음.
+   * 오늘 날짜 플랜만: 인라인 「종료」 시 종료 시각을 지금(로컬 시각)으로 맞춘다.
+   * 같은 날 구간만 — 시작 시각보다 이전이면 시작 시각에 맞춘다. 자정 넘김 일정은 처리하지 않음.
    * `setItems` 함수형 업데이트만 사용해 타이머 중지 직후에도 최신 `prev` 기준으로 갱신한다.
    */
-  const extendItemEndTimeToNowIfPastPlannedEnd = useCallback(
+  const snapScheduleItemEndTimeToNow = useCallback(
       (id) => {
         if (!selectedIsToday) return;
         setItems((prev) => {
@@ -2124,13 +2124,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           if (!resolvedEnd) return prev;
           if (spansMidnight(st, resolvedEnd)) return prev;
 
-          const endSec = parseHHMMToSecondsFromMidnight(resolvedEnd);
-          if (endSec == null) return prev;
+          const startSec = parseHHMMToSecondsFromMidnight(st);
+          if (startSec == null) return prev;
           const now = new Date();
           const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-          if (nowSec <= endSec) return prev;
-
-          const newEnd = secondsToHHMM(nowSec);
+          const effectiveSec = Math.max(nowSec, startSec);
+          const newEnd = secondsToHHMM(effectiveSec);
           return sortItemsByTimeAsc(
               prev.map((x) => (x.id === id ? { ...x, endTime: newEnd } : x))
           );
@@ -2139,7 +2138,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       [selectedIsToday, sortItemsByTimeAsc]
   );
 
-  /** 인라인 「종료」: 실행 중이면 먼저 타이머 중지 후, 계획 종료보다 늦으면 종료 시각을 지금으로 갱신 */
+  /** 인라인 「종료」: 실행 중이면 먼저 타이머 중지 후, 종료 시각을 지금으로 맞춘다 */
   const handleScheduleItemEndClick = useCallback(
       async (id) => {
         if (!selectedIsToday) return;
@@ -2157,10 +2156,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         }
 
         flushSync(() => {
-          extendItemEndTimeToNowIfPastPlannedEnd(id);
+          snapScheduleItemEndTimeToNow(id);
         });
       },
-      [selectedIsToday, toggleExecutionForItem, extendItemEndTimeToNowIfPastPlannedEnd]
+      [selectedIsToday, toggleExecutionForItem, snapScheduleItemEndTimeToNow]
   );
 
   /** 일정 추가 모달: 항목 추가 직후 실행(타이머) 시작 — `+`와 동일 데이터, 모달만 닫고 실행 */
@@ -4686,7 +4685,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                               ? "오늘 날짜에서만 사용할 수 있습니다"
                                                               : rowSpans
                                                                 ? "자정 넘김 일정은 이 버튼으로 연장할 수 없습니다"
-                                                                : "실행 중이면 타이머를 멈추고, 현재 시각이 계획 종료보다 늦으면 종료 시각을 지금으로 맞춥니다"
+                                                                : "실행 중이면 타이머를 멈추고, 종료 시각을 지금으로 맞춥니다"
                                                           }
                                                           disabled={endExtendDisabled}
                                                           onClick={(event) => {
