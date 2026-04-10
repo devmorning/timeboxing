@@ -19,6 +19,7 @@ import SmoothEnter from "./components/timeboxing/SmoothEnter.jsx";
 import ExecutionTrendBarChart, {
   ExecutionTrendDayList,
 } from "./components/timeboxing/ExecutionTrendBarChart.jsx";
+import ExecutionSyncLiquidGlassOverlay from "./components/timeboxing/ExecutionSyncLiquidGlassOverlay.jsx";
 import TimeRangeSelectors from "./components/timeboxing/TimeRangeSelectors.jsx";
 import {
   collectYmdsNeededForMonthTrend,
@@ -5932,6 +5933,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
             </div>
         ) : null}
 
+        {executionSync ? (
+            <ExecutionSyncLiquidGlassOverlay action={executionSync.action} />
+        ) : null}
       </main>
   );
 }

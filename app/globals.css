@@ -177,6 +177,118 @@ body {
     animation: timer-toggle-second-hand 60s linear infinite;
   }
 
+  /** 타이머 API 동기화 — 전면 리퀴드글래스 오버레이 */
+  @keyframes execution-sync-overlay-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .execution-sync-overlay-enter {
+    animation: execution-sync-overlay-enter 0.36s ease-out forwards;
+  }
+
+  @keyframes execution-sync-blob-a {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(5%, -7%) scale(1.07);
+    }
+  }
+
+  @keyframes execution-sync-blob-b {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(-6%, 6%) scale(1.05);
+    }
+  }
+
+  @keyframes execution-sync-blob-c {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(4%, 5%) scale(1.04);
+    }
+  }
+
+  @keyframes execution-sync-blob-d {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(-4%, -5%) scale(1.08);
+    }
+  }
+
+  .execution-sync-blob-a {
+    animation: execution-sync-blob-a 16s ease-in-out infinite;
+  }
+
+  .execution-sync-blob-b {
+    animation: execution-sync-blob-b 19s ease-in-out infinite;
+  }
+
+  .execution-sync-blob-c {
+    animation: execution-sync-blob-c 13s ease-in-out infinite 1.2s;
+  }
+
+  .execution-sync-blob-d {
+    animation: execution-sync-blob-d 14.5s ease-in-out infinite 0.6s;
+  }
+
+  @keyframes execution-sync-shimmer {
+    0% {
+      transform: translateX(-120%) skewX(-11deg);
+    }
+    100% {
+      transform: translateX(220%) skewX(-11deg);
+    }
+  }
+
+  .execution-sync-shimmer {
+    animation: execution-sync-shimmer 3.8s ease-in-out infinite;
+  }
+
+  @keyframes execution-sync-card-breathe {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.018);
+    }
+  }
+
+  .execution-sync-card-breathe {
+    animation: execution-sync-card-breathe 3.4s ease-in-out infinite;
+  }
+
+  @keyframes execution-sync-hand-tick {
+    0%,
+    100% {
+      transform: rotate(-4deg);
+    }
+    50% {
+      transform: rotate(10deg);
+    }
+  }
+
+  .execution-sync-hand-tick {
+    transform-origin: 12px 12px;
+    animation: execution-sync-hand-tick 1.8s ease-in-out infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .main-date-sheen-track,
     .main-date-slot-glow {
@@ -190,6 +302,17 @@ body {
     }
 
     .timer-toggle-second-hand {
+      animation: none !important;
+    }
+
+    .execution-sync-overlay-enter,
+    .execution-sync-blob-a,
+    .execution-sync-blob-b,
+    .execution-sync-blob-c,
+    .execution-sync-blob-d,
+    .execution-sync-shimmer,
+    .execution-sync-card-breathe,
+    .execution-sync-hand-tick {
       animation: none !important;
     }
   }
