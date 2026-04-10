@@ -1245,8 +1245,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [isInitialSkeletonDelayDone, setIsInitialSkeletonDelayDone] = useState(Boolean(initialAuthUser));
   const [showDayPlanSkeleton, setShowDayPlanSkeleton] = useState(true);
   const [showDayPlanContent, setShowDayPlanContent] = useState(false);
-  const [swipingItemId, setSwipingItemId] = useState(null);
-  const [swipeOffsetX, setSwipeOffsetX] = useState(0);
   const [expandedScheduleItemId, setExpandedScheduleItemId] = useState(null);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
@@ -1259,14 +1257,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
   const [templateDraftContent, setTemplateDraftContent] = useState("");
   const [editingTemplateId, setEditingTemplateId] = useState(null);
-  const swipeGestureRef = useRef({
-    itemId: null,
-    startX: 0,
-    startY: 0,
-    dragging: false,
-    horizontalLocked: false,
-    didMove: false,
-  });
   const reportSwipeRef = useRef({
     startX: 0,
     startY: 0,
@@ -1993,7 +1983,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       [brainDump, important3, selectedDate, sortItemsByTimeAsc]
   );
 
-  const toggleExecutionBySwipe = useCallback(
+  const toggleExecutionForItem = useCallback(
       async (id) => {
         const target = items.find((it) => it.id === id);
         if (!target) return;
@@ -2144,74 +2134,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     // 날짜 전환 시에는 실행(가상 타이머) 상태를 끊어준다.
     resetExecutionState();
   }, [selectedDate, resetExecutionState]);
-
-  const handleItemTouchStart = (id, event) => {
-    const touch = event.touches?.[0];
-    if (!touch) return;
-    swipeGestureRef.current = {
-      itemId: id,
-      startX: touch.clientX,
-      startY: touch.clientY,
-      dragging: true,
-      horizontalLocked: false,
-      didMove: false,
-    };
-    setSwipingItemId(id);
-    setSwipeOffsetX(0);
-  };
-
-  const handleItemTouchMove = (id, event) => {
-    const touch = event.touches?.[0];
-    const gesture = swipeGestureRef.current;
-    if (!touch || !gesture.dragging || gesture.itemId !== id) return;
-
-    const dx = touch.clientX - gesture.startX;
-    const dy = touch.clientY - gesture.startY;
-
-    if (!gesture.horizontalLocked) {
-      if (Math.abs(dx) < 6) return;
-      if (Math.abs(dx) <= Math.abs(dy)) {
-        gesture.dragging = false;
-        setSwipingItemId(null);
-        setSwipeOffsetX(0);
-        return;
-      }
-      gesture.horizontalLocked = true;
-    }
-
-    const nextOffset = Math.max(-120, Math.min(96, dx));
-    gesture.didMove = Math.abs(nextOffset) > 10;
-    setSwipeOffsetX(nextOffset);
-  };
-
-  const handleItemTouchEnd = (id) => {
-    const gesture = swipeGestureRef.current;
-    const isSameItem = gesture.itemId === id;
-    const shouldDelete = isSameItem && swipeOffsetX <= -72;
-    const shouldToggleDone = isSameItem && swipeOffsetX >= 56;
-    const didMove = isSameItem && gesture.didMove;
-
-    swipeGestureRef.current = {
-      itemId: null,
-      startX: 0,
-      startY: 0,
-      dragging: false,
-      horizontalLocked: false,
-      didMove: false,
-    };
-    setSwipingItemId(null);
-    setSwipeOffsetX(0);
-
-    if (shouldDelete) {
-      deleteItemById(id);
-      return true;
-    }
-    if (shouldToggleDone) {
-      toggleExecutionBySwipe(id);
-      return true;
-    }
-    return didMove;
-  };
 
   const handleReportTouchStart = (event) => {
     const touch = event.touches?.[0];
@@ -4552,7 +4474,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                             }
                                             onClick={() => {
                                               if (isCarry) return;
-                                              if (swipingItemId === it.id && swipeOffsetX !== 0) return;
                                               setExpandedScheduleItemId((prev) =>
                                                 prev === it.id ? null : it.id
                                               );
@@ -4566,20 +4487,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 );
                                               }
                                             }}
-                                            onTouchStart={!isCarry ? (e) => handleItemTouchStart(it.id, e) : undefined}
-                                            onTouchMove={!isCarry ? (e) => handleItemTouchMove(it.id, e) : undefined}
-                                            onTouchEnd={
-                                              !isCarry
-                                                ? (e) => {
-                                                    const moved = handleItemTouchEnd(it.id);
-                                                    if (moved) {
-                                                      preventDefaultIfCancelable(e);
-                                                      e.stopPropagation();
-                                                    }
-                                                  }
-                                                : undefined
-                                            }
-                                            onTouchCancel={!isCarry ? () => handleItemTouchEnd(it.id) : undefined}
                                             className={[
                                               "rounded-2xl px-2.5 py-2.5 outline-none transition-colors",
                                               !prefersReducedMotion
@@ -4594,14 +4501,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 ? undefined
                                                 : {
                                                     touchAction: "pan-y",
-                                                    transform:
-                                                        swipingItemId === it.id && swipeOffsetX !== 0
-                                                          ? `translateX(${swipeOffsetX}px)`
-                                                          : "translateX(0)",
-                                                    transition:
-                                                        swipingItemId === it.id
-                                                          ? "none"
-                                                          : "transform 180ms cubic-bezier(0.22, 1, 0.36, 1)",
                                                   }
                                             }
                                         >
@@ -4646,43 +4545,21 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                               <div className="flex items-center gap-2">
                                                 <button
                                                   type="button"
-                                                  disabled={isExecutionSyncing || isExecutionRunning}
+                                                  disabled={isExecutionSyncing}
                                                   onClick={(event) => {
                                                     event.stopPropagation();
-                                                    if (!isExecutionRunning) {
-                                                      toggleExecutionBySwipe(it.id);
-                                                    }
+                                                    toggleExecutionForItem(it.id);
                                                   }}
                                                   className={[
                                                     "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/25",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
                                                     isExecutionRunning
-                                                      ? "cursor-not-allowed border-emerald-200/70 bg-emerald-50/60 text-emerald-500"
-                                                      : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/70",
+                                                      ? "border-orange-300 bg-orange-100/80 text-orange-700 hover:bg-orange-100"
+                                                      : "border-stone-200 bg-stone-100/80 text-stone-700 hover:bg-stone-100",
                                                     isExecutionSyncing ? "opacity-50" : "",
                                                   ].join(" ")}
                                                 >
-                                                  타이머 시작
-                                                </button>
-                                                <button
-                                                  type="button"
-                                                  disabled={isExecutionSyncing || !isExecutionRunning}
-                                                  onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    if (isExecutionRunning) {
-                                                      toggleExecutionBySwipe(it.id);
-                                                    }
-                                                  }}
-                                                  className={[
-                                                    "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/25",
-                                                    !isExecutionRunning
-                                                      ? "cursor-not-allowed border-rose-200/70 bg-rose-50/60 text-rose-500"
-                                                      : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100/70",
-                                                    isExecutionSyncing ? "opacity-50" : "",
-                                                  ].join(" ")}
-                                                >
-                                                  타이머 중지
+                                                  {isExecutionRunning ? "타이머 중지" : "타이머 시작"}
                                                 </button>
                                               </div>
                                             </div>
