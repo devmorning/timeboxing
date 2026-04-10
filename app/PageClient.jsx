@@ -1899,6 +1899,37 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     }
   };
 
+  /**
+   * 오늘 날짜 플랜만: 현재 시각이 계획 종료(또는 시작+30분 기본)보다 늦으면 종료 시각을 지금으로 맞춘다.
+   * 자정 넘김 일정은 구간 정의가 달라 별도 처리하지 않음.
+   */
+  const extendItemEndTimeToNowIfPastPlannedEnd = useCallback(
+      (id) => {
+        if (!selectedIsToday) return;
+        const it = itemsRef.current.find((x) => x.id === id);
+        if (!it) return;
+        const st = it.startTime || it.time || "09:00";
+        const etRaw = (it.endTime || "").trim();
+        const resolvedEnd = resolveEndTimeOrDefault(st, etRaw);
+        if (!resolvedEnd) return;
+        if (spansMidnight(st, resolvedEnd)) return;
+
+        const endSec = parseHHMMToSecondsFromMidnight(resolvedEnd);
+        if (endSec == null) return;
+        const now = new Date();
+        const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+        if (nowSec <= endSec) return;
+
+        const newEnd = secondsToHHMM(nowSec);
+        setItems((prev) =>
+            sortItemsByTimeAsc(
+                prev.map((x) => (x.id === id ? { ...x, endTime: newEnd } : x))
+            )
+        );
+      },
+      [selectedIsToday, sortItemsByTimeAsc]
+  );
+
   useEffect(() => {
     setExpandedScheduleItemId(null);
   }, [selectedDate]);
@@ -4606,6 +4637,48 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 >
                                                   {isExecutionRunning ? "타이머 중지" : "타이머 시작"}
                                                 </button>
+                                                {(() => {
+                                                  const rowSt = it.startTime || it.time || "09:00";
+                                                  const rowEtResolved = resolveEndTimeOrDefault(
+                                                      rowSt,
+                                                      (it.endTime || "").trim()
+                                                  );
+                                                  const rowSpans = Boolean(
+                                                      rowEtResolved && spansMidnight(rowSt, rowEtResolved)
+                                                  );
+                                                  const endExtendDisabled =
+                                                      isExecutionSyncing ||
+                                                      !selectedIsToday ||
+                                                      rowSpans;
+                                                  return (
+                                                      <button
+                                                          type="button"
+                                                          aria-label="계획 종료 시각을 지금으로 연장"
+                                                          title={
+                                                            !selectedIsToday
+                                                              ? "오늘 날짜에서만 사용할 수 있습니다"
+                                                              : rowSpans
+                                                                ? "자정 넘김 일정은 이 버튼으로 연장할 수 없습니다"
+                                                                : "현재 시각이 계획 종료보다 늦을 때만 종료 시각이 갱신됩니다"
+                                                          }
+                                                          disabled={endExtendDisabled}
+                                                          onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            extendItemEndTimeToNowIfPastPlannedEnd(it.id);
+                                                          }}
+                                                          className={[
+                                                            "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
+                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                                                            endExtendDisabled
+                                                              ? "cursor-not-allowed border-stone-200/80 bg-stone-100/50 text-stone-400"
+                                                              : "border-emerald-200 bg-emerald-50/90 text-emerald-800 hover:bg-emerald-100",
+                                                            isExecutionSyncing ? "opacity-50" : "",
+                                                          ].join(" ")}
+                                                      >
+                                                        종료
+                                                      </button>
+                                                  );
+                                                })()}
                                                 <button
                                                   type="button"
                                                   disabled={isExecutionSyncing}

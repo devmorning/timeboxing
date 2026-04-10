@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import PageClient from "../app/PageClient.jsx";
 
 const initialProps = {
@@ -22,6 +22,15 @@ const initialProps = {
 };
 
 describe("일정 항목 인라인 확장", () => {
+  beforeEach(() => {
+    jest.useFakeTimers({ advanceTimers: true });
+    jest.setSystemTime(new Date("2026-03-31T12:00:00"));
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it("항목 클릭 시 일정 수정 모달 대신 인라인 타이머 토글이 열린다", () => {
     render(<PageClient {...initialProps} />);
 
@@ -54,5 +63,20 @@ describe("일정 항목 인라인 확장", () => {
     fireEvent.click(screen.getByRole("button", { name: "삭제" }));
 
     expect(screen.queryByText("테스트 일정")).not.toBeInTheDocument();
+  });
+
+  it("종료 버튼: 계획 종료보다 늦은 시각이면 종료 시각을 지금으로 연장한다", async () => {
+    jest.setSystemTime(new Date("2026-03-31T14:15:30"));
+
+    render(<PageClient {...initialProps} />);
+
+    fireEvent.click(screen.getByText("테스트 일정"));
+    fireEvent.click(
+        screen.getByRole("button", { name: "계획 종료 시각을 지금으로 연장" })
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/09:00\s*–\s*14:15/)).toBeInTheDocument();
+    });
   });
 });
