@@ -3084,7 +3084,20 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       el instanceof HTMLElement ? getChapterBlurParallaxTranslateY(root, el) : 0
     );
     setMainChapterParallaxYs(ys.length ? ys : [0, 0, 0]);
-    setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(root));
+
+    const raw = getMainChapterIdxFromScrollRoot(root);
+    const scrollRange = root.scrollHeight - root.clientHeight;
+    const distFromBottom = scrollRange - root.scrollTop;
+    const lastIdx = chapters.length - 1;
+    // 챕터3 목록 끝에서 하단 러버밴드 시 scrollTop이 줄어들며 챕터 인덱스만 위로 튀는 현상 방지
+    const bottomRubberBandPx = 140;
+
+    setMainActiveChapterIdx((prev) => {
+      if (lastIdx >= 0 && scrollRange > 80 && prev === lastIdx && raw < lastIdx) {
+        if (distFromBottom < bottomRubberBandPx) return lastIdx;
+      }
+      return raw;
+    });
   }, []);
 
   const onMainChapterScroll = useCallback(() => {
@@ -4317,7 +4330,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           "h-[min(calc(100dvh-8.25rem-env(safe-area-inset-bottom)),760px)] snap-y snap-mandatory space-y-8 pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scroll-pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scrollbar-none",
                           daySwipeLocksVerticalScroll
                             ? "overflow-y-hidden overscroll-y-none touch-none"
-                            : "overflow-y-auto overscroll-y-contain",
+                            : "overflow-y-auto overscroll-y-none",
                         ].join(" ")}
                     >
                       <section

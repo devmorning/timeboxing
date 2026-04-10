@@ -18,7 +18,10 @@ export function getScrollContentOffsetTop(root, el) {
   );
 }
 
-/** 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스 */
+/**
+ * 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스.
+ * 하단 러버밴드 보정은 PageClient `syncMainChapterScrollState`에서 처리.
+ */
 export function getMainChapterIdxFromScrollRoot(root) {
   if (!root) return 0;
   const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
