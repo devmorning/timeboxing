@@ -79,48 +79,4 @@ describe("일정 항목 인라인 확장", () => {
     });
   });
 
-  it("항목을 펼치기 전에는 종료 버튼이 없고, 펼치면 보인다", () => {
-    render(<PageClient {...initialProps} />);
-
-    expect(screen.queryByTestId("schedule-item-end-extend")).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByText("테스트 일정"));
-
-    const endBtn = screen.getByTestId("schedule-item-end-extend");
-    expect(endBtn).toBeInTheDocument();
-    expect(endBtn).toBeVisible();
-  });
-
-  it("종료 버튼: 계획 종료보다 늦은 시각이면 종료 시각을 지금으로 맞춘다", async () => {
-    jest.setSystemTime(new Date("2026-03-31T14:15:30"));
-
-    render(<PageClient {...initialProps} />);
-
-    fireEvent.click(screen.getByText("테스트 일정"));
-    fireEvent.click(screen.getByTestId("schedule-item-end-extend"));
-
-    await waitFor(() => {
-      expect(screen.getByText(/09:00\s*–\s*14:15/)).toBeInTheDocument();
-    });
-  });
-
-  it("종료 버튼: 타이머 실행 중이면 먼저 중지하고 종료 시각을 연장한다", async () => {
-    jest.setSystemTime(new Date("2026-03-31T14:15:30"));
-
-    render(<PageClient {...initialProps} />);
-
-    fireEvent.click(screen.getByText("테스트 일정"));
-    fireEvent.click(screen.getByRole("button", { name: "타이머 시작" }));
-
-    expect(screen.getByRole("button", { name: "타이머 중지" })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByTestId("schedule-item-end-extend"));
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "타이머 시작" })).toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(screen.getByText(/09:00\s*–\s*14:15/)).toBeInTheDocument();
-    });
-  });
 });

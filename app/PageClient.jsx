@@ -8,7 +8,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { flushSync } from "react-dom";
 import TextInput from "../components/textinput/TextInput.jsx";
 import { InlineCalendarMonth } from "../components/timeboxing/InlineCalendarMonth.jsx";
 import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/utils/calendarMonth.js";
@@ -2105,62 +2104,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         activeExecutionItemId,
         resetExecutionState,
       ]
-  );
-
-  /**
-   * 오늘 날짜 플랜만: 현재 시각이 계획 종료(또는 시작+30분 기본)보다 늦을 때만 종료 시각을 지금으로 맞춘다.
-   * 자정 넘김 일정은 구간 정의가 달라 별도 처리하지 않음.
-   * `setItems` 함수형 업데이트만 사용해 타이머 중지 직후에도 최신 `prev` 기준으로 갱신한다.
-   */
-  const extendItemEndTimeToNowIfPastPlannedEnd = useCallback(
-      (id) => {
-        if (!selectedIsToday) return;
-        setItems((prev) => {
-          const it = prev.find((x) => x.id === id);
-          if (!it) return prev;
-          const st = it.startTime || it.time || "09:00";
-          const etRaw = (it.endTime || "").trim();
-          const resolvedEnd = resolveEndTimeOrDefault(st, etRaw);
-          if (!resolvedEnd) return prev;
-          if (spansMidnight(st, resolvedEnd)) return prev;
-
-          const endSec = parseHHMMToSecondsFromMidnight(resolvedEnd);
-          if (endSec == null) return prev;
-          const now = new Date();
-          const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-          if (nowSec <= endSec) return prev;
-
-          const newEnd = secondsToHHMM(nowSec);
-          return sortItemsByTimeAsc(
-              prev.map((x) => (x.id === id ? { ...x, endTime: newEnd } : x))
-          );
-        });
-      },
-      [selectedIsToday, sortItemsByTimeAsc]
-  );
-
-  /** 인라인 「종료」: 실행 중이면 먼저 타이머 중지 후, 계획 종료보다 늦으면 종료 시각을 지금으로 갱신 */
-  const handleScheduleItemEndClick = useCallback(
-      async (id) => {
-        if (!selectedIsToday) return;
-        const target = itemsRef.current.find((x) => x.id === id);
-        if (!target) return;
-        const st = target.startTime || target.time || "09:00";
-        const resolvedEnd = resolveEndTimeOrDefault(st, (target.endTime || "").trim());
-        if (resolvedEnd && spansMidnight(st, resolvedEnd)) return;
-
-        const running =
-            Boolean(target.executionStartedAt) || Boolean(target.done);
-
-        if (running) {
-          await toggleExecutionForItem(id);
-        }
-
-        flushSync(() => {
-          extendItemEndTimeToNowIfPastPlannedEnd(id);
-        });
-      },
-      [selectedIsToday, toggleExecutionForItem, extendItemEndTimeToNowIfPastPlannedEnd]
   );
 
   /** 목록 인라인 펼침: 항목 필드 즉시 반영 */
@@ -4721,49 +4664,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 />
                                               </div>
                                               <div className="flex min-w-0 flex-wrap items-stretch gap-2">
-                                                {(() => {
-                                                  const rowSt = it.startTime || it.time || "09:00";
-                                                  const rowEtResolved = resolveEndTimeOrDefault(
-                                                      rowSt,
-                                                      (it.endTime || "").trim()
-                                                  );
-                                                  const rowSpans = Boolean(
-                                                      rowEtResolved && spansMidnight(rowSt, rowEtResolved)
-                                                  );
-                                                  const endExtendDisabled =
-                                                      isExecutionSyncing ||
-                                                      !selectedIsToday ||
-                                                      rowSpans;
-                                                  return (
-                                                      <button
-                                                          type="button"
-                                                          data-testid="schedule-item-end-extend"
-                                                          aria-label="계획 종료 시각을 지금으로 연장"
-                                                          title={
-                                                            !selectedIsToday
-                                                              ? "오늘 날짜에서만 사용할 수 있습니다"
-                                                              : rowSpans
-                                                                ? "자정 넘김 일정은 이 버튼으로 연장할 수 없습니다"
-                                                                : "실행 중이면 타이머를 멈추고, 현재 시각이 계획 종료보다 늦을 때만 종료 시각을 지금으로 맞춥니다"
-                                                          }
-                                                          disabled={endExtendDisabled}
-                                                          onClick={(event) => {
-                                                            event.stopPropagation();
-                                                            void handleScheduleItemEndClick(it.id);
-                                                          }}
-                                                          className={[
-                                                            "inline-flex h-8 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold",
-                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/25",
-                                                            endExtendDisabled
-                                                              ? "cursor-not-allowed border-emerald-200/50 bg-emerald-50/50 text-emerald-800/45 ring-1 ring-inset ring-emerald-900/10"
-                                                              : "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] hover:bg-emerald-100",
-                                                            isExecutionSyncing ? "opacity-50" : "",
-                                                          ].join(" ")}
-                                                      >
-                                                        종료
-                                                      </button>
-                                                  );
-                                                })()}
                                                 <button
                                                   type="button"
                                                   disabled={isExecutionSyncing}
