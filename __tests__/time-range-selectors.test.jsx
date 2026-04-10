@@ -1,0 +1,119 @@
+import React, { useState } from "react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import TimeRangeSelectors from "../app/components/timeboxing/TimeRangeSelectors.jsx";
+
+const STEP = 300;
+
+function snapLocalNowToStep(d) {
+  const totalSec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  const rounded = Math.round(totalSec / STEP) * STEP;
+  const wrapped = ((rounded % 86400) + 86400) % 86400;
+  const h = Math.floor(wrapped / 3600);
+  const m = Math.floor((wrapped % 3600) / 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function endFromStartAndDuration(startHHMM, durationMin) {
+  const [sh, sm] = startHHMM.split(":").map(Number);
+  const a = sh * 3600 + sm * 60;
+  const addSec = durationMin * 60;
+  const endSec = (a + addSec) % 86400;
+  const h = Math.floor(endSec / 3600);
+  const min = Math.floor((endSec % 3600) / 60);
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+function Harness({ initialStart = "09:00", initialEnd = "09:30", disabled = false }) {
+  const [start, setStart] = useState(initialStart);
+  const [end, setEnd] = useState(initialEnd);
+  return (
+    <TimeRangeSelectors
+      startTime={start}
+      endTime={end}
+      onChangeStartTime={setStart}
+      onChangeEndTime={setEnd}
+      disabled={disabled}
+    />
+  );
+}
+
+describe("TimeRangeSelectors — 지금 맞춤", () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("버튼 클릭 시 시작 시각이 5분 단위로 스냅된 현재 시각으로 바뀌고 구간 유지로 종료가 갱신된다", () => {
+    const frozen = new Date(2026, 3, 10, 14, 37, 22);
+    jest.setSystemTime(frozen);
+    const expectedStart = snapLocalNowToStep(frozen);
+    const expectedEnd = endFromStartAndDuration(expectedStart, 30);
+
+    render(<Harness initialStart="09:00" initialEnd="09:30" />);
+
+    fireEvent.click(screen.getByRole("button", { name: "시작 시간을 현재 시각으로 맞추기" }));
+
+    expect(screen.getByLabelText("시작 시간 선택")).toHaveValue(expectedStart);
+    expect(screen.getByLabelText("종료 시간 선택")).toHaveValue(expectedEnd);
+  });
+
+  it("피드백 토스트가 나타났다가 타임아웃 후 사라진다 (jsdom에서 animationend 미발화 대비)", async () => {
+    jest.setSystemTime(new Date(2026, 3, 10, 10, 0, 0));
+
+    render(<Harness />);
+
+    fireEvent.click(screen.getByRole("button", { name: "시작 시간을 현재 시각으로 맞추기" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent("지금이야!");
+
+    await act(async () => {
+      jest.advanceTimersByTime(2100);
+    });
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("disabled일 때 버튼이 비활성화되고 클릭해도 onChangeStartTime이 호출되지 않는다", () => {
+    jest.setSystemTime(new Date(2026, 3, 10, 12, 0, 0));
+    const onStart = jest.fn();
+
+    render(
+      <TimeRangeSelectors
+        startTime="09:00"
+        endTime="09:30"
+        onChangeStartTime={onStart}
+        onChangeEndTime={jest.fn()}
+        disabled
+      />
+    );
+
+    const btn = screen.getByRole("button", { name: "시작 시간을 현재 시각으로 맞추기" });
+    expect(btn).toBeDisabled();
+    fireEvent.click(btn);
+    expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it("연속 클릭마다 onChangeStartTime이 다시 호출되고 토스트 id가 갱신된다", async () => {
+    jest.setSystemTime(new Date(2026, 3, 10, 15, 0, 0));
+
+    render(<Harness />);
+    const btn = screen.getByRole("button", { name: "시작 시간을 현재 시각으로 맞추기" });
+
+    fireEvent.click(btn);
+    const first = screen.getByRole("status");
+    expect(first).toBeInTheDocument();
+
+    await act(async () => {
+      jest.advanceTimersByTime(2100);
+    });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+
+    jest.setSystemTime(new Date(2026, 3, 10, 15, 5, 0));
+    fireEvent.click(btn);
+
+    expect(screen.getByRole("status")).toHaveTextContent("지금이야!");
+  });
+});

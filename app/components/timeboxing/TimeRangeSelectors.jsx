@@ -142,9 +142,9 @@ export default function TimeRangeSelectors({
 
   const skipStartEffectRef = useRef(true);
 
-  /** '지금 맞춤' 클릭 피드백 — 애니 재생용 카운터 */
+  /** '지금 맞춤' 클릭 피드백 — 애니 재생용 카운터(연속 클릭마다 글로우·흔들림 재생) */
   const [nowSnapFx, setNowSnapFx] = useState(0);
-  const [startInputGlow, setStartInputGlow] = useState(false);
+  const [reduceMotionRing, setReduceMotionRing] = useState(false);
   const [nowToast, setNowToast] = useState({ id: 0, visible: false });
 
   const applyStartTimeNow = useCallback(() => {
@@ -152,15 +152,21 @@ export default function TimeRangeSelectors({
     const next = nowHHMMSnappedToStep(STEP_SECONDS);
     onChangeStartTime?.(next);
     setNowSnapFx((n) => n + 1);
-    setStartInputGlow(true);
     setNowToast((t) => ({ id: t.id + 1, visible: true }));
   }, [disabled, onChangeStartTime]);
 
+  /** prefers-reduced-motion: 짧은 링 피드백(CSS 애니 대신) */
   useEffect(() => {
-    if (!startInputGlow) return undefined;
-    const t = window.setTimeout(() => setStartInputGlow(false), 900);
+    if (nowSnapFx === 0) return undefined;
+    const mq =
+        typeof window !== "undefined" && typeof window.matchMedia === "function"
+          ? window.matchMedia("(prefers-reduced-motion: reduce)")
+          : null;
+    if (!mq?.matches) return undefined;
+    setReduceMotionRing(true);
+    const t = window.setTimeout(() => setReduceMotionRing(false), 700);
     return () => window.clearTimeout(t);
-  }, [startInputGlow]);
+  }, [nowSnapFx]);
 
   /** 토스트: 애니메이션 미지원·중단 시에도 잔류하지 않도록 */
   useEffect(() => {
@@ -291,6 +297,7 @@ export default function TimeRangeSelectors({
             <label className="block">
               <span className="sr-only">시작 시간 선택</span>
               <input
+                key={nowSnapFx > 0 ? `snap-${nowSnapFx}` : "start-time"}
                 type="time"
                 step={STEP_SECONDS}
                 value={startValue}
@@ -301,9 +308,8 @@ export default function TimeRangeSelectors({
                 }}
                 className={[
                   inputClass,
-                  startInputGlow
-                    ? "motion-safe:animate-now-input-glow motion-reduce:ring-2 motion-reduce:ring-orange-400/50"
-                    : "",
+                  nowSnapFx > 0 ? "motion-safe:animate-now-input-glow" : "",
+                  reduceMotionRing ? "ring-2 ring-orange-400/50 ring-offset-1" : "",
                 ].join(" ")}
               />
             </label>
