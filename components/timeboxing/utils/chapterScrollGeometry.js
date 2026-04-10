@@ -20,7 +20,7 @@ export function getScrollContentOffsetTop(root, el) {
 
 /**
  * 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스.
- * 하단 러버밴드 보정은 `resolveMainChapterIdxWithLastChapterLatch`에서 처리.
+ * 하단 러버밴드 보정은 `resolveMainChapterIdxWithBottomRubberGuard`에서 처리.
  */
 export function getMainChapterIdxFromScrollRoot(root) {
   if (!root) return 0;
@@ -35,19 +35,20 @@ export function getMainChapterIdxFromScrollRoot(root) {
   return idx;
 }
 
-/** 스크롤 하단 근처에서 래치 — 큰 러버밴드에서도 ref로 마지막 챕터 유지 */
-export const MAIN_CHAPTER_LATCH_NEAR_BOTTOM_PX = 360;
+/** probe만 위로 튀는 작은 러버밴드 — 래치 없이도 막기 (94d5999의 140px을 소폭 확대) */
+export const MAIN_CHAPTER_RUBBER_IMMEDIATE_DIST_PX = 220;
+
+/** 한 번이라도 이 거리 안쪽이면 래치 arm — 큰 탄성에서 dist가 커져도 유지 */
+export const MAIN_CHAPTER_LATCH_ARM_DIST_PX = 340;
+
+/** 마지막 챕터 상단보다 이만큼 위로 스크롤하면 래치 해제 */
+export const MAIN_CHAPTER_LATCH_CLEAR_ABOVE_LAST_PX = 350;
 
 /**
- * 마지막 챕터 상단보다 이만큼 위로 스크롤해야 래치 해제(값이 클수록 하단 탄성에 관대).
- */
-export const MAIN_CHAPTER_LATCH_LEAVE_ABOVE_LAST_CHAPTER_PX = 370;
-
-/**
- * 챕터3 목록 끝 하단 오버스크롤 시 probe만 위로 튀는 현상 방지.
+ * 챕터3 끝 하단 오버스크롤 시 마지막 챕터 인덱스가 위로 역행하는 것 방지.
  * @param {{ current: boolean }} latchRef
  */
-export function resolveMainChapterIdxWithLastChapterLatch({
+export function resolveMainChapterIdxWithBottomRubberGuard({
   raw,
   prevIdx,
   lastIdx,
@@ -64,15 +65,20 @@ export function resolveMainChapterIdxWithLastChapterLatch({
 
   const distFromBottom = Math.max(0, scrollRange - scrollTop);
 
-  if (distFromBottom < MAIN_CHAPTER_LATCH_NEAR_BOTTOM_PX) {
+  if (distFromBottom < MAIN_CHAPTER_LATCH_ARM_DIST_PX) {
     latchRef.current = true;
   }
-  if (scrollTop < lastChapterScrollTop - MAIN_CHAPTER_LATCH_LEAVE_ABOVE_LAST_CHAPTER_PX) {
+  if (scrollTop < lastChapterScrollTop - MAIN_CHAPTER_LATCH_CLEAR_ABOVE_LAST_PX) {
     latchRef.current = false;
   }
 
-  if (prevIdx === lastIdx && raw < lastIdx && latchRef.current) {
-    return lastIdx;
+  if (prevIdx === lastIdx && raw < lastIdx && scrollRange > 80) {
+    if (
+      distFromBottom < MAIN_CHAPTER_RUBBER_IMMEDIATE_DIST_PX ||
+      latchRef.current
+    ) {
+      return lastIdx;
+    }
   }
   return raw;
 }

@@ -43,7 +43,7 @@ import {
   getChapterBlurParallaxTranslateY,
   getMainChapterIdxFromScrollRoot,
   getScrollContentOffsetTop,
-  resolveMainChapterIdxWithLastChapterLatch,
+  resolveMainChapterIdxWithBottomRubberGuard,
 } from "../components/timeboxing/utils/chapterScrollGeometry.js";
 
 const SECONDS_PER_DAY = 86400;
@@ -1318,8 +1318,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 챕터별 글로우 패럴렉스 translateY(px) — 스크롤 픽셀마다 갱신 */
   const [mainChapterParallaxYs, setMainChapterParallaxYs] = useState(() => [0, 0, 0]);
   const mainChapterScrollSyncRafRef = useRef(null);
-  /** 챕터3 하단 러버밴드 시 마지막 챕터 인덱스 유지(큰 bounce 대비) */
-  const mainChapterLastChapterLatchRef = useRef(false);
+  /** 하단 러버밴드 시 마지막 챕터 유지(큰 탄성에서 dist만으로는 부족할 때) */
+  const mainChapterBottomRubberLatchRef = useRef(false);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   /** 드래그 오프셋(px) — 캐러셀에서 인접 날 미리보기 */
@@ -1908,7 +1908,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   }, [selectedDate]);
 
   useEffect(() => {
-    mainChapterLastChapterLatchRef.current = false;
+    mainChapterBottomRubberLatchRef.current = false;
   }, [selectedDate]);
 
   const resetExecutionState = useCallback(() => {
@@ -3100,14 +3100,14 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       lastCh instanceof HTMLElement ? getScrollContentOffsetTop(root, lastCh) : 0;
 
     setMainActiveChapterIdx((prev) =>
-        resolveMainChapterIdxWithLastChapterLatch({
+        resolveMainChapterIdxWithBottomRubberGuard({
           raw,
           prevIdx: prev,
           lastIdx,
           scrollTop: root.scrollTop,
           scrollRange,
           lastChapterScrollTop,
-          latchRef: mainChapterLastChapterLatchRef,
+          latchRef: mainChapterBottomRubberLatchRef,
         })
     );
   }, []);
