@@ -13,6 +13,15 @@ const initialProps = {
 };
 
 describe("인라인 캘린더 열기", () => {
+  const swipeLeft = async (target) => {
+    fireEvent.touchStart(target, { touches: [{ clientX: 220, clientY: 240 }] });
+    fireEvent.touchMove(target, { touches: [{ clientX: 120, clientY: 240 }] });
+    fireEvent.touchEnd(target, { changedTouches: [{ clientX: 120, clientY: 240 }] });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 320));
+    });
+  };
+
   it("날짜 버튼 클릭 시 인라인 캘린더가 열린다", async () => {
     render(<PageClient {...initialProps} />);
 
@@ -41,6 +50,33 @@ describe("인라인 캘린더 열기", () => {
     fireEvent.click(screen.getByLabelText("날짜 패널 펼치기"));
     await waitFor(() => {
       expect(screen.getByTestId("inline-calendar-panel").className).toContain("grid-rows-[1fr]");
+    });
+  });
+
+  it("브레인덤프 영역에서 좌측 스와이프하면 다음날로 이동한다", async () => {
+    render(<PageClient {...initialProps} />);
+
+    const dateToggleBefore = screen.getByLabelText(/날짜 선택 열기 — 2026년 3월 31일/);
+    expect(dateToggleBefore).toBeInTheDocument();
+
+    const brainDump = document.getElementById("brain_dump");
+    expect(brainDump).toBeTruthy();
+    if (!brainDump) return;
+    await swipeLeft(brainDump);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/날짜 선택 열기 — 2026년 4월 1일/)).toBeInTheDocument();
+    });
+  });
+
+  it("일정 목록 영역에서 좌측 스와이프하면 다음날로 이동한다", async () => {
+    render(<PageClient {...initialProps} />);
+
+    const scheduleSection = screen.getByLabelText("일정 목록");
+    await swipeLeft(scheduleSection);
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/날짜 선택 열기 — 2026년 4월 1일/)).toBeInTheDocument();
     });
   });
 

@@ -2884,6 +2884,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const isDaySwipeIgnoredTarget = useCallback((target) => {
     if (!(target instanceof Element)) return true;
+    if (target.closest("[data-day-swipe-allow]")) return false;
     if (target.closest("[data-day-swipe-ignore]")) return true;
     if (target.closest("button, input, textarea, select, a, label")) return true;
     if (target.closest('[role="button"]')) return true;
@@ -4388,6 +4389,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               <textarea
                                   ref={brainDumpTextareaRef}
                                   id="brain_dump"
+                                  data-day-swipe-allow
                                   aria-label="브레인 덤프"
                                   value={displayBrainDump}
                                   disabled={isDatePickerOpen}
@@ -4412,6 +4414,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
                       <section
                           aria-label="일정 목록"
+                          data-day-swipe-allow
                           data-main-chapter
                           className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24 scroll-mb-24"
                       >
@@ -4460,7 +4463,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     return (
                                         <div
                                             key={rowKey}
-                                            data-day-swipe-ignore
                                             role={isCarry ? undefined : "button"}
                                             tabIndex={isCarry ? undefined : 0}
                                             aria-expanded={isCarry ? undefined : isExpanded}
