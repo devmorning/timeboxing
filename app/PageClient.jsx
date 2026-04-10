@@ -4185,7 +4185,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                     />
                                   </p>
                                   <p className="text-[11px] font-semibold tracking-tight text-stone-600 transition-colors duration-300 group-hover:text-stone-700">
-                                    {selectedDateDisplay.ym}
+                                    {selectedIsToday ? "오늘" : selectedDateDisplay.ym}
                                   </p>
                                 </div>
                               </div>
