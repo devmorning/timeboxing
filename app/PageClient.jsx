@@ -99,6 +99,19 @@ function resolveEndTimeOrDefault(startTime, endTime) {
   return secondsToHHMM(stSec + THIRTY_MIN_SECONDS);
 }
 
+/** TimeRangeSelectors와 동일 5분 스냅 — 빠른 일정 생성용 */
+const QUICK_ITEM_STEP_SECONDS = 300;
+
+function getNowStartTimeSnappedHHMM() {
+  const d = new Date();
+  const totalSec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+  const rounded = Math.round(totalSec / QUICK_ITEM_STEP_SECONDS) * QUICK_ITEM_STEP_SECONDS;
+  const wrapped = ((rounded % SECONDS_PER_DAY) + SECONDS_PER_DAY) % SECONDS_PER_DAY;
+  const h = Math.floor(wrapped / 3600);
+  const m = Math.floor((wrapped % 3600) / 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function parseHHMMToSecondsFromMidnight(s) {
   if (!s || typeof s !== "string") return null;
   const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
@@ -2831,6 +2844,35 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 캐러셀 등으로 날짜만 바뀐 뒤 API 로딩 — 본문 전체 blur 대신 오버레이만 */
   const showDateTransitionOverlay =
       isDateTransitionLoading && !isInitialPlanLoading;
+
+  /** 하단: 일정 즉시 생성 + 실행 시작(기존 `toggleExecutionForItem`과 동일 경로) */
+  const handleQuickCreateAndStartExecution = useCallback(() => {
+    if (isDateTransitionLoading) return;
+    const id =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const startStr = getNowStartTimeSnappedHHMM();
+    const endStr = resolveEndTimeOrDefault(startStr, "");
+    const content = `지금 집중 · ${startStr}`;
+    setItems((prev) =>
+        sortItemsByTimeAsc([
+          ...prev,
+          {
+            id,
+            startTime: startStr,
+            endTime: endStr,
+            content,
+            done: false,
+            executedSeconds: 0,
+          },
+        ])
+    );
+    window.setTimeout(() => {
+      toggleExecutionForItem(id);
+    }, 0);
+  }, [isDateTransitionLoading, sortItemsByTimeAsc, toggleExecutionForItem]);
+
   const isDayPlanLoading =
       !authReady ||
       (authUser?.id &&
@@ -4620,45 +4662,82 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       "shadow-[0_14px_44px_-18px_rgba(15,23,42,0.14)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/45",
                     ].join(" ")}
                 >
-                  <button
-                      type="button"
-                      aria-label="일정 추가"
-                      disabled={isDateTransitionLoading}
-                      onClick={() => {
-                        setIsDatePickerOpen(false);
-                        resetEditState();
-                        setIsScheduleComposerModalOpen(true);
-                      }}
-                      className={[
-                        "flex min-h-[52px] min-w-0 flex-col items-center justify-end gap-0.5 rounded-xl px-1 py-1.5",
-                        "text-orange-600 active:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
-                        isDateTransitionLoading ? "cursor-wait opacity-45" : "",
-                      ].join(" ")}
-                  >
-                    <svg
-                        aria-hidden="true"
-                        className="h-[22px] w-[22px] shrink-0"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.75"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                  <div className="flex min-h-[52px] min-w-0 items-stretch gap-0.5">
+                    <button
+                        type="button"
+                        aria-label="일정 추가"
+                        disabled={isDateTransitionLoading}
+                        onClick={() => {
+                          setIsDatePickerOpen(false);
+                          resetEditState();
+                          setIsScheduleComposerModalOpen(true);
+                        }}
+                        className={[
+                          "flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-end gap-0.5 rounded-xl px-0.5 py-1.5",
+                          "text-orange-600 active:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                          isDateTransitionLoading ? "cursor-wait opacity-45" : "",
+                        ].join(" ")}
                     >
-                      <rect x="4" y="5" width="16" height="14" rx="2" />
-                      <path d="M4 10h16M9 3v4M15 3v4" />
-                      <circle cx="17.5" cy="17.5" r="4.5" fill="currentColor" fillOpacity="0.2" stroke="none" />
-                      <path
-                          d="M17.5 15.5v4M15.5 17.5h4"
+                      <svg
+                          aria-hidden="true"
+                          className="h-[22px] w-[22px] shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
                           stroke="currentColor"
                           strokeWidth="1.75"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-orange-600">
-                      일정
-                    </span>
-                  </button>
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                      >
+                        <rect x="4" y="5" width="16" height="14" rx="2" />
+                        <path d="M4 10h16M9 3v4M15 3v4" />
+                        <circle cx="17.5" cy="17.5" r="4.5" fill="currentColor" fillOpacity="0.2" stroke="none" />
+                        <path
+                            d="M17.5 15.5v4M15.5 17.5h4"
+                            stroke="currentColor"
+                            strokeWidth="1.75"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-orange-600">
+                        일정
+                      </span>
+                    </button>
+                    <button
+                        type="button"
+                        data-testid="quick-schedule-run"
+                        aria-label="지금 일정을 만들고 실행 시작"
+                        title="지금 일정을 만들고 실행 시작"
+                        disabled={isDateTransitionLoading}
+                        onClick={handleQuickCreateAndStartExecution}
+                        className={[
+                          "flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-end gap-0.5 rounded-xl px-0.5 py-1.5",
+                          "text-orange-600 active:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                          isDateTransitionLoading ? "cursor-wait opacity-45" : "",
+                        ].join(" ")}
+                    >
+                      <svg
+                          aria-hidden="true"
+                          className="h-[22px] w-[22px] shrink-0"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="8.25" opacity="0.2" />
+                        <path d="M12 8.1V12l2.85 1.75" strokeWidth="1.85" />
+                        <path
+                            d="M17.4 6.2l1.1 1.9M5.9 17.1l1.6-1.2"
+                            opacity="0.4"
+                            strokeWidth="1.35"
+                        />
+                      </svg>
+                      <span className="max-w-full truncate text-center text-[10px] font-semibold leading-tight tracking-wide text-orange-600">
+                        지금
+                      </span>
+                    </button>
+                  </div>
                   <button
                       type="button"
                       aria-label="일자별 통계 열기"
