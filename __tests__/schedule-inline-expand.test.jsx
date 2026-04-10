@@ -65,6 +65,22 @@ describe("일정 항목 인라인 확장", () => {
     expect(screen.queryByText("테스트 일정")).not.toBeInTheDocument();
   });
 
+  it("펼친 영역에서 내용을 수정하고 저장하면 목록에 반영된다", async () => {
+    render(<PageClient {...initialProps} />);
+
+    fireEvent.click(screen.getByText("테스트 일정"));
+
+    const inputs = screen.getAllByPlaceholderText("예: 고객 피드백 정리");
+    const inlineInput = inputs[inputs.length - 1];
+    fireEvent.change(inlineInput, { target: { value: "인라인에서 수정한 일정" } });
+
+    fireEvent.click(screen.getByTestId("schedule-item-inline-save"));
+
+    await waitFor(() => {
+      expect(screen.getByText("인라인에서 수정한 일정")).toBeInTheDocument();
+    });
+  });
+
   it("항목을 펼치기 전에는 종료 버튼이 없고, 펼치면 보인다", () => {
     render(<PageClient {...initialProps} />);
 
