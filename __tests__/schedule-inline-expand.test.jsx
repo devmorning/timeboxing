@@ -46,4 +46,13 @@ describe("일정 항목 인라인 확장", () => {
 
     expect(screen.getByRole("button", { name: "타이머 중지" })).toBeEnabled();
   });
+
+  it("인라인 삭제 버튼 클릭 시 항목이 제거된다", () => {
+    render(<PageClient {...initialProps} />);
+
+    fireEvent.click(screen.getByText("테스트 일정"));
+    fireEvent.click(screen.getByRole("button", { name: "삭제" }));
+
+    expect(screen.queryByText("테스트 일정")).not.toBeInTheDocument();
+  });
 });

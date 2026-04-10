@@ -4561,6 +4561,22 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 >
                                                   {isExecutionRunning ? "타이머 중지" : "타이머 시작"}
                                                 </button>
+                                                <button
+                                                  type="button"
+                                                  disabled={isExecutionSyncing}
+                                                  onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    deleteItemById(it.id);
+                                                  }}
+                                                  className={[
+                                                    "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
+                                                    "border-rose-200 bg-rose-50/90 text-rose-700 hover:bg-rose-100",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/25",
+                                                    isExecutionSyncing ? "opacity-50" : "",
+                                                  ].join(" ")}
+                                                >
+                                                  삭제
+                                                </button>
                                               </div>
                                             </div>
                                           ) : null}
