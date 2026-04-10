@@ -25,9 +25,16 @@ export default function ExecutionSyncLiquidGlassOverlay({ action }) {
     return null;
   }
 
+  const safePad = [
+    "pt-[max(1.25rem,env(safe-area-inset-top))]",
+    "pb-[max(1.25rem,env(safe-area-inset-bottom))]",
+    "pl-[max(1rem,env(safe-area-inset-left))]",
+    "pr-[max(1rem,env(safe-area-inset-right))]",
+  ].join(" ");
+
   return createPortal(
     <div
-      className="execution-sync-overlay-enter pointer-events-auto fixed inset-0 z-[100] flex min-h-[100dvh] w-full max-w-none touch-none items-center justify-center overflow-hidden overscroll-none"
+      className="execution-sync-overlay-enter pointer-events-auto fixed inset-0 z-[100] flex min-h-[100dvh] w-full max-w-none touch-none overflow-hidden overscroll-none"
       style={{ overscrollBehavior: "none" }}
       role="status"
       aria-live="polite"
@@ -36,14 +43,13 @@ export default function ExecutionSyncLiquidGlassOverlay({ action }) {
       onPointerDownCapture={(e) => e.preventDefault()}
       onTouchMoveCapture={(e) => e.preventDefault()}
     >
-      {/* 베이스 — 블러 + 은은한 틴트 (전체 면) */}
+      {/* 배경 레이어 — 글래스 뒤로 비침 */}
       <div
         className="absolute inset-0 bg-gradient-to-br from-stone-100/90 via-white/55 to-orange-50/65 backdrop-blur-md backdrop-saturate-150"
         aria-hidden
       />
       <div className="absolute inset-0 bg-stone-900/[0.06]" aria-hidden />
 
-      {/* 떠다니는 리퀴드 볼록(색 번짐) — 전역 프레임 기준 */}
       <div
         className="execution-sync-blob-a pointer-events-none absolute -left-[18%] top-[8%] h-[52vmin] w-[52vmin] rounded-full bg-gradient-to-br from-orange-300/55 to-amber-200/35 blur-3xl"
         aria-hidden
@@ -61,18 +67,20 @@ export default function ExecutionSyncLiquidGlassOverlay({ action }) {
         aria-hidden
       />
 
-      {/* 중앙 글래스 카드 */}
-      <div className="execution-sync-card-breathe relative mx-4 w-full max-w-[min(100%,18.5rem)] px-1">
-        <div className="relative overflow-hidden rounded-[1.65rem] border border-white/60 bg-white/40 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur-2xl backdrop-saturate-[1.35]">
-          <div
-            className="execution-sync-shimmer pointer-events-none absolute inset-0 opacity-[0.55]"
-            aria-hidden
-            style={{
-              background:
-                "linear-gradient(105deg, transparent 36%, rgba(255,255,255,0.72) 50%, transparent 64%)",
-            }}
-          />
-          <div className="relative flex flex-col items-center gap-4 px-7 py-8">
+      {/* 전체 화면 액정커버 느낌 — 리퀴드 글래스 면 */}
+      <div className="absolute inset-0 flex min-h-[100dvh] w-full flex-col overflow-hidden rounded-none border border-white/55 bg-white/38 shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_0_0_1px_rgba(255,255,255,0.12)] backdrop-blur-2xl backdrop-saturate-[1.35]">
+        <div
+          className="execution-sync-shimmer pointer-events-none absolute inset-0 opacity-[0.5]"
+          aria-hidden
+          style={{
+            background:
+              "linear-gradient(105deg, transparent 32%, rgba(255,255,255,0.65) 50%, transparent 68%)",
+          }}
+        />
+        <div
+          className={`relative flex min-h-0 flex-1 flex-col items-center justify-center gap-5 ${safePad}`}
+        >
+          <div className="execution-sync-card-breathe flex flex-col items-center gap-5">
             <div className="relative flex h-[4.75rem] w-[4.75rem] items-center justify-center">
               <div
                 className="pointer-events-none absolute h-11 w-11 rounded-full border-[2.5px] border-orange-200/75 border-t-orange-600 border-r-orange-500/35 motion-safe:animate-spin"
@@ -94,11 +102,11 @@ export default function ExecutionSyncLiquidGlassOverlay({ action }) {
                 <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
               </svg>
             </div>
-            <p className="text-center text-[15px] font-semibold tracking-tight text-stone-800">
+            <p className="text-center text-[16px] font-semibold tracking-tight text-stone-800">
               {label}
               <span className="ml-0.5 font-bold text-orange-600">…</span>
             </p>
-            <p className="text-center text-[12px] leading-snug text-stone-500/95">
+            <p className="text-center text-[13px] leading-snug text-stone-500/95">
               잠시만 기다려 주세요
             </p>
           </div>
