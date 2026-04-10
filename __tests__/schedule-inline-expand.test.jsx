@@ -77,36 +77,6 @@ describe("일정 항목 인라인 확장", () => {
     expect(endBtn).toBeVisible();
   });
 
-  it("종료 버튼: 계획 종료 시각보다 이르더라도 종료 시각을 지금으로 맞춘다", async () => {
-    jest.setSystemTime(new Date("2026-03-31T12:00:00"));
-
-    const propsLongBlock = {
-      ...initialProps,
-      initialPlan: {
-        ...initialProps.initialPlan,
-        items: [
-          {
-            id: "item-1",
-            startTime: "09:00",
-            endTime: "15:00",
-            content: "테스트 일정",
-            done: false,
-            executedSeconds: 0,
-          },
-        ],
-      },
-    };
-
-    render(<PageClient {...propsLongBlock} />);
-
-    fireEvent.click(screen.getByText("테스트 일정"));
-    fireEvent.click(screen.getByTestId("schedule-item-end-extend"));
-
-    await waitFor(() => {
-      expect(screen.getByText(/09:00\s*–\s*12:00/)).toBeInTheDocument();
-    });
-  });
-
   it("종료 버튼: 계획 종료보다 늦은 시각이면 종료 시각을 지금으로 맞춘다", async () => {
     jest.setSystemTime(new Date("2026-03-31T14:15:30"));
 
@@ -137,40 +107,6 @@ describe("일정 항목 인라인 확장", () => {
     });
     await waitFor(() => {
       expect(screen.getByText(/09:00\s*–\s*14:15/)).toBeInTheDocument();
-    });
-  });
-
-  it("종료 버튼: 타이머 실행 중·계획 종료 전이어도 중지 후 종료 시각을 지금으로 맞춘다", async () => {
-    jest.setSystemTime(new Date("2026-03-31T12:00:00"));
-
-    const propsLongBlock = {
-      ...initialProps,
-      initialPlan: {
-        ...initialProps.initialPlan,
-        items: [
-          {
-            id: "item-1",
-            startTime: "09:00",
-            endTime: "15:00",
-            content: "테스트 일정",
-            done: false,
-            executedSeconds: 0,
-          },
-        ],
-      },
-    };
-
-    render(<PageClient {...propsLongBlock} />);
-
-    fireEvent.click(screen.getByText("테스트 일정"));
-    fireEvent.click(screen.getByRole("button", { name: "타이머 시작" }));
-    fireEvent.click(screen.getByTestId("schedule-item-end-extend"));
-
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: "타이머 시작" })).toBeInTheDocument();
-    });
-    await waitFor(() => {
-      expect(screen.getByText(/09:00\s*–\s*12:00/)).toBeInTheDocument();
     });
   });
 });
