@@ -1,24 +1,33 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
- * 타이머 시작/중지 API fetch 중 — 전면 리퀴드글래스 스타일로 입력·탭 차단
+ * 타이머 시작/중지 API fetch 중 — 전면 리퀴드글래스 스타일로 입력·탭 차단 (뷰포트 전체, body 포털)
  */
 export default function ExecutionSyncLiquidGlassOverlay({ action }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
+    if (!mounted) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, []);
+  }, [mounted]);
 
   const label = action === "start" ? "타이머 시작하는 중" : "타이머 멈추는 중";
 
-  return (
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <div
-      className="execution-sync-overlay-enter pointer-events-auto fixed inset-0 z-[90] flex touch-none items-center justify-center overflow-hidden overscroll-none"
+      className="execution-sync-overlay-enter pointer-events-auto fixed inset-0 z-[100] flex min-h-[100dvh] w-full max-w-none touch-none items-center justify-center overflow-hidden overscroll-none"
       style={{ overscrollBehavior: "none" }}
       role="status"
       aria-live="polite"
@@ -27,14 +36,14 @@ export default function ExecutionSyncLiquidGlassOverlay({ action }) {
       onPointerDownCapture={(e) => e.preventDefault()}
       onTouchMoveCapture={(e) => e.preventDefault()}
     >
-      {/* 베이스 — 블러 + 은은한 틴트 */}
+      {/* 베이스 — 블러 + 은은한 틴트 (전체 면) */}
       <div
         className="absolute inset-0 bg-gradient-to-br from-stone-100/90 via-white/55 to-orange-50/65 backdrop-blur-md backdrop-saturate-150"
         aria-hidden
       />
       <div className="absolute inset-0 bg-stone-900/[0.06]" aria-hidden />
 
-      {/* 떠다니는 리퀴드 볼록(색 번짐) */}
+      {/* 떠다니는 리퀴드 볼록(색 번짐) — 전역 프레임 기준 */}
       <div
         className="execution-sync-blob-a pointer-events-none absolute -left-[18%] top-[8%] h-[52vmin] w-[52vmin] rounded-full bg-gradient-to-br from-orange-300/55 to-amber-200/35 blur-3xl"
         aria-hidden
@@ -55,7 +64,6 @@ export default function ExecutionSyncLiquidGlassOverlay({ action }) {
       {/* 중앙 글래스 카드 */}
       <div className="execution-sync-card-breathe relative mx-4 w-full max-w-[min(100%,18.5rem)] px-1">
         <div className="relative overflow-hidden rounded-[1.65rem] border border-white/60 bg-white/40 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35),inset_0_1px_0_rgba(255,255,255,0.85)] backdrop-blur-2xl backdrop-saturate-[1.35]">
-          {/* 빛 스윕 */}
           <div
             className="execution-sync-shimmer pointer-events-none absolute inset-0 opacity-[0.55]"
             aria-hidden
@@ -65,7 +73,6 @@ export default function ExecutionSyncLiquidGlassOverlay({ action }) {
             }}
           />
           <div className="relative flex flex-col items-center gap-4 px-7 py-8">
-            {/* 스피너 + 스톱워치 */}
             <div className="relative flex h-[4.75rem] w-[4.75rem] items-center justify-center">
               <div
                 className="pointer-events-none absolute h-11 w-11 rounded-full border-[2.5px] border-orange-200/75 border-t-orange-600 border-r-orange-500/35 motion-safe:animate-spin"
@@ -97,6 +104,7 @@ export default function ExecutionSyncLiquidGlassOverlay({ action }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
