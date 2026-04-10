@@ -1247,6 +1247,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [showDayPlanContent, setShowDayPlanContent] = useState(false);
   const [swipingItemId, setSwipingItemId] = useState(null);
   const [swipeOffsetX, setSwipeOffsetX] = useState(0);
+  const [expandedScheduleItemId, setExpandedScheduleItemId] = useState(null);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
   const [calendarVisibleRange, setCalendarVisibleRange] = useState({ start: 0, end: 0 });
@@ -1632,14 +1633,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     );
   }, [editingItem, newContent, newEndTime, newStartTime]);
 
-  const startEditItem = (item) => {
-    setEditingId(item.id);
-    setNewStartTime(item.startTime || item.time || "09:00");
-    setNewEndTime(item.endTime || "");
-    setNewContent(item.content);
-    setIsScheduleComposerModalOpen(true);
-  };
-
   const resetEditState = () => {
     setEditingId(null);
     setNewStartTime("09:00");
@@ -1899,6 +1892,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const deleteItemById = (id) => {
     setItems((prev) => prev.filter((it) => it.id !== id));
+    if (expandedScheduleItemId === id) {
+      setExpandedScheduleItemId(null);
+    }
     if (activeExecutionItemId === id) {
       setActiveExecutionItemId(null);
       setActiveExecutionStartedAtMs(null);
@@ -1909,6 +1905,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       setIsScheduleComposerModalOpen(false);
     }
   };
+
+  useEffect(() => {
+    setExpandedScheduleItemId(null);
+  }, [selectedDate]);
 
   const resetExecutionState = useCallback(() => {
     setActiveExecutionItemId(null);
@@ -4533,12 +4533,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                         (Boolean(it.executionStartedAt) ||
                                             (activeExecutionItemId === it.id &&
                                                 activeExecutionStartedAtMs != null));
+                                    const isExpanded =
+                                      !isCarry && expandedScheduleItemId === it.id;
                                     return (
                                         <div
                                             key={rowKey}
                                             data-day-swipe-ignore
                                             role={isCarry ? undefined : "button"}
                                             tabIndex={isCarry ? undefined : 0}
+                                            aria-expanded={isCarry ? undefined : isExpanded}
                                             aria-busy={isExecutionSyncing}
                                             aria-label={
                                               isExecutionSyncing
@@ -4550,13 +4553,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                             onClick={() => {
                                               if (isCarry) return;
                                               if (swipingItemId === it.id && swipeOffsetX !== 0) return;
-                                              startEditItem(it);
+                                              setExpandedScheduleItemId((prev) =>
+                                                prev === it.id ? null : it.id
+                                              );
                                             }}
                                             onKeyDown={(e) => {
                                               if (isCarry) return;
                                               if (e.key === "Enter" || e.key === " ") {
                                                 e.preventDefault();
-                                                startEditItem(it);
+                                                setExpandedScheduleItemId((prev) =>
+                                                  prev === it.id ? null : it.id
+                                                );
                                               }
                                             }}
                                             onTouchStart={!isCarry ? (e) => handleItemTouchStart(it.id, e) : undefined}
@@ -4631,6 +4638,55 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 </span>
                                             ) : null}
                                           </div>
+                                          {!isCarry && isExpanded ? (
+                                            <div
+                                              data-day-swipe-ignore
+                                              className="mt-2 overflow-hidden border-t border-stone-200/70 pt-2"
+                                            >
+                                              <div className="flex items-center gap-2">
+                                                <button
+                                                  type="button"
+                                                  disabled={isExecutionSyncing || isExecutionRunning}
+                                                  onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    if (!isExecutionRunning) {
+                                                      toggleExecutionBySwipe(it.id);
+                                                    }
+                                                  }}
+                                                  className={[
+                                                    "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/25",
+                                                    isExecutionRunning
+                                                      ? "cursor-not-allowed border-emerald-200/70 bg-emerald-50/60 text-emerald-500"
+                                                      : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100/70",
+                                                    isExecutionSyncing ? "opacity-50" : "",
+                                                  ].join(" ")}
+                                                >
+                                                  타이머 시작
+                                                </button>
+                                                <button
+                                                  type="button"
+                                                  disabled={isExecutionSyncing || !isExecutionRunning}
+                                                  onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    if (isExecutionRunning) {
+                                                      toggleExecutionBySwipe(it.id);
+                                                    }
+                                                  }}
+                                                  className={[
+                                                    "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
+                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/25",
+                                                    !isExecutionRunning
+                                                      ? "cursor-not-allowed border-rose-200/70 bg-rose-50/60 text-rose-500"
+                                                      : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100/70",
+                                                    isExecutionSyncing ? "opacity-50" : "",
+                                                  ].join(" ")}
+                                                >
+                                                  타이머 중지
+                                                </button>
+                                              </div>
+                                            </div>
+                                          ) : null}
                                         </div>
                                     );
                                   })}
