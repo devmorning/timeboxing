@@ -4438,7 +4438,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         <div
                             className={UI_CANVAS_INSET}
                         >
-                          <div className="px-3 pt-3 pb-[max(2rem,calc(1rem+env(safe-area-inset-bottom)))]">
+                          <div className="px-3 pt-3 pb-[max(6.75rem,calc(5.75rem+env(safe-area-inset-bottom)))]">
                             {/* 추가된 항목 목록 (전날 자정 넘김 새벽 구간 포함) */}
                             {displayItemsMerged.length > 0 ? (
                                 <div className="space-y-2.5">
