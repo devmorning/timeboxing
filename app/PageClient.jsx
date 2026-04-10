@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { flushSync } from "react-dom";
 import TextInput from "../components/textinput/TextInput.jsx";
 import { InlineCalendarMonth } from "../components/timeboxing/InlineCalendarMonth.jsx";
 import { buildMonthKeys, getRangeYmdBounds } from "../components/timeboxing/utils/calendarMonth.js";
@@ -1899,37 +1900,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     }
   };
 
-  /**
-   * 오늘 날짜 플랜만: 현재 시각이 계획 종료(또는 시작+30분 기본)보다 늦으면 종료 시각을 지금으로 맞춘다.
-   * 자정 넘김 일정은 구간 정의가 달라 별도 처리하지 않음.
-   */
-  const extendItemEndTimeToNowIfPastPlannedEnd = useCallback(
-      (id) => {
-        if (!selectedIsToday) return;
-        const it = itemsRef.current.find((x) => x.id === id);
-        if (!it) return;
-        const st = it.startTime || it.time || "09:00";
-        const etRaw = (it.endTime || "").trim();
-        const resolvedEnd = resolveEndTimeOrDefault(st, etRaw);
-        if (!resolvedEnd) return;
-        if (spansMidnight(st, resolvedEnd)) return;
-
-        const endSec = parseHHMMToSecondsFromMidnight(resolvedEnd);
-        if (endSec == null) return;
-        const now = new Date();
-        const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-        if (nowSec <= endSec) return;
-
-        const newEnd = secondsToHHMM(nowSec);
-        setItems((prev) =>
-            sortItemsByTimeAsc(
-                prev.map((x) => (x.id === id ? { ...x, endTime: newEnd } : x))
-            )
-        );
-      },
-      [selectedIsToday, sortItemsByTimeAsc]
-  );
-
   useEffect(() => {
     setExpandedScheduleItemId(null);
   }, [selectedDate]);
@@ -2135,6 +2105,62 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         activeExecutionItemId,
         resetExecutionState,
       ]
+  );
+
+  /**
+   * 오늘 날짜 플랜만: 현재 시각이 계획 종료(또는 시작+30분 기본)보다 늦으면 종료 시각을 지금으로 맞춘다.
+   * 자정 넘김 일정은 구간 정의가 달라 별도 처리하지 않음.
+   * `setItems` 함수형 업데이트만 사용해 타이머 중지 직후에도 최신 `prev` 기준으로 갱신한다.
+   */
+  const extendItemEndTimeToNowIfPastPlannedEnd = useCallback(
+      (id) => {
+        if (!selectedIsToday) return;
+        setItems((prev) => {
+          const it = prev.find((x) => x.id === id);
+          if (!it) return prev;
+          const st = it.startTime || it.time || "09:00";
+          const etRaw = (it.endTime || "").trim();
+          const resolvedEnd = resolveEndTimeOrDefault(st, etRaw);
+          if (!resolvedEnd) return prev;
+          if (spansMidnight(st, resolvedEnd)) return prev;
+
+          const endSec = parseHHMMToSecondsFromMidnight(resolvedEnd);
+          if (endSec == null) return prev;
+          const now = new Date();
+          const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+          if (nowSec <= endSec) return prev;
+
+          const newEnd = secondsToHHMM(nowSec);
+          return sortItemsByTimeAsc(
+              prev.map((x) => (x.id === id ? { ...x, endTime: newEnd } : x))
+          );
+        });
+      },
+      [selectedIsToday, sortItemsByTimeAsc]
+  );
+
+  /** 인라인 「종료」: 실행 중이면 먼저 타이머 중지 후, 계획 종료보다 늦으면 종료 시각을 지금으로 갱신 */
+  const handleScheduleItemEndClick = useCallback(
+      async (id) => {
+        if (!selectedIsToday) return;
+        const target = itemsRef.current.find((x) => x.id === id);
+        if (!target) return;
+        const st = target.startTime || target.time || "09:00";
+        const resolvedEnd = resolveEndTimeOrDefault(st, (target.endTime || "").trim());
+        if (resolvedEnd && spansMidnight(st, resolvedEnd)) return;
+
+        const running =
+            Boolean(target.executionStartedAt) || Boolean(target.done);
+
+        if (running) {
+          await toggleExecutionForItem(id);
+        }
+
+        flushSync(() => {
+          extendItemEndTimeToNowIfPastPlannedEnd(id);
+        });
+      },
+      [selectedIsToday, toggleExecutionForItem, extendItemEndTimeToNowIfPastPlannedEnd]
   );
 
   /** 일정 추가 모달: 항목 추가 직후 실행(타이머) 시작 — `+`와 동일 데이터, 모달만 닫고 실행 */
@@ -4660,12 +4686,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                               ? "오늘 날짜에서만 사용할 수 있습니다"
                                                               : rowSpans
                                                                 ? "자정 넘김 일정은 이 버튼으로 연장할 수 없습니다"
-                                                                : "현재 시각이 계획 종료보다 늦을 때만 종료 시각이 갱신됩니다"
+                                                                : "실행 중이면 타이머를 멈추고, 현재 시각이 계획 종료보다 늦으면 종료 시각을 지금으로 맞춥니다"
                                                           }
                                                           disabled={endExtendDisabled}
                                                           onClick={(event) => {
                                                             event.stopPropagation();
-                                                            extendItemEndTimeToNowIfPastPlannedEnd(it.id);
+                                                            void handleScheduleItemEndClick(it.id);
                                                           }}
                                                           className={[
                                                             "inline-flex h-8 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold",

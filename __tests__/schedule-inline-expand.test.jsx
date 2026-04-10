@@ -89,4 +89,24 @@ describe("일정 항목 인라인 확장", () => {
       expect(screen.getByText(/09:00\s*–\s*14:15/)).toBeInTheDocument();
     });
   });
+
+  it("종료 버튼: 타이머 실행 중이면 먼저 중지하고 종료 시각을 연장한다", async () => {
+    jest.setSystemTime(new Date("2026-03-31T14:15:30"));
+
+    render(<PageClient {...initialProps} />);
+
+    fireEvent.click(screen.getByText("테스트 일정"));
+    fireEvent.click(screen.getByRole("button", { name: "타이머 시작" }));
+
+    expect(screen.getByRole("button", { name: "타이머 중지" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId("schedule-item-end-extend"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "타이머 시작" })).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByText(/09:00\s*–\s*14:15/)).toBeInTheDocument();
+    });
+  });
 });
