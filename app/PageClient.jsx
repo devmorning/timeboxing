@@ -4250,7 +4250,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       <section
                           aria-label="가장 중요한 3가지"
                           data-main-chapter
-                          className="relative min-h-[min(56vh,520px)] snap-start snap-always scroll-mt-24"
+                          className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24"
                       >
                         <div
                             aria-hidden
@@ -4349,7 +4349,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       <section
                           aria-label="브레인 덤프"
                           data-main-chapter
-                          className="relative min-h-[min(56vh,520px)] snap-start snap-always scroll-mt-24"
+                          className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24"
                       >
                         <div
                             aria-hidden
@@ -4416,7 +4416,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           aria-label="일정 목록"
                           data-day-swipe-allow
                           data-main-chapter
-                          className="relative min-h-[min(56vh,520px)] snap-start snap-always scroll-mt-24 scroll-mb-24"
+                          className="relative min-h-[min(56vh,520px)] snap-start scroll-mt-24 scroll-mb-24"
                       >
                         <div
                             aria-hidden
