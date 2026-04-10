@@ -21,14 +21,33 @@ const initialProps = {
   },
 };
 
-describe("빠른 일정 + 실행", () => {
-  it("하단 지금 버튼으로 일정이 생성된다", async () => {
+describe("일정 추가 모달: 추가 후 실행", () => {
+  beforeEach(() => {
+    jest.spyOn(crypto, "randomUUID").mockReturnValue("local-test-new-item");
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("내용 입력 후 추가·실행 버튼으로 항목이 생기고 타이머가 시작된다", async () => {
     render(<PageClient {...initialProps} />);
 
-    fireEvent.click(screen.getByTestId("quick-schedule-run"));
+    fireEvent.click(screen.getByRole("button", { name: "일정 추가" }));
+
+    const input = await screen.findByPlaceholderText("예: 고객 피드백 정리");
+    fireEvent.change(input, { target: { value: "모달 추가 실행 테스트" } });
+
+    fireEvent.click(screen.getByTestId("schedule-add-and-run"));
 
     await waitFor(() => {
-      expect(screen.getByText(/지금 집중 ·/)).toBeInTheDocument();
+      expect(screen.getByText("모달 추가 실행 테스트")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText("모달 추가 실행 테스트"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "타이머 중지" })).toBeInTheDocument();
     });
   });
 });

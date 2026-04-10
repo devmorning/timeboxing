@@ -99,19 +99,6 @@ function resolveEndTimeOrDefault(startTime, endTime) {
   return secondsToHHMM(stSec + THIRTY_MIN_SECONDS);
 }
 
-/** TimeRangeSelectors와 동일 5분 스냅 — 빠른 일정 생성용 */
-const QUICK_ITEM_STEP_SECONDS = 300;
-
-function getNowStartTimeSnappedHHMM() {
-  const d = new Date();
-  const totalSec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
-  const rounded = Math.round(totalSec / QUICK_ITEM_STEP_SECONDS) * QUICK_ITEM_STEP_SECONDS;
-  const wrapped = ((rounded % SECONDS_PER_DAY) + SECONDS_PER_DAY) % SECONDS_PER_DAY;
-  const h = Math.floor(wrapped / 3600);
-  const m = Math.floor((wrapped % 3600) / 60);
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
 function parseHHMMToSecondsFromMidnight(s) {
   if (!s || typeof s !== "string") return null;
   const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
@@ -1192,6 +1179,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [newEndTime, setNewEndTime] = useState("");
   const [newContent, setNewContent] = useState("");
   const [items, setItems] = useState(initialPlan?.items ?? []);
+  /** `toggleExecutionForItem` 등 비동기 콜백에서 항상 최신 목록을 찾기 위함 */
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
   /** 전날 플랜에서 자정 넘김(수면 등)으로 오늘 새벽에 이어지는 구간 — 표시·통계용 */
   const [carryOverItems, setCarryOverItems] = useState([]);
   const [editingId, setEditingId] = useState(null);
@@ -1998,7 +1988,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   const toggleExecutionForItem = useCallback(
       async (id) => {
-        const target = items.find((it) => it.id === id);
+        const target = itemsRef.current.find((it) => it.id === id);
         if (!target) return;
 
         const running =
@@ -2016,11 +2006,16 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                 if (updated) mergeExecutionItemIntoState(updated);
               } catch (err) {
                 if (err?.status === 404) {
+                  const latestItems = itemsRef.current;
                   await dayPlanRepository.saveByDate(
                       selectedDate,
-                      normalizeDayPlan({ important3, brainDump, items })
+                      normalizeDayPlan({ important3, brainDump, items: latestItems })
                   );
-                  lastSavedPlanRef.current = serializePlan({ important3, brainDump, items });
+                  lastSavedPlanRef.current = serializePlan({
+                    important3,
+                    brainDump,
+                    items: latestItems,
+                  });
                   const updated = await dayPlanRepository.startExecution(selectedDate, id);
                   if (updated) mergeExecutionItemIntoState(updated);
                 } else {
@@ -2098,7 +2093,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         }
       },
       [
-        items,
         selectedDate,
         dayPlanRepository,
         mergeExecutionItemIntoState,
@@ -2111,6 +2105,41 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
         resetExecutionState,
       ]
   );
+
+  /** 일정 추가 모달: 항목 추가 직후 실행(타이머) 시작 — `+`와 동일 데이터, 모달만 닫고 실행 */
+  const addItemAndStartExecution = useCallback(() => {
+    if (!canAdd) return;
+    const id =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const resolvedEndTime = resolveEndTimeOrDefault(newStartTime, newEndTime);
+    setItems((prev) =>
+        sortItemsByTimeAsc([
+          ...prev,
+          {
+            id,
+            startTime: newStartTime,
+            endTime: resolvedEndTime,
+            content: newContent.trim(),
+            done: false,
+            executedSeconds: 0,
+          },
+        ])
+    );
+    closeScheduleComposerModal();
+    window.setTimeout(() => {
+      toggleExecutionForItem(id);
+    }, 0);
+  }, [
+    canAdd,
+    newStartTime,
+    newEndTime,
+    newContent,
+    sortItemsByTimeAsc,
+    closeScheduleComposerModal,
+    toggleExecutionForItem,
+  ]);
 
   const getDisplayedExecutionSeconds = useCallback(
       (item) => {
@@ -2844,34 +2873,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 캐러셀 등으로 날짜만 바뀐 뒤 API 로딩 — 본문 전체 blur 대신 오버레이만 */
   const showDateTransitionOverlay =
       isDateTransitionLoading && !isInitialPlanLoading;
-
-  /** 하단: 일정 즉시 생성 + 실행 시작(기존 `toggleExecutionForItem`과 동일 경로) */
-  const handleQuickCreateAndStartExecution = useCallback(() => {
-    if (isDateTransitionLoading) return;
-    const id =
-        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-            ? crypto.randomUUID()
-            : `${Date.now()}_${Math.random().toString(16).slice(2)}`;
-    const startStr = getNowStartTimeSnappedHHMM();
-    const endStr = resolveEndTimeOrDefault(startStr, "");
-    const content = `지금 집중 · ${startStr}`;
-    setItems((prev) =>
-        sortItemsByTimeAsc([
-          ...prev,
-          {
-            id,
-            startTime: startStr,
-            endTime: endStr,
-            content,
-            done: false,
-            executedSeconds: 0,
-          },
-        ])
-    );
-    window.setTimeout(() => {
-      toggleExecutionForItem(id);
-    }, 0);
-  }, [isDateTransitionLoading, sortItemsByTimeAsc, toggleExecutionForItem]);
 
   const isDayPlanLoading =
       !authReady ||
@@ -4662,82 +4663,45 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                       "shadow-[0_14px_44px_-18px_rgba(15,23,42,0.14)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/45",
                     ].join(" ")}
                 >
-                  <div className="flex min-h-[52px] min-w-0 items-stretch gap-0.5">
-                    <button
-                        type="button"
-                        aria-label="일정 추가"
-                        disabled={isDateTransitionLoading}
-                        onClick={() => {
-                          setIsDatePickerOpen(false);
-                          resetEditState();
-                          setIsScheduleComposerModalOpen(true);
-                        }}
-                        className={[
-                          "flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-end gap-0.5 rounded-xl px-0.5 py-1.5",
-                          "text-orange-600 active:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
-                          isDateTransitionLoading ? "cursor-wait opacity-45" : "",
-                        ].join(" ")}
+                  <button
+                      type="button"
+                      aria-label="일정 추가"
+                      disabled={isDateTransitionLoading}
+                      onClick={() => {
+                        setIsDatePickerOpen(false);
+                        resetEditState();
+                        setIsScheduleComposerModalOpen(true);
+                      }}
+                      className={[
+                        "flex min-h-[52px] min-w-0 flex-col items-center justify-end gap-0.5 rounded-xl px-1 py-1.5",
+                        "text-orange-600 active:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                        isDateTransitionLoading ? "cursor-wait opacity-45" : "",
+                      ].join(" ")}
+                  >
+                    <svg
+                        aria-hidden="true"
+                        className="h-[22px] w-[22px] shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                     >
-                      <svg
-                          aria-hidden="true"
-                          className="h-[22px] w-[22px] shrink-0"
-                          viewBox="0 0 24 24"
-                          fill="none"
+                      <rect x="4" y="5" width="16" height="14" rx="2" />
+                      <path d="M4 10h16M9 3v4M15 3v4" />
+                      <circle cx="17.5" cy="17.5" r="4.5" fill="currentColor" fillOpacity="0.2" stroke="none" />
+                      <path
+                          d="M17.5 15.5v4M15.5 17.5h4"
                           stroke="currentColor"
                           strokeWidth="1.75"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                      >
-                        <rect x="4" y="5" width="16" height="14" rx="2" />
-                        <path d="M4 10h16M9 3v4M15 3v4" />
-                        <circle cx="17.5" cy="17.5" r="4.5" fill="currentColor" fillOpacity="0.2" stroke="none" />
-                        <path
-                            d="M17.5 15.5v4M15.5 17.5h4"
-                            stroke="currentColor"
-                            strokeWidth="1.75"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                      <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-orange-600">
-                        일정
-                      </span>
-                    </button>
-                    <button
-                        type="button"
-                        data-testid="quick-schedule-run"
-                        aria-label="지금 일정을 만들고 실행 시작"
-                        title="지금 일정을 만들고 실행 시작"
-                        disabled={isDateTransitionLoading}
-                        onClick={handleQuickCreateAndStartExecution}
-                        className={[
-                          "flex min-h-[52px] min-w-0 flex-1 flex-col items-center justify-end gap-0.5 rounded-xl px-0.5 py-1.5",
-                          "text-orange-600 active:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
-                          isDateTransitionLoading ? "cursor-wait opacity-45" : "",
-                        ].join(" ")}
-                    >
-                      <svg
-                          aria-hidden="true"
-                          className="h-[22px] w-[22px] shrink-0"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                      >
-                        <circle cx="12" cy="12" r="8.25" opacity="0.2" />
-                        <path d="M12 8.1V12l2.85 1.75" strokeWidth="1.85" />
-                        <path
-                            d="M17.4 6.2l1.1 1.9M5.9 17.1l1.6-1.2"
-                            opacity="0.4"
-                            strokeWidth="1.35"
-                        />
-                      </svg>
-                      <span className="max-w-full truncate text-center text-[10px] font-semibold leading-tight tracking-wide text-orange-600">
-                        지금
-                      </span>
-                    </button>
-                  </div>
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-orange-600">
+                      일정
+                    </span>
+                  </button>
                   <button
                       type="button"
                       aria-label="일자별 통계 열기"
@@ -4986,6 +4950,44 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                               />
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
+                              {!editingId ? (
+                                  <button
+                                      type="button"
+                                      data-testid="schedule-add-and-run"
+                                      aria-label="추가하고 실행 시작"
+                                      title="입력한 일정을 추가하고 바로 실행합니다"
+                                      disabled={!canAdd || isDatePickerOpen}
+                                      onClick={addItemAndStartExecution}
+                                      className={[
+                                        "flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-xl border p-0",
+                                        "border-orange-200/60 bg-gradient-to-br from-orange-50/95 to-amber-50/85 text-orange-700",
+                                        "shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_6px_18px_-12px_rgba(251,146,60,0.35)] active:opacity-70",
+                                        "focus:outline-none focus:ring-2 focus:ring-orange-500/25",
+                                        !canAdd || isDatePickerOpen
+                                            ? "cursor-not-allowed opacity-40"
+                                            : "",
+                                      ].join(" ")}
+                                  >
+                                    <svg
+                                        aria-hidden="true"
+                                        viewBox="0 0 24 24"
+                                        className="h-[18px] w-[18px] shrink-0"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.6"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                      <circle cx="12" cy="12" r="8.25" opacity="0.22" />
+                                      <path d="M12 8.1V12l2.85 1.75" strokeWidth="1.85" />
+                                      <path
+                                          d="M17.4 6.2l1.1 1.9M5.9 17.1l1.6-1.2"
+                                          opacity="0.4"
+                                          strokeWidth="1.35"
+                                      />
+                                    </svg>
+                                  </button>
+                              ) : null}
                               <button
                                   type="button"
                                   aria-label="반복 내용 관리 열기"
