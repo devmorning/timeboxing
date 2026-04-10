@@ -4690,6 +4690,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                       timerRunning={isExecutionRunning}
                                                       timerSyncing={isExecutionSyncing}
                                                       onTimerToggle={() => toggleExecutionForItem(it.id)}
+                                                      onScheduleDelete={() => deleteItemById(it.id)}
                                                       startTime={it.startTime || it.time || "09:00"}
                                                       endTime={(it.endTime || "").trim()}
                                                       onChangeStartTime={(v) => {

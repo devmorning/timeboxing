@@ -120,6 +120,23 @@ function formatDurationOptionLabel(totalMin) {
   return `${h}시간 ${m}분`;
 }
 
+/** 일정 종료(삭제) — 깃발(완주·끝) */
+function ScheduleEndFlagIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="block h-[18px] w-[18px]" fill="none" aria-hidden>
+      <path d="M5 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M5 6h11l-3.5 4 3.5 4H5V6z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+        fill="currentColor"
+        fillOpacity="0.14"
+      />
+    </svg>
+  );
+}
+
 /** 종료 시간 옆 스톱워치 — running 시 초침 회전 (globals.css .timer-toggle-second-hand) */
 function TimerStopwatchIcon({ running }) {
   return (
@@ -152,6 +169,8 @@ export default function TimeRangeSelectors({
   timerRunning = false,
   timerSyncing = false,
   onTimerToggle,
+  /** 타이머 옆 일정 종료(삭제) — 부모에서 delete와 동일 동작 연결 */
+  onScheduleDelete,
   /** 한 줄 정렬: center(기본) | start */
   rowJustify = "center",
   startTime,
@@ -338,6 +357,27 @@ export default function TimeRangeSelectors({
               ].join(" ")}
             >
               <TimerStopwatchIcon running={timerRunning} />
+            </button>
+          ) : null}
+          {showTimerToggle && typeof onScheduleDelete === "function" ? (
+            <button
+              type="button"
+              disabled={disabled || timerSyncing}
+              onClick={(e) => {
+                e.stopPropagation();
+                onScheduleDelete();
+              }}
+              aria-label="일정 삭제"
+              title="일정 삭제"
+              className={[
+                "inline-flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg border border-slate-200/90 bg-[#FAFAFA] text-rose-600/90",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30",
+                "disabled:cursor-not-allowed disabled:opacity-45",
+                "hover:border-rose-300/90 hover:bg-rose-50 hover:text-rose-700",
+                timerSyncing ? "animate-pulse" : "",
+              ].join(" ")}
+            >
+              <ScheduleEndFlagIcon />
             </button>
           ) : null}
         </div>
