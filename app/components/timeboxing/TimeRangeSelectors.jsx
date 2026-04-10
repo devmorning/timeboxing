@@ -122,6 +122,10 @@ function formatDurationOptionLabel(totalMin) {
 
 export default function TimeRangeSelectors({
   showTimeControls = true,
+  /** false: 시작을 현재 시각으로 맞추는 시계 버튼 숨김 */
+  showApplyNowButton = true,
+  /** false: 구간(분) select 숨김 — 시작·종료 time 입력만 */
+  showDurationSelect = true,
   startTime,
   endTime,
   onChangeStartTime,
@@ -148,7 +152,7 @@ export default function TimeRangeSelectors({
     onChangeStartTime?.(next);
   }, [disabled, onChangeStartTime]);
 
-  /** 부모에서 start/end가 바뀌면 구간(분) 동기화 */
+  /** 부모에서 start/end가 바뀌면 구간(분) 동기화 (select 사용 시에만 종료 시각 자동 보정) */
   useEffect(() => {
     const st = startTime || "09:00";
     const et = typeof endTime === "string" ? endTime.trim() : "";
@@ -157,15 +161,17 @@ export default function TimeRangeSelectors({
     if (d == null) return;
     const clamped = clampDurationMinutes(d);
     setDurationMin(clamped);
+    if (!showDurationSelect) return;
     const snapped = endTimeFromStartAndDurationMinutes(st, clamped);
     if (snapped !== toTimeInputValue(et)) {
       onChangeEndTime?.(snapped);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- start/end만 동기화
-  }, [startTime, endTime]);
+  }, [startTime, endTime, showDurationSelect]);
 
-  /** 시작 시각만 바뀌면 같은 구간 길이로 종료 시각 재계산 */
+  /** 시작 시각만 바뀌면 같은 구간 길이로 종료 시각 재계산 (구간 select 사용 시만) */
   useEffect(() => {
+    if (!showDurationSelect) return;
     if (skipStartEffectRef.current) {
       skipStartEffectRef.current = false;
       return;
@@ -173,7 +179,7 @@ export default function TimeRangeSelectors({
     const nextEnd = endTimeFromStartAndDurationMinutes(startTime || "09:00", durationMinRef.current);
     onChangeEndTime?.(nextEnd);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 시작 변경 시에만 종료 재계산
-  }, [startTime]);
+  }, [startTime, showDurationSelect]);
 
   const applyDuration = (nextDur) => {
     const d = clampDurationMinutes(nextDur);
@@ -213,35 +219,37 @@ export default function TimeRangeSelectors({
   return (
     <>
       <div className="flex min-w-0 flex-nowrap items-center justify-center gap-1.5 overflow-x-auto pb-0.5 sm:gap-2.5">
-        <div className="flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={applyStartTimeNow}
-            title="시작 시간을 지금 시각으로 맞추기"
-            aria-label="시작 시간을 현재 시각으로 맞추기"
-            className={[
-              "inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-[#FAFAFA] text-slate-500",
-              "hover:border-orange-300/80 hover:bg-orange-50/90 hover:text-orange-600",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/35 focus-visible:ring-offset-1",
-              "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200/90 disabled:hover:bg-[#FAFAFA] disabled:hover:text-slate-500",
-            ].join(" ")}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-[18px] w-[18px]"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.85"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <circle cx="12" cy="12" r="7.25" />
-              <path d="M12 8.15V12l2.9 1.93" />
-              <path d="M17.2 6.8c.35.28.68.58 1 1" stroke="#ea580c" />
-            </svg>
-          </button>
+        <div className={`flex shrink-0 items-center ${showApplyNowButton ? "gap-1" : ""}`}>
+          {showApplyNowButton ? (
+              <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={applyStartTimeNow}
+                  title="시작 시간을 지금 시각으로 맞추기"
+                  aria-label="시작 시간을 현재 시각으로 맞추기"
+                  className={[
+                    "inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-[#FAFAFA] text-slate-500",
+                    "hover:border-orange-300/80 hover:bg-orange-50/90 hover:text-orange-600",
+                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/35 focus-visible:ring-offset-1",
+                    "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200/90 disabled:hover:bg-[#FAFAFA] disabled:hover:text-slate-500",
+                  ].join(" ")}
+              >
+                <svg
+                    viewBox="0 0 24 24"
+                    className="h-[18px] w-[18px]"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.85"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                >
+                  <circle cx="12" cy="12" r="7.25" />
+                  <path d="M12 8.15V12l2.9 1.93" />
+                  <path d="M17.2 6.8c.35.28.68.58 1 1" stroke="#ea580c" />
+                </svg>
+              </button>
+          ) : null}
           <div className="w-[104px] shrink-0">
             <label className="block">
               <span className="sr-only">시작 시간 선택</span>
@@ -276,27 +284,29 @@ export default function TimeRangeSelectors({
             />
           </label>
         </div>
-        <div className="shrink-0">
-          <label className="sr-only" htmlFor="time-range-duration-select">
-            시작부터 종료까지 구간 길이
-          </label>
-          <select
-            id="time-range-duration-select"
-            className={selectClass}
-            disabled={disabled}
-            value={ALLOWED_DURATIONS.includes(durationMin) ? String(durationMin) : ""}
-            onChange={onSelectDuration}
-          >
-            {!ALLOWED_DURATIONS.includes(durationMin) ? (
-              <option value="">{durationMin}분</option>
-            ) : null}
-            {ALLOWED_DURATIONS.map((m) => (
-              <option key={m} value={m}>
-                {formatDurationOptionLabel(m)}
-              </option>
-            ))}
-          </select>
-        </div>
+        {showDurationSelect ? (
+            <div className="shrink-0">
+              <label className="sr-only" htmlFor="time-range-duration-select">
+                시작부터 종료까지 구간 길이
+              </label>
+              <select
+                  id="time-range-duration-select"
+                  className={selectClass}
+                  disabled={disabled}
+                  value={ALLOWED_DURATIONS.includes(durationMin) ? String(durationMin) : ""}
+                  onChange={onSelectDuration}
+              >
+                {!ALLOWED_DURATIONS.includes(durationMin) ? (
+                    <option value="">{durationMin}분</option>
+                ) : null}
+                {ALLOWED_DURATIONS.map((m) => (
+                    <option key={m} value={m}>
+                      {formatDurationOptionLabel(m)}
+                    </option>
+                ))}
+              </select>
+            </div>
+        ) : null}
       </div>
       {showNextDayHint ? (
         <p className="mx-auto w-full max-w-[min(100%,20rem)] pt-0.5 text-center text-[11px] leading-snug text-slate-400">

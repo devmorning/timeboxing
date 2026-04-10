@@ -4702,6 +4702,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                   >
                                                     <div data-day-swipe-ignore className="min-w-0 w-full">
                                                       <TimeRangeSelectors
+                                                          showApplyNowButton={false}
+                                                          showDurationSelect={false}
                                                           startTime={inlineScheduleEdit.startTime}
                                                           endTime={inlineScheduleEdit.endTime}
                                                           onChangeStartTime={(v) => {
