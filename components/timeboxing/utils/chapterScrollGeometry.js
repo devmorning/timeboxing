@@ -18,10 +18,7 @@ export function getScrollContentOffsetTop(root, el) {
   );
 }
 
-/**
- * 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스.
- * 하단 러버밴드 보정은 `resolveMainChapterIdxWithBottomRubberGuard`에서 처리.
- */
+/** 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스 */
 export function getMainChapterIdxFromScrollRoot(root) {
   if (!root) return 0;
   const chapters = Array.from(root.querySelectorAll("[data-main-chapter]"));
@@ -33,54 +30,6 @@ export function getMainChapterIdxFromScrollRoot(root) {
     if (el instanceof HTMLElement && getScrollContentOffsetTop(root, el) <= probeTop) idx = i;
   }
   return idx;
-}
-
-/** probe만 위로 튀는 작은 러버밴드 — 래치 없이도 막기 (94d5999의 140px을 소폭 확대) */
-export const MAIN_CHAPTER_RUBBER_IMMEDIATE_DIST_PX = 220;
-
-/** 한 번이라도 이 거리 안쪽이면 래치 arm — 큰 탄성에서 dist가 커져도 유지 */
-export const MAIN_CHAPTER_LATCH_ARM_DIST_PX = 340;
-
-/** 마지막 챕터 상단보다 이만큼 위로 스크롤하면 래치 해제 */
-export const MAIN_CHAPTER_LATCH_CLEAR_ABOVE_LAST_PX = 350;
-
-/**
- * 챕터3 끝 하단 오버스크롤 시 마지막 챕터 인덱스가 위로 역행하는 것 방지.
- * @param {{ current: boolean }} latchRef
- */
-export function resolveMainChapterIdxWithBottomRubberGuard({
-  raw,
-  prevIdx,
-  lastIdx,
-  scrollTop,
-  scrollRange,
-  lastChapterScrollTop,
-  latchRef,
-}) {
-  if (lastIdx < 0) return raw;
-  if (scrollRange <= 8) {
-    latchRef.current = false;
-    return raw;
-  }
-
-  const distFromBottom = Math.max(0, scrollRange - scrollTop);
-
-  if (distFromBottom < MAIN_CHAPTER_LATCH_ARM_DIST_PX) {
-    latchRef.current = true;
-  }
-  if (scrollTop < lastChapterScrollTop - MAIN_CHAPTER_LATCH_CLEAR_ABOVE_LAST_PX) {
-    latchRef.current = false;
-  }
-
-  if (prevIdx === lastIdx && raw < lastIdx && scrollRange > 80) {
-    if (
-      distFromBottom < MAIN_CHAPTER_RUBBER_IMMEDIATE_DIST_PX ||
-      latchRef.current
-    ) {
-      return lastIdx;
-    }
-  }
-  return raw;
 }
 
 /** 날짜 스와이프 중 옆 열에 더해지는 세로 패럴렉스 — 가로 당김(px)당 세로 이동 비율 */

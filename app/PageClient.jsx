@@ -43,7 +43,6 @@ import {
   getChapterBlurParallaxTranslateY,
   getMainChapterIdxFromScrollRoot,
   getScrollContentOffsetTop,
-  resolveMainChapterIdxWithBottomRubberGuard,
 } from "../components/timeboxing/utils/chapterScrollGeometry.js";
 
 const SECONDS_PER_DAY = 86400;
@@ -1318,8 +1317,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 챕터별 글로우 패럴렉스 translateY(px) — 스크롤 픽셀마다 갱신 */
   const [mainChapterParallaxYs, setMainChapterParallaxYs] = useState(() => [0, 0, 0]);
   const mainChapterScrollSyncRafRef = useRef(null);
-  /** 하단 러버밴드 시 마지막 챕터 유지(큰 탄성에서 dist만으로는 부족할 때) */
-  const mainChapterBottomRubberLatchRef = useRef(false);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   /** 드래그 오프셋(px) — 캐러셀에서 인접 날 미리보기 */
@@ -1905,10 +1902,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   useEffect(() => {
     setExpandedScheduleItemId(null);
-  }, [selectedDate]);
-
-  useEffect(() => {
-    mainChapterBottomRubberLatchRef.current = false;
   }, [selectedDate]);
 
   const resetExecutionState = useCallback(() => {
@@ -3091,25 +3084,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       el instanceof HTMLElement ? getChapterBlurParallaxTranslateY(root, el) : 0
     );
     setMainChapterParallaxYs(ys.length ? ys : [0, 0, 0]);
-
-    const raw = getMainChapterIdxFromScrollRoot(root);
-    const scrollRange = root.scrollHeight - root.clientHeight;
-    const lastIdx = chapters.length - 1;
-    const lastCh = lastIdx >= 0 ? chapters[lastIdx] : null;
-    const lastChapterScrollTop =
-      lastCh instanceof HTMLElement ? getScrollContentOffsetTop(root, lastCh) : 0;
-
-    setMainActiveChapterIdx((prev) =>
-        resolveMainChapterIdxWithBottomRubberGuard({
-          raw,
-          prevIdx: prev,
-          lastIdx,
-          scrollTop: root.scrollTop,
-          scrollRange,
-          lastChapterScrollTop,
-          latchRef: mainChapterBottomRubberLatchRef,
-        })
-    );
+    setMainActiveChapterIdx(getMainChapterIdxFromScrollRoot(root));
   }, []);
 
   const onMainChapterScroll = useCallback(() => {
@@ -4342,7 +4317,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           "h-[min(calc(100dvh-8.25rem-env(safe-area-inset-bottom)),760px)] snap-y snap-mandatory space-y-8 pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scroll-pb-[max(8rem,calc(6rem+env(safe-area-inset-bottom)))] scrollbar-none",
                           daySwipeLocksVerticalScroll
                             ? "overflow-y-hidden overscroll-y-none touch-none"
-                            : "overflow-y-auto overscroll-y-none",
+                            : "overflow-y-auto overscroll-y-contain",
                         ].join(" ")}
                     >
                       <section
