@@ -120,7 +120,7 @@ function formatDurationOptionLabel(totalMin) {
   return `${h}시간 ${m}분`;
 }
 
-/** 일정 종료(삭제) — 깃발(완주·끝) */
+/** 일정 종료 — 깃발(완주·끝): 타이머 종료 + 필요 시 종료 시각 연장 */
 function ScheduleEndFlagIcon() {
   return (
     <svg viewBox="0 0 24 24" className="block h-[18px] w-[18px]" fill="none" aria-hidden>
@@ -169,8 +169,11 @@ export default function TimeRangeSelectors({
   timerRunning = false,
   timerSyncing = false,
   onTimerToggle,
-  /** 타이머 옆 일정 종료(삭제) — 부모에서 delete와 동일 동작 연결 */
-  onScheduleDelete,
+  /** 타이머 옆 일정 종료 — 타이머 중지·종료 시각 연장 등 부모에서 처리 */
+  onScheduleEnd,
+  /** true: 깃발 버튼 비활성(오늘 아님·자정 넘김 등) */
+  scheduleEndDisabled = false,
+  scheduleEndButtonTitle = "타이머를 종료하고, 지금이 계획 종료보다 늦으면 종료 시각을 지금으로 맞춥니다",
   /** 한 줄 정렬: center(기본) | start */
   rowJustify = "center",
   startTime,
@@ -359,21 +362,23 @@ export default function TimeRangeSelectors({
               <TimerStopwatchIcon running={timerRunning} />
             </button>
           ) : null}
-          {showTimerToggle && typeof onScheduleDelete === "function" ? (
+          {showTimerToggle && typeof onScheduleEnd === "function" ? (
             <button
               type="button"
-              disabled={disabled || timerSyncing}
+              disabled={disabled || timerSyncing || scheduleEndDisabled}
               onClick={(e) => {
                 e.stopPropagation();
-                onScheduleDelete();
+                onScheduleEnd();
               }}
-              aria-label="일정 삭제"
-              title="일정 삭제"
+              aria-label={scheduleEndButtonTitle}
+              title={scheduleEndButtonTitle}
               className={[
-                "inline-flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg border border-slate-200/90 bg-[#FAFAFA] text-rose-600/90",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/30",
+                "inline-flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg border bg-[#FAFAFA]",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30",
                 "disabled:cursor-not-allowed disabled:opacity-45",
-                "hover:border-rose-300/90 hover:bg-rose-50 hover:text-rose-700",
+                scheduleEndDisabled
+                  ? "border-emerald-200/50 bg-emerald-50/50 text-emerald-800/45 ring-1 ring-inset ring-emerald-900/10"
+                  : "border-emerald-200/80 text-emerald-800/95 hover:border-emerald-300/90 hover:bg-emerald-50 hover:text-emerald-900",
                 timerSyncing ? "animate-pulse" : "",
               ].join(" ")}
             >

@@ -2136,6 +2136,63 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       [sortItemsByTimeAsc]
   );
 
+  /** 오늘 날짜 플랜만: 현재 시각이 계획 종료보다 늦을 때만 종료 시각을 지금으로 맞춤 (자정 넘김 제외) */
+  const extendItemEndTimeToNowIfPastPlannedEnd = useCallback(
+      (id) => {
+        if (!selectedIsToday) return;
+        setItems((prev) => {
+          const it = prev.find((x) => x.id === id);
+          if (!it) return prev;
+          const st = it.startTime || it.time || "09:00";
+          const etRaw = (it.endTime || "").trim();
+          const resolvedEnd = resolveEndTimeOrDefault(st, etRaw);
+          if (!resolvedEnd) return prev;
+          if (spansMidnight(st, resolvedEnd)) return prev;
+
+          const endSec = parseHHMMToSecondsFromMidnight(resolvedEnd);
+          if (endSec == null) return prev;
+          const now = new Date();
+          const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+          if (nowSec <= endSec) return prev;
+
+          const newEnd = secondsToHHMM(nowSec);
+          return sortItemsByTimeAsc(
+              prev.map((x) => (x.id === id ? { ...x, endTime: newEnd } : x))
+          );
+        });
+      },
+      [selectedIsToday, sortItemsByTimeAsc]
+  );
+
+  /** 인라인 깃발: 타이머 종료 후, 지금이 계획 종료보다 늦으면 종료 시각 연장 */
+  const handleScheduleItemEndFromFlag = useCallback(
+      async (id) => {
+        if (!selectedIsToday) return;
+        const target = itemsRef.current.find((x) => x.id === id);
+        if (!target) return;
+        const st = target.startTime || target.time || "09:00";
+        const resolvedEnd = resolveEndTimeOrDefault(st, (target.endTime || "").trim());
+        if (resolvedEnd && spansMidnight(st, resolvedEnd)) {
+          const running =
+              Boolean(target.executionStartedAt) || Boolean(target.done);
+          if (running) {
+            await toggleExecutionForItem(id);
+          }
+          return;
+        }
+
+        const running =
+            Boolean(target.executionStartedAt) || Boolean(target.done);
+
+        if (running) {
+          await toggleExecutionForItem(id);
+        }
+
+        extendItemEndTimeToNowIfPastPlannedEnd(id);
+      },
+      [selectedIsToday, toggleExecutionForItem, extendItemEndTimeToNowIfPastPlannedEnd]
+  );
+
   /** 일정 추가 모달: 항목 추가 직후 실행(타이머) 시작 — `+`와 동일 데이터, 모달만 닫고 실행 */
   const addItemAndStartExecution = useCallback(() => {
     if (!canAdd) return;
@@ -4533,6 +4590,21 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 activeExecutionStartedAtMs != null));
                                     const isExpanded =
                                       !isCarry && expandedScheduleItemId === it.id;
+                                    const rowSt = it.startTime || it.time || "09:00";
+                                    const rowEtResolved = resolveEndTimeOrDefault(
+                                        rowSt,
+                                        (it.endTime || "").trim()
+                                    );
+                                    const rowSpans = Boolean(
+                                        rowEtResolved && spansMidnight(rowSt, rowEtResolved)
+                                    );
+                                    const scheduleEndFlagDisabled =
+                                        isExecutionSyncing || !selectedIsToday || rowSpans;
+                                    const scheduleEndFlagTitle = !selectedIsToday
+                                      ? "오늘 날짜에서만 사용할 수 있습니다"
+                                      : rowSpans
+                                        ? "자정 넘김 일정은 이 버튼으로 연장할 수 없습니다"
+                                        : "타이머를 종료하고, 지금이 계획 종료보다 늦으면 종료 시각을 지금으로 맞춥니다";
                                     return (
                                         <div
                                             key={rowKey}
@@ -4634,7 +4706,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                       timerRunning={isExecutionRunning}
                                                       timerSyncing={isExecutionSyncing}
                                                       onTimerToggle={() => toggleExecutionForItem(it.id)}
-                                                      onScheduleDelete={() => deleteItemById(it.id)}
+                                                      onScheduleEnd={() => void handleScheduleItemEndFromFlag(it.id)}
+                                                      scheduleEndDisabled={scheduleEndFlagDisabled}
+                                                      scheduleEndButtonTitle={scheduleEndFlagTitle}
                                                       startTime={it.startTime || it.time || "09:00"}
                                                       endTime={(it.endTime || "").trim()}
                                                       onChangeStartTime={(v) => {
