@@ -162,6 +162,21 @@ body {
     animation: day-digit-pop-down 0.48s cubic-bezier(0.36, 1, 0.66, 1) forwards;
   }
 
+  /** TimeRangeSelectors 스톱워치 — 초침 60초 한 바퀴 */
+  @keyframes timer-toggle-second-hand {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .timer-toggle-second-hand {
+    transform-origin: 12px 12px;
+    animation: timer-toggle-second-hand 60s linear infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .main-date-sheen-track,
     .main-date-slot-glow {
@@ -171,6 +186,10 @@ body {
     .day-digit-pop,
     .day-digit-pop-up,
     .day-digit-pop-down {
+      animation: none !important;
+    }
+
+    .timer-toggle-second-hand {
       animation: none !important;
     }
   }

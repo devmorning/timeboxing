@@ -4686,6 +4686,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                       rowJustify="start"
                                                       showApplyNowButton={false}
                                                       showDurationSelect={false}
+                                                      showTimerToggle
+                                                      timerRunning={isExecutionRunning}
+                                                      timerSyncing={isExecutionSyncing}
+                                                      onTimerToggle={() => toggleExecutionForItem(it.id)}
                                                       startTime={it.startTime || it.time || "09:00"}
                                                       endTime={(it.endTime || "").trim()}
                                                       onChangeStartTime={(v) => {
@@ -4716,24 +4720,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 />
                                               </div>
                                               <div className="flex min-w-0 flex-wrap items-stretch gap-2">
-                                                <button
-                                                  type="button"
-                                                  disabled={isExecutionSyncing}
-                                                  onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    toggleExecutionForItem(it.id);
-                                                  }}
-                                                  className={[
-                                                    "inline-flex h-8 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
-                                                    isExecutionRunning
-                                                      ? "border-orange-300 bg-orange-100/80 text-orange-700 hover:bg-orange-100"
-                                                      : "border-stone-200 bg-stone-100/80 text-stone-700 hover:bg-stone-100",
-                                                    isExecutionSyncing ? "opacity-50" : "",
-                                                  ].join(" ")}
-                                                >
-                                                  {isExecutionRunning ? "타이머 중지" : "타이머 시작"}
-                                                </button>
                                                 {(() => {
                                                   const rowSt = it.startTime || it.time || "09:00";
                                                   const rowEtResolved = resolveEndTimeOrDefault(
