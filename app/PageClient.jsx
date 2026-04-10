@@ -1250,8 +1250,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   const [showDayPlanSkeleton, setShowDayPlanSkeleton] = useState(true);
   const [showDayPlanContent, setShowDayPlanContent] = useState(false);
   const [expandedScheduleItemId, setExpandedScheduleItemId] = useState(null);
-  /** 일정 목록 인라인 펼침: 시간·내용 수정 초안 */
-  const [inlineScheduleEdit, setInlineScheduleEdit] = useState(null);
   /** 인라인 캘린더에 표시할 월 목록 `YYYY-MM` (열 때만 설정) */
   const [calendarMonthRange, setCalendarMonthRange] = useState(null);
   const [calendarVisibleRange, setCalendarVisibleRange] = useState({ start: 0, end: 0 });
@@ -1904,26 +1902,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   useEffect(() => {
     setExpandedScheduleItemId(null);
-    setInlineScheduleEdit(null);
   }, [selectedDate]);
-
-  useLayoutEffect(() => {
-    if (!expandedScheduleItemId) {
-      setInlineScheduleEdit(null);
-      return;
-    }
-    const it = itemsRef.current.find((x) => x.id === expandedScheduleItemId);
-    if (!it) {
-      setInlineScheduleEdit(null);
-      return;
-    }
-    setInlineScheduleEdit({
-      id: it.id,
-      startTime: it.startTime || it.time || "09:00",
-      endTime: (it.endTime || "").trim(),
-      content: it.content || "",
-    });
-  }, [expandedScheduleItemId]);
 
   const resetExecutionState = useCallback(() => {
     setActiveExecutionItemId(null);
@@ -2184,31 +2163,34 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       [selectedIsToday, toggleExecutionForItem, extendItemEndTimeToNowIfPastPlannedEnd]
   );
 
-  /** 목록 인라인 펼침: 시간·내용 저장 */
-  const commitInlineScheduleEdit = useCallback(() => {
-    if (!inlineScheduleEdit) return;
-    const trimmed = inlineScheduleEdit.content.trim();
-    if (!trimmed) return;
-    const resolvedEnd = resolveEndTimeOrDefault(
-        inlineScheduleEdit.startTime,
-        inlineScheduleEdit.endTime
-    );
-    const id = inlineScheduleEdit.id;
-    setItems((prev) =>
-        sortItemsByTimeAsc(
-            prev.map((it) =>
-                it.id === id
-                    ? {
-                      ...it,
-                      startTime: inlineScheduleEdit.startTime,
-                      endTime: resolvedEnd,
-                      content: trimmed,
-                    }
-                    : it
+  /** 목록 인라인 펼침: 항목 필드 즉시 반영 */
+  const patchScheduleItemById = useCallback(
+      (id, patch) => {
+        setItems((prev) =>
+            sortItemsByTimeAsc(
+                prev.map((x) => (x.id === id ? { ...x, ...patch } : x))
             )
-        )
-    );
-  }, [inlineScheduleEdit, sortItemsByTimeAsc]);
+        );
+      },
+      [sortItemsByTimeAsc]
+  );
+
+  /** 종료 시각 입력 시 최신 시작 시각 기준으로 resolve (연쇄 입력 대비) */
+  const patchScheduleItemEndTimeInline = useCallback(
+      (id, endRaw) => {
+        const et = typeof endRaw === "string" ? endRaw.trim() : "";
+        setItems((prev) => {
+          const cur = prev.find((x) => x.id === id);
+          if (!cur) return prev;
+          const st = cur.startTime || cur.time || "09:00";
+          const resolvedEnd = resolveEndTimeOrDefault(st, et);
+          return sortItemsByTimeAsc(
+              prev.map((x) => (x.id === id ? { ...x, endTime: resolvedEnd } : x))
+          );
+        });
+      },
+      [sortItemsByTimeAsc]
+  );
 
   /** 일정 추가 모달: 항목 추가 직후 실행(타이머) 시작 — `+`와 동일 데이터, 모달만 닫고 실행 */
   const addItemAndStartExecution = useCallback(() => {
@@ -4691,74 +4673,48 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                               data-day-swipe-ignore
                                               className="mt-2 min-w-0 border-t border-stone-200/70 pt-2"
                                             >
-                                              {inlineScheduleEdit?.id === it.id ? (
-                                                  <div
-                                                      role="group"
-                                                      aria-label="일정 시간·내용 편집"
-                                                      className="mb-3 space-y-2.5"
-                                                      onClick={(e) => e.stopPropagation()}
-                                                      onPointerDown={(e) => e.stopPropagation()}
-                                                      onKeyDown={(e) => e.stopPropagation()}
-                                                  >
-                                                    <div data-day-swipe-ignore className="min-w-0 w-full">
-                                                      <TimeRangeSelectors
-                                                          showApplyNowButton={false}
-                                                          showDurationSelect={false}
-                                                          startTime={inlineScheduleEdit.startTime}
-                                                          endTime={inlineScheduleEdit.endTime}
-                                                          onChangeStartTime={(v) => {
-                                                            setInlineScheduleEdit((d) =>
-                                                                d && d.id === it.id ? { ...d, startTime: v } : d
-                                                            );
-                                                          }}
-                                                          onChangeEndTime={(v) => {
-                                                            setInlineScheduleEdit((d) =>
-                                                                d && d.id === it.id ? { ...d, endTime: v } : d
-                                                            );
-                                                          }}
-                                                          disabled={isExecutionSyncing}
-                                                      />
-                                                    </div>
-                                                    <ComposerContentInput
-                                                        value={inlineScheduleEdit.content}
-                                                        placeholder="예: 고객 피드백 정리"
-                                                        disabled={isExecutionSyncing}
-                                                        onChange={(v) => {
-                                                          setInlineScheduleEdit((d) =>
-                                                              d && d.id === it.id ? { ...d, content: v } : d
-                                                          );
-                                                        }}
-                                                        inputClassName={[
-                                                          "!border-0 rounded-xl !bg-stone-100/70 px-3.5 py-3 text-base leading-relaxed tracking-[-0.01em] text-stone-800",
-                                                          "min-h-[40px]",
-                                                          "placeholder:text-stone-400",
-                                                          "focus:!bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/12",
-                                                          "disabled:!bg-stone-200/40 disabled:text-stone-400",
-                                                        ].join(" ")}
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        data-testid="schedule-item-inline-save"
-                                                        disabled={
-                                                          isExecutionSyncing ||
-                                                          !inlineScheduleEdit.content.trim()
-                                                        }
-                                                        onClick={(e) => {
-                                                          e.stopPropagation();
-                                                          commitInlineScheduleEdit();
-                                                        }}
-                                                        className={[
-                                                          "flex h-9 w-full select-none items-center justify-center rounded-xl border border-orange-200/70 px-3 text-[13px] font-semibold",
-                                                          "bg-gradient-to-r from-orange-50/95 to-amber-50/85 text-orange-800 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]",
-                                                          "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
-                                                          "active:opacity-90",
-                                                          "disabled:cursor-not-allowed disabled:opacity-45",
-                                                        ].join(" ")}
-                                                    >
-                                                      저장
-                                                    </button>
-                                                  </div>
-                                              ) : null}
+                                              <div
+                                                  role="group"
+                                                  aria-label="일정 시간·내용 편집"
+                                                  className="mb-3 space-y-2.5"
+                                                  onClick={(e) => e.stopPropagation()}
+                                                  onPointerDown={(e) => e.stopPropagation()}
+                                                  onKeyDown={(e) => e.stopPropagation()}
+                                              >
+                                                <div data-day-swipe-ignore className="min-w-0 w-full">
+                                                  <TimeRangeSelectors
+                                                      rowJustify="start"
+                                                      showApplyNowButton={false}
+                                                      showDurationSelect={false}
+                                                      startTime={it.startTime || it.time || "09:00"}
+                                                      endTime={(it.endTime || "").trim()}
+                                                      onChangeStartTime={(v) => {
+                                                        const nextStart =
+                                                            v && v.length >= 4 ? v.slice(0, 5) : "09:00";
+                                                        patchScheduleItemById(it.id, { startTime: nextStart });
+                                                      }}
+                                                      onChangeEndTime={(v) => {
+                                                        patchScheduleItemEndTimeInline(it.id, v);
+                                                      }}
+                                                      disabled={isExecutionSyncing}
+                                                  />
+                                                </div>
+                                                <ComposerContentInput
+                                                    value={typeof it.content === "string" ? it.content : ""}
+                                                    placeholder="예: 고객 피드백 정리"
+                                                    disabled={isExecutionSyncing}
+                                                    onChange={(v) => {
+                                                      patchScheduleItemById(it.id, { content: v });
+                                                    }}
+                                                    inputClassName={[
+                                                      "!border-0 rounded-xl !bg-stone-100/70 px-3.5 py-3 text-base leading-relaxed tracking-[-0.01em] text-stone-800",
+                                                      "min-h-[40px]",
+                                                      "placeholder:text-stone-400",
+                                                      "focus:!bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/12",
+                                                      "disabled:!bg-stone-200/40 disabled:text-stone-400",
+                                                    ].join(" ")}
+                                                />
+                                              </div>
                                               <div className="flex min-w-0 flex-wrap items-stretch gap-2">
                                                 <button
                                                   type="button"

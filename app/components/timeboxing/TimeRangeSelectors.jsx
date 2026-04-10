@@ -126,6 +126,8 @@ export default function TimeRangeSelectors({
   showApplyNowButton = true,
   /** false: 구간(분) select 숨김 — 시작·종료 time 입력만 */
   showDurationSelect = true,
+  /** 한 줄 정렬: center(기본) | start */
+  rowJustify = "center",
   startTime,
   endTime,
   onChangeStartTime,
@@ -196,10 +198,12 @@ export default function TimeRangeSelectors({
     applyDuration(v);
   };
 
+  const rowJustifyClass = rowJustify === "start" ? "justify-start" : "justify-center";
+
   if (!showTimeControls) {
     return (
       <div
-        className="flex min-w-0 flex-nowrap items-center justify-center gap-1.5 overflow-x-auto pb-0.5 sm:gap-2.5"
+        className={`flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 sm:gap-2.5 ${rowJustifyClass}`}
         aria-hidden="true"
       >
         <div className="flex shrink-0 items-center gap-1">
@@ -218,7 +222,9 @@ export default function TimeRangeSelectors({
 
   return (
     <>
-      <div className="flex min-w-0 flex-nowrap items-center justify-center gap-1.5 overflow-x-auto pb-0.5 sm:gap-2.5">
+      <div
+          className={`flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto pb-0.5 sm:gap-2.5 ${rowJustifyClass}`}
+      >
         <div className={`flex shrink-0 items-center ${showApplyNowButton ? "gap-1" : ""}`}>
           {showApplyNowButton ? (
               <button
