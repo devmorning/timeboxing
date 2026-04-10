@@ -142,40 +142,11 @@ export default function TimeRangeSelectors({
 
   const skipStartEffectRef = useRef(true);
 
-  /** '지금 맞춤' 클릭 피드백 — 애니 재생용 카운터(연속 클릭마다 글로우·흔들림 재생) */
-  const [nowSnapFx, setNowSnapFx] = useState(0);
-  const [reduceMotionRing, setReduceMotionRing] = useState(false);
-  const [nowToast, setNowToast] = useState({ id: 0, visible: false });
-
   const applyStartTimeNow = useCallback(() => {
     if (disabled) return;
     const next = nowHHMMSnappedToStep(STEP_SECONDS);
     onChangeStartTime?.(next);
-    setNowSnapFx((n) => n + 1);
-    setNowToast((t) => ({ id: t.id + 1, visible: true }));
   }, [disabled, onChangeStartTime]);
-
-  /** prefers-reduced-motion: 짧은 링 피드백(CSS 애니 대신) */
-  useEffect(() => {
-    if (nowSnapFx === 0) return undefined;
-    const mq =
-        typeof window !== "undefined" && typeof window.matchMedia === "function"
-          ? window.matchMedia("(prefers-reduced-motion: reduce)")
-          : null;
-    if (!mq?.matches) return undefined;
-    setReduceMotionRing(true);
-    const t = window.setTimeout(() => setReduceMotionRing(false), 700);
-    return () => window.clearTimeout(t);
-  }, [nowSnapFx]);
-
-  /** 토스트: 애니메이션 미지원·중단 시에도 잔류하지 않도록 */
-  useEffect(() => {
-    if (!nowToast.visible) return undefined;
-    const t = window.setTimeout(() => {
-      setNowToast((s) => (s.visible ? { ...s, visible: false } : s));
-    }, 2000);
-    return () => window.clearTimeout(t);
-  }, [nowToast.visible, nowToast.id]);
 
   /** 부모에서 start/end가 바뀌면 구간(분) 동기화 */
   useEffect(() => {
@@ -242,7 +213,7 @@ export default function TimeRangeSelectors({
   return (
     <>
       <div className="flex min-w-0 flex-nowrap items-center justify-center gap-1.5 overflow-x-auto pb-0.5 sm:gap-2.5">
-        <div className="relative flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             disabled={disabled}
@@ -250,54 +221,31 @@ export default function TimeRangeSelectors({
             title="시작 시간을 지금 시각으로 맞추기"
             aria-label="시작 시간을 현재 시각으로 맞추기"
             className={[
-              "relative inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-[#FAFAFA] text-slate-500",
-              "transition-[transform,background-color,border-color,color,box-shadow] duration-200 ease-out",
+              "inline-flex h-10 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200/90 bg-[#FAFAFA] text-slate-500",
               "hover:border-orange-300/80 hover:bg-orange-50/90 hover:text-orange-600",
               "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/35 focus-visible:ring-offset-1",
-              "active:scale-[0.94] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200/90 disabled:hover:bg-[#FAFAFA] disabled:hover:text-slate-500",
-              "motion-reduce:active:scale-100",
+              "disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-slate-200/90 disabled:hover:bg-[#FAFAFA] disabled:hover:text-slate-500",
             ].join(" ")}
           >
-            <span
-              key={nowSnapFx}
-              className={nowSnapFx > 0 ? "inline-flex motion-safe:animate-now-snap-wiggle" : "inline-flex"}
+            <svg
+              viewBox="0 0 24 24"
+              className="h-[18px] w-[18px]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.85"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               aria-hidden
             >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-[18px] w-[18px]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.85"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="7.25" />
-                <path d="M12 8.15V12l2.9 1.93" />
-                <path d="M17.2 6.8c.35.28.68.58 1 1" stroke="#ea580c" />
-              </svg>
-            </span>
+              <circle cx="12" cy="12" r="7.25" />
+              <path d="M12 8.15V12l2.9 1.93" />
+              <path d="M17.2 6.8c.35.28.68.58 1 1" stroke="#ea580c" />
+            </svg>
           </button>
-          {nowToast.visible ? (
-            <span
-              key={nowToast.id}
-              className={[
-                "pointer-events-none absolute -top-9 left-[calc(50%+0.5rem)] z-10 whitespace-nowrap rounded-full",
-                "border border-orange-200/90 bg-gradient-to-r from-orange-50 to-amber-50 px-2.5 py-0.5",
-                "text-[11px] font-bold tracking-tight text-orange-700 shadow-[0_6px_16px_-4px_rgba(234,88,12,0.35)]",
-                "motion-safe:animate-now-toast-pop motion-reduce:animate-none motion-reduce:top-[-1.85rem]",
-              ].join(" ")}
-              role="status"
-              onAnimationEnd={() => setNowToast((t) => ({ ...t, visible: false }))}
-            >
-              지금이야! ✨
-            </span>
-          ) : null}
           <div className="w-[104px] shrink-0">
             <label className="block">
               <span className="sr-only">시작 시간 선택</span>
               <input
-                key={nowSnapFx > 0 ? `snap-${nowSnapFx}` : "start-time"}
                 type="time"
                 step={STEP_SECONDS}
                 value={startValue}
@@ -306,11 +254,7 @@ export default function TimeRangeSelectors({
                   const v = e.target.value;
                   onChangeStartTime?.(v && v.length >= 4 ? v.slice(0, 5) : "09:00");
                 }}
-                className={[
-                  inputClass,
-                  nowSnapFx > 0 ? "motion-safe:animate-now-input-glow" : "",
-                  reduceMotionRing ? "ring-2 ring-orange-400/50 ring-offset-1" : "",
-                ].join(" ")}
+                className={inputClass}
               />
             </label>
           </div>

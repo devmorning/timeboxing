@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import TimeRangeSelectors from "../app/components/timeboxing/TimeRangeSelectors.jsx";
 
 const STEP = 300;
@@ -60,22 +60,6 @@ describe("TimeRangeSelectors — 지금 맞춤", () => {
     expect(screen.getByLabelText("종료 시간 선택")).toHaveValue(expectedEnd);
   });
 
-  it("피드백 토스트가 나타났다가 타임아웃 후 사라진다 (jsdom에서 animationend 미발화 대비)", async () => {
-    jest.setSystemTime(new Date(2026, 3, 10, 10, 0, 0));
-
-    render(<Harness />);
-
-    fireEvent.click(screen.getByRole("button", { name: "시작 시간을 현재 시각으로 맞추기" }));
-
-    expect(screen.getByRole("status")).toHaveTextContent("지금이야!");
-
-    await act(async () => {
-      jest.advanceTimersByTime(2100);
-    });
-
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-  });
-
   it("disabled일 때 버튼이 비활성화되고 클릭해도 onChangeStartTime이 호출되지 않는다", () => {
     jest.setSystemTime(new Date(2026, 3, 10, 12, 0, 0));
     const onStart = jest.fn();
@@ -96,24 +80,16 @@ describe("TimeRangeSelectors — 지금 맞춤", () => {
     expect(onStart).not.toHaveBeenCalled();
   });
 
-  it("연속 클릭마다 onChangeStartTime이 다시 호출되고 토스트 id가 갱신된다", async () => {
+  it("시스템 시각이 바뀐 뒤 다시 누르면 새 스냅 시각이 반영된다", () => {
     jest.setSystemTime(new Date(2026, 3, 10, 15, 0, 0));
-
-    render(<Harness />);
+    render(<Harness initialStart="09:00" initialEnd="09:30" />);
     const btn = screen.getByRole("button", { name: "시작 시간을 현재 시각으로 맞추기" });
 
     fireEvent.click(btn);
-    const first = screen.getByRole("status");
-    expect(first).toBeInTheDocument();
+    expect(screen.getByLabelText("시작 시간 선택")).toHaveValue("15:00");
 
-    await act(async () => {
-      jest.advanceTimersByTime(2100);
-    });
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
-
-    jest.setSystemTime(new Date(2026, 3, 10, 15, 5, 0));
+    jest.setSystemTime(new Date(2026, 3, 10, 15, 7, 0));
     fireEvent.click(btn);
-
-    expect(screen.getByRole("status")).toHaveTextContent("지금이야!");
+    expect(screen.getByLabelText("시작 시간 선택")).toHaveValue("15:05");
   });
 });
