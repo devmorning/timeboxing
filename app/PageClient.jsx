@@ -4616,9 +4616,9 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                           {!isCarry && isExpanded ? (
                                             <div
                                               data-day-swipe-ignore
-                                              className="mt-2 overflow-hidden border-t border-stone-200/70 pt-2"
+                                              className="mt-2 min-w-0 border-t border-stone-200/70 pt-2"
                                             >
-                                              <div className="flex items-center gap-2">
+                                              <div className="flex min-w-0 flex-wrap items-stretch gap-2">
                                                 <button
                                                   type="button"
                                                   disabled={isExecutionSyncing}
@@ -4627,7 +4627,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                     toggleExecutionForItem(it.id);
                                                   }}
                                                   className={[
-                                                    "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
+                                                    "inline-flex h-8 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold",
                                                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
                                                     isExecutionRunning
                                                       ? "border-orange-300 bg-orange-100/80 text-orange-700 hover:bg-orange-100"
@@ -4653,6 +4653,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                   return (
                                                       <button
                                                           type="button"
+                                                          data-testid="schedule-item-end-extend"
                                                           aria-label="계획 종료 시각을 지금으로 연장"
                                                           title={
                                                             !selectedIsToday
@@ -4667,11 +4668,11 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                             extendItemEndTimeToNowIfPastPlannedEnd(it.id);
                                                           }}
                                                           className={[
-                                                            "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
-                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+                                                            "inline-flex h-8 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold",
+                                                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/25",
                                                             endExtendDisabled
-                                                              ? "cursor-not-allowed border-stone-200/80 bg-stone-100/50 text-stone-400"
-                                                              : "border-emerald-200 bg-emerald-50/90 text-emerald-800 hover:bg-emerald-100",
+                                                              ? "cursor-not-allowed border-emerald-200/50 bg-emerald-50/50 text-emerald-800/45 ring-1 ring-inset ring-emerald-900/10"
+                                                              : "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] hover:bg-emerald-100",
                                                             isExecutionSyncing ? "opacity-50" : "",
                                                           ].join(" ")}
                                                       >
@@ -4687,7 +4688,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                     deleteItemById(it.id);
                                                   }}
                                                   className={[
-                                                    "inline-flex h-8 items-center rounded-lg border px-3 text-[12px] font-semibold",
+                                                    "inline-flex h-8 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold",
                                                     "border-rose-200 bg-rose-50/90 text-rose-700 hover:bg-rose-100",
                                                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/25",
                                                     isExecutionSyncing ? "opacity-50" : "",
