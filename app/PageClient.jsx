@@ -43,6 +43,7 @@ import {
   getChapterBlurParallaxTranslateY,
   getMainChapterIdxFromScrollRoot,
   getScrollContentOffsetTop,
+  resolveMainChapterIdxWithLastChapterLatch,
 } from "../components/timeboxing/utils/chapterScrollGeometry.js";
 
 const SECONDS_PER_DAY = 86400;
@@ -1317,6 +1318,8 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   /** 챕터별 글로우 패럴렉스 translateY(px) — 스크롤 픽셀마다 갱신 */
   const [mainChapterParallaxYs, setMainChapterParallaxYs] = useState(() => [0, 0, 0]);
   const mainChapterScrollSyncRafRef = useRef(null);
+  /** 챕터3 하단 러버밴드 시 마지막 챕터 인덱스 유지(큰 bounce 대비) */
+  const mainChapterLastChapterLatchRef = useRef(false);
   const pendingChapterIdxAfterDaySwipeRef = useRef(null);
   const daySwipeCommitTimerRef = useRef(null);
   /** 드래그 오프셋(px) — 캐러셀에서 인접 날 미리보기 */
@@ -1902,6 +1905,10 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
   useEffect(() => {
     setExpandedScheduleItemId(null);
+  }, [selectedDate]);
+
+  useEffect(() => {
+    mainChapterLastChapterLatchRef.current = false;
   }, [selectedDate]);
 
   const resetExecutionState = useCallback(() => {
@@ -3087,17 +3094,22 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
 
     const raw = getMainChapterIdxFromScrollRoot(root);
     const scrollRange = root.scrollHeight - root.clientHeight;
-    const distFromBottom = scrollRange - root.scrollTop;
     const lastIdx = chapters.length - 1;
-    // 챕터3 목록 끝에서 하단 러버밴드 시 scrollTop이 줄어들며 챕터 인덱스만 위로 튀는 현상 방지
-    const bottomRubberBandPx = 140;
+    const lastCh = lastIdx >= 0 ? chapters[lastIdx] : null;
+    const lastChapterScrollTop =
+      lastCh instanceof HTMLElement ? getScrollContentOffsetTop(root, lastCh) : 0;
 
-    setMainActiveChapterIdx((prev) => {
-      if (lastIdx >= 0 && scrollRange > 80 && prev === lastIdx && raw < lastIdx) {
-        if (distFromBottom < bottomRubberBandPx) return lastIdx;
-      }
-      return raw;
-    });
+    setMainActiveChapterIdx((prev) =>
+        resolveMainChapterIdxWithLastChapterLatch({
+          raw,
+          prevIdx: prev,
+          lastIdx,
+          scrollTop: root.scrollTop,
+          scrollRange,
+          lastChapterScrollTop,
+          latchRef: mainChapterLastChapterLatchRef,
+        })
+    );
   }, []);
 
   const onMainChapterScroll = useCallback(() => {

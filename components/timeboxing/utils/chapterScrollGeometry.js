@@ -20,7 +20,7 @@ export function getScrollContentOffsetTop(root, el) {
 
 /**
  * 메인 챕터 스크롤 박스에서 현재 포커스 챕터 인덱스.
- * 하단 러버밴드 보정은 PageClient `syncMainChapterScrollState`에서 처리.
+ * 하단 러버밴드 보정은 `resolveMainChapterIdxWithLastChapterLatch`에서 처리.
  */
 export function getMainChapterIdxFromScrollRoot(root) {
   if (!root) return 0;
@@ -33,6 +33,48 @@ export function getMainChapterIdxFromScrollRoot(root) {
     if (el instanceof HTMLElement && getScrollContentOffsetTop(root, el) <= probeTop) idx = i;
   }
   return idx;
+}
+
+/** 스크롤 하단 근처에서 래치 — 큰 러버밴드에서도 ref로 마지막 챕터 유지 */
+export const MAIN_CHAPTER_LATCH_NEAR_BOTTOM_PX = 360;
+
+/**
+ * 마지막 챕터 상단보다 이만큼 위로 스크롤해야 래치 해제(값이 클수록 하단 탄성에 관대).
+ */
+export const MAIN_CHAPTER_LATCH_LEAVE_ABOVE_LAST_CHAPTER_PX = 370;
+
+/**
+ * 챕터3 목록 끝 하단 오버스크롤 시 probe만 위로 튀는 현상 방지.
+ * @param {{ current: boolean }} latchRef
+ */
+export function resolveMainChapterIdxWithLastChapterLatch({
+  raw,
+  prevIdx,
+  lastIdx,
+  scrollTop,
+  scrollRange,
+  lastChapterScrollTop,
+  latchRef,
+}) {
+  if (lastIdx < 0) return raw;
+  if (scrollRange <= 8) {
+    latchRef.current = false;
+    return raw;
+  }
+
+  const distFromBottom = Math.max(0, scrollRange - scrollTop);
+
+  if (distFromBottom < MAIN_CHAPTER_LATCH_NEAR_BOTTOM_PX) {
+    latchRef.current = true;
+  }
+  if (scrollTop < lastChapterScrollTop - MAIN_CHAPTER_LATCH_LEAVE_ABOVE_LAST_CHAPTER_PX) {
+    latchRef.current = false;
+  }
+
+  if (prevIdx === lastIdx && raw < lastIdx && latchRef.current) {
+    return lastIdx;
+  }
+  return raw;
 }
 
 /** 날짜 스와이프 중 옆 열에 더해지는 세로 패럴렉스 — 가로 당김(px)당 세로 이동 비율 */
