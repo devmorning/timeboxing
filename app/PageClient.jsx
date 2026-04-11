@@ -614,7 +614,7 @@ function ScheduleItemInlineStopwatch({
   const timeStr = `${hms}.${ms}`;
   const ariaLabel = isExecutionRunning
     ? `타이머 중지, 경과 ${timeStr}`
-    : `타이머 시작, 누적 ${timeStr}`;
+    : `타이머 시작, ${timeStr}`;
 
   return (
     <button
@@ -628,25 +628,42 @@ function ScheduleItemInlineStopwatch({
           onToggle?.();
         }}
         className={[
-          "mb-3 flex min-w-0 w-full items-center justify-between gap-3 rounded-xl border border-stone-200/85 bg-stone-100/60 px-3 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+          "group mb-3 flex min-w-0 w-full items-center justify-center rounded-[1.35rem] px-4 py-3.5 text-center",
+          "border border-white/55 bg-gradient-to-br from-white/75 via-stone-50/45 to-orange-50/30",
+          "shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_14px_44px_-22px_rgba(15,23,42,0.18)] backdrop-blur-xl",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/35 focus-visible:ring-offset-2 focus-visible:ring-offset-stone-100/80",
+          isExecutionRunning
+            ? "ring-1 ring-orange-200/45 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_12px_40px_-16px_rgba(251,146,60,0.14),0_0_0_1px_rgba(251,146,60,0.06)]"
+            : "ring-1 ring-white/40",
           disabled
-            ? "cursor-not-allowed opacity-60"
-            : "cursor-pointer active:scale-[0.99] active:bg-stone-200/50 hover:bg-stone-100/90",
+            ? "cursor-not-allowed opacity-55"
+            : [
+                  "cursor-pointer transition-[transform,box-shadow,background-color] duration-300 ease-out",
+                  "hover:border-white/70 hover:from-white/85 hover:via-stone-50/55 hover:to-orange-50/35 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_18px_48px_-20px_rgba(15,23,42,0.14)]",
+                  "active:scale-[0.985]",
+                ].join(" "),
         ].join(" ")}
     >
-      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">
-        {isExecutionRunning ? "실행 시간" : "누적 실행"}
-      </span>
       <span
-          className={[
-            "pointer-events-none min-w-0 text-right font-mono text-[1.35rem] font-semibold tabular-nums leading-none tracking-tight",
-            isExecutionRunning ? "text-emerald-700" : "text-stone-600",
-          ].join(" ")}
+          className="pointer-events-none flex min-w-0 items-baseline justify-center gap-px font-mono tabular-nums tracking-tight"
           aria-hidden="true"
       >
-        <span className="tabular-nums">{hms}</span>
-        <span className="text-[1.05rem] font-semibold tabular-nums opacity-90">.{ms}</span>
+        <span
+            className={[
+              "text-[1.375rem] font-medium leading-none sm:text-2xl",
+              isExecutionRunning ? "text-stone-900" : "text-stone-700",
+            ].join(" ")}
+        >
+          {hms}
+        </span>
+        <span
+            className={[
+              "pl-0.5 text-[0.95rem] font-normal leading-none sm:text-[1.05rem]",
+              isExecutionRunning ? "text-orange-700/55" : "text-stone-400",
+            ].join(" ")}
+        >
+          .{ms}
+        </span>
       </span>
     </button>
   );
