@@ -197,6 +197,58 @@ body {
     animation: schedule-row-timer-live 3s ease-in-out infinite;
   }
 
+  @keyframes schedule-row-timer-live-soon {
+    0%,
+    100% {
+      transform: rotate(0deg) scale(1);
+      filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.35));
+    }
+    50% {
+      transform: rotate(-4deg) scale(1.08);
+      filter: drop-shadow(0 0 9px rgba(217, 119, 6, 0.42));
+    }
+  }
+
+  .schedule-row-timer-live--soon {
+    animation: schedule-row-timer-live-soon 2.8s ease-in-out infinite;
+  }
+
+  @keyframes schedule-row-timer-live-critical {
+    0%,
+    100% {
+      transform: rotate(0deg) scale(1);
+      filter: drop-shadow(0 0 3px rgba(234, 88, 12, 0.45));
+    }
+    33% {
+      transform: rotate(-6deg) scale(1.11);
+      filter: drop-shadow(0 0 10px rgba(234, 88, 12, 0.52));
+    }
+    66% {
+      transform: rotate(5deg) scale(1.09);
+      filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.4));
+    }
+  }
+
+  .schedule-row-timer-live--critical {
+    animation: schedule-row-timer-live-critical 2.2s ease-in-out infinite;
+  }
+
+  @keyframes schedule-row-timer-live-exceeded {
+    0%,
+    100% {
+      transform: rotate(0deg) scale(1);
+      filter: drop-shadow(0 0 4px rgba(220, 38, 38, 0.55));
+    }
+    50% {
+      transform: rotate(-7deg) scale(1.14);
+      filter: drop-shadow(0 0 14px rgba(185, 28, 28, 0.65));
+    }
+  }
+
+  .schedule-row-timer-live--exceeded {
+    animation: schedule-row-timer-live-exceeded 1.35s ease-in-out infinite;
+  }
+
   /** 타이머 API 동기화 — 전면 리퀴드글래스 오버레이 */
   @keyframes execution-sync-overlay-enter {
     from {
@@ -325,7 +377,10 @@ body {
       animation: none !important;
     }
 
-    .schedule-row-timer-live {
+    .schedule-row-timer-live,
+    .schedule-row-timer-live--soon,
+    .schedule-row-timer-live--critical,
+    .schedule-row-timer-live--exceeded {
       animation: none !important;
       filter: none !important;
       transform: none !important;

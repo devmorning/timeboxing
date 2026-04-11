@@ -175,6 +175,94 @@ function getPlannedSecondsOnCalendarDay(startTime, endTime) {
   return iv.end - iv.start;
 }
 
+/** 오늘 보기에서만: 현재 시각이 구간 종료에 얼마나 가까운지 */
+function classifyEndUrgencyFromRemaining(remainingSec, durationSec) {
+  if (remainingSec <= 0) return "exceeded";
+  const ratio = durationSec > 0 ? remainingSec / durationSec : 1;
+  if (remainingSec <= 300) return "critical";
+  if (remainingSec <= 900) return "soon";
+  if (ratio <= 0.1) return "critical";
+  if (ratio <= 0.35) return "soon";
+  return "ok";
+}
+
+/**
+ * @returns {"exceeded"|"critical"|"soon"|"ok"|"neutral"}
+ */
+function getScheduleEndUrgency(startTime, endTime, now, selectedIsToday) {
+  if (!selectedIsToday) return "neutral";
+  const st = typeof startTime === "string" ? startTime : "09:00";
+  const et = resolveEndTimeOrDefault(st, typeof endTime === "string" ? endTime.trim() : "");
+  if (!et) return "neutral";
+
+  const nowSec =
+    now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+  if (spansMidnight(st, et)) {
+    const a = parseHHMMToSecondsFromMidnight(st);
+    if (a == null) return "neutral";
+    if (nowSec < a) return "ok";
+    const endSec = SECONDS_PER_DAY;
+    if (nowSec >= endSec) return "exceeded";
+    const remaining = endSec - nowSec;
+    const duration = endSec - a;
+    return classifyEndUrgencyFromRemaining(remaining, duration);
+  }
+
+  const iv = getPlannedIntervalOnCalendarDay(st, et);
+  if (!iv) return "neutral";
+
+  if (nowSec < iv.start) return "ok";
+  if (nowSec >= iv.end) return "exceeded";
+
+  const duration = iv.end - iv.start;
+  const remaining = iv.end - nowSec;
+  return classifyEndUrgencyFromRemaining(remaining, duration);
+}
+
+function scheduleEndUrgencyTimeClass(u) {
+  switch (u) {
+    case "exceeded":
+      return "text-red-600 font-bold";
+    case "critical":
+      return "text-orange-800";
+    case "soon":
+      return "text-amber-700";
+    case "ok":
+      return "text-orange-700";
+    default:
+      return "text-orange-700";
+  }
+}
+
+function scheduleEndUrgencyIconClass(u) {
+  switch (u) {
+    case "exceeded":
+      return "text-red-600";
+    case "critical":
+      return "text-orange-700";
+    case "soon":
+      return "text-amber-600";
+    case "ok":
+      return "text-orange-600";
+    default:
+      return "text-orange-600";
+  }
+}
+
+function scheduleRowTimerLiveModifier(u) {
+  switch (u) {
+    case "exceeded":
+      return "schedule-row-timer-live schedule-row-timer-live--exceeded";
+    case "critical":
+      return "schedule-row-timer-live schedule-row-timer-live--critical";
+    case "soon":
+      return "schedule-row-timer-live schedule-row-timer-live--soon";
+    default:
+      return "schedule-row-timer-live";
+  }
+}
+
 function mergeIntervalsSeconds(intervals) {
   const sorted = intervals
       .filter((iv) => iv.end > iv.start)
@@ -564,16 +652,13 @@ function ScheduleItemInlineStopwatch({
   );
 }
 
-/** 접힌 행 전용: 실행 중이면 초침 60초 회전 + 부모에서 살짝 흔들·글로우( schedule-row-timer-live ) */
-function ScheduleRowCollapsedTimerIcon({ running, prefersReducedMotion }) {
-  const animateHand = Boolean(running) && !prefersReducedMotion;
+/** 접힌 행 전용: 초침 60초 회전 + 종료 임박도에 따른 색(부모 schedule-row-timer-live) */
+function ScheduleRowCollapsedTimerIcon({ urgency, prefersReducedMotion }) {
+  const animateHand = !prefersReducedMotion;
   return (
     <svg
         viewBox="0 0 24 24"
-        className={[
-          "block h-[22px] w-[22px]",
-          running ? "text-orange-600" : "text-stone-400",
-        ].join(" ")}
+        className={["block h-[22px] w-[22px]", scheduleEndUrgencyIconClass(urgency)].join(" ")}
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
@@ -1242,6 +1327,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       () => selectedDate === toLocalYmd(new Date()),
       [selectedDate]
   );
+
+  /** 일정 행 종료 임박 색 — 오늘 날짜에서만 시계 갱신 */
+  const [scheduleRowClockMs, setScheduleRowClockMs] = useState(() => Date.now());
+  useEffect(() => {
+    setScheduleRowClockMs(Date.now());
+  }, [selectedDate]);
+  useEffect(() => {
+    if (!selectedIsToday) return;
+    const id = window.setInterval(() => setScheduleRowClockMs(Date.now()), 15000);
+    return () => window.clearInterval(id);
+  }, [selectedIsToday]);
 
   const peekPrevYmd = useMemo(() => addDaysToYmd(selectedDate, -1), [selectedDate]);
   const peekNextYmd = useMemo(() => addDaysToYmd(selectedDate, 1), [selectedDate]);
@@ -4643,6 +4739,18 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                             executionSync.action === "start");
                                     const isExpanded =
                                       !isCarry && expandedScheduleItemId === it.id;
+                                    const endUrgency = !isCarry
+                                      ? getScheduleEndUrgency(
+                                            it.startTime || it.time || "09:00",
+                                            (it.endTime || "").trim(),
+                                            new Date(
+                                                selectedIsToday
+                                                  ? Math.max(scheduleRowClockMs, executionNowMs)
+                                                  : scheduleRowClockMs
+                                            ),
+                                            selectedIsToday
+                                        )
+                                      : "neutral";
                                     return (
                                         <div
                                             key={rowKey}
@@ -4690,7 +4798,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                             }
                                         >
                                           <div className="flex items-start gap-2">
-                                            <div className="w-min max-w-full shrink-0 whitespace-nowrap select-none text-[13px] font-semibold tabular-nums leading-snug tracking-tight text-orange-700">
+                                            <div
+                                                className={[
+                                                  "w-min max-w-full shrink-0 whitespace-nowrap select-none text-[13px] font-semibold tabular-nums leading-snug tracking-tight",
+                                                  isCarry ? "text-orange-700" : scheduleEndUrgencyTimeClass(endUrgency),
+                                                ].join(" ")}
+                                            >
                                               {isCarry
                                                 ? formatCarryOverSegmentForDay(it.endTime)
                                                 : it.endTime
@@ -4714,13 +4827,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                   <span
                                                       className={[
                                                         "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                                                        !prefersReducedMotion ? "schedule-row-timer-live" : "",
+                                                        !prefersReducedMotion
+                                                          ? scheduleRowTimerLiveModifier(endUrgency)
+                                                          : "",
                                                       ].filter(Boolean).join(" ")}
                                                       aria-label="타이머 실행 중"
                                                       title="실행 중"
                                                   >
                                                     <ScheduleRowCollapsedTimerIcon
-                                                        running
+                                                        urgency={endUrgency}
                                                         prefersReducedMotion={prefersReducedMotion}
                                                     />
                                                   </span>
