@@ -120,60 +120,12 @@ function formatDurationOptionLabel(totalMin) {
   return `${h}시간 ${m}분`;
 }
 
-/** 일정 종료 — 깃발(완주·끝): 타이머 종료 + 필요 시 종료 시각 연장 */
-function ScheduleEndFlagIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="block h-[18px] w-[18px]" fill="none" aria-hidden>
-      <path d="M5 4v16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path
-        d="M5 6h11l-3.5 4 3.5 4H5V6z"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinejoin="round"
-        fill="currentColor"
-        fillOpacity="0.14"
-      />
-    </svg>
-  );
-}
-
-/** 종료 시간 옆 스톱워치 — running 시 초침 회전 (globals.css .timer-toggle-second-hand) */
-function TimerStopwatchIcon({ running }) {
-  return (
-    <svg viewBox="0 0 24 24" className="block h-[18px] w-[18px]" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M12 2.5v2.2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path
-        d="M12 4.5v1M19.5 12h-1M12 19.5v-1M4.5 12h1"
-        stroke="currentColor"
-        strokeWidth="1"
-        strokeLinecap="round"
-        opacity="0.35"
-      />
-      <g className={running ? "timer-toggle-second-hand" : ""} style={{ transformOrigin: "12px 12px" }}>
-        <line x1="12" y1="12" x2="12" y2="6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </g>
-      <circle cx="12" cy="12" r="1.25" fill="currentColor" />
-    </svg>
-  );
-}
-
 export default function TimeRangeSelectors({
   showTimeControls = true,
   /** false: 시작을 현재 시각으로 맞추는 시계 버튼 숨김 */
   showApplyNowButton = true,
   /** false: 구간(분) select 숨김 — 시작·종료 time 입력만 */
   showDurationSelect = true,
-  /** 종료 시간 input 오른쪽에 타이머 시작/중지 아이콘 */
-  showTimerToggle = false,
-  timerRunning = false,
-  timerSyncing = false,
-  onTimerToggle,
-  /** 타이머 옆 일정 종료 — 타이머 중지·종료 시각 연장 등 부모에서 처리 */
-  onScheduleEnd,
-  /** true: 깃발 버튼 비활성(오늘 아님·자정 넘김 등) */
-  scheduleEndDisabled = false,
-  scheduleEndButtonTitle = "타이머를 종료하고, 지금이 계획 종료보다 늦으면 종료 시각을 지금으로 맞춥니다",
   /** 한 줄 정렬: center(기본) | start */
   rowJustify = "center",
   startTime,
@@ -339,52 +291,6 @@ export default function TimeRangeSelectors({
               />
             </label>
           </div>
-          {showTimerToggle ? (
-            <button
-              type="button"
-              disabled={disabled || timerSyncing}
-              onClick={(e) => {
-                e.stopPropagation();
-                onTimerToggle?.();
-              }}
-              aria-label={timerRunning ? "타이머 중지" : "타이머 시작"}
-              title={timerRunning ? "타이머 중지" : "타이머 시작"}
-              className={[
-                "inline-flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg border border-slate-200/90 bg-[#FAFAFA] text-slate-600",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/30",
-                "disabled:cursor-not-allowed disabled:opacity-45",
-                timerRunning
-                  ? "border-orange-300/80 bg-orange-50/95 text-orange-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]"
-                  : "hover:border-orange-300/80 hover:bg-orange-50/90 hover:text-orange-600",
-                timerSyncing ? "animate-pulse" : "",
-              ].join(" ")}
-            >
-              <TimerStopwatchIcon running={timerRunning} />
-            </button>
-          ) : null}
-          {showTimerToggle && typeof onScheduleEnd === "function" ? (
-            <button
-              type="button"
-              disabled={disabled || timerSyncing || scheduleEndDisabled}
-              onClick={(e) => {
-                e.stopPropagation();
-                onScheduleEnd();
-              }}
-              aria-label={scheduleEndButtonTitle}
-              title={scheduleEndButtonTitle}
-              className={[
-                "inline-flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg border bg-[#FAFAFA]",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30",
-                "disabled:cursor-not-allowed disabled:opacity-45",
-                scheduleEndDisabled
-                  ? "border-emerald-200/50 bg-emerald-50/50 text-emerald-800/45 ring-1 ring-inset ring-emerald-900/10"
-                  : "border-emerald-200/80 text-emerald-800/95 hover:border-emerald-300/90 hover:bg-emerald-50 hover:text-emerald-900",
-                timerSyncing ? "animate-pulse" : "",
-              ].join(" ")}
-            >
-              <ScheduleEndFlagIcon />
-            </button>
-          ) : null}
         </div>
         {showDurationSelect ? (
             <div className="shrink-0">

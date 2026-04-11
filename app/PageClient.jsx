@@ -484,6 +484,114 @@ function rubberDaySwipeDx(dx, maxAbs) {
   return sign * (maxAbs + Math.min(excess * 0.33, maxAbs * 0.55));
 }
 
+function formatElapsedMsToStopwatchParts(totalMs) {
+  const ms = Math.max(0, Math.floor(totalMs));
+  const frac = ms % 1000;
+  const totalSec = Math.floor(ms / 1000);
+  const hh = Math.floor(totalSec / 3600);
+  const mm = Math.floor((totalSec % 3600) / 60);
+  const ss = totalSec % 60;
+  return {
+    hms: `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`,
+    ms: String(frac).padStart(3, "0"),
+  };
+}
+
+/** 내용 인라인 스톱워치: 실행 중 requestAnimationFrame으로 ms 단위 갱신, 탭 시 시작/중지 */
+function ScheduleItemInlineStopwatch({
+  baseExecutedSeconds,
+  startedAtMs,
+  isExecutionRunning,
+  onToggle,
+  disabled,
+}) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const startOk = typeof startedAtMs === "number" && Number.isFinite(startedAtMs);
+
+  useEffect(() => {
+    if (!isExecutionRunning || !startOk) return;
+    let rafId = 0;
+    const tick = () => {
+      setNowMs(Date.now());
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [isExecutionRunning, startOk, startedAtMs]);
+
+  const baseMs = Math.max(0, Math.floor(Number(baseExecutedSeconds) || 0) * 1000);
+  const elapsedMs =
+    isExecutionRunning && startOk ? baseMs + Math.max(0, nowMs - startedAtMs) : baseMs;
+  const { hms, ms } = formatElapsedMsToStopwatchParts(elapsedMs);
+  const timeStr = `${hms}.${ms}`;
+  const ariaLabel = isExecutionRunning
+    ? `타이머 중지, 경과 ${timeStr}`
+    : `타이머 시작, 누적 ${timeStr}`;
+
+  return (
+    <button
+        type="button"
+        disabled={disabled}
+        aria-label={ariaLabel}
+        aria-pressed={isExecutionRunning}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggle?.();
+        }}
+        className={[
+          "mb-3 flex min-w-0 w-full items-center justify-between gap-3 rounded-xl border border-stone-200/85 bg-stone-100/60 px-3 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
+          disabled
+            ? "cursor-not-allowed opacity-60"
+            : "cursor-pointer active:scale-[0.99] active:bg-stone-200/50 hover:bg-stone-100/90",
+        ].join(" ")}
+    >
+      <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">
+        {isExecutionRunning ? "실행 시간" : "누적 실행"}
+      </span>
+      <span
+          className={[
+            "pointer-events-none min-w-0 text-right font-mono text-[1.35rem] font-semibold tabular-nums leading-none tracking-tight",
+            isExecutionRunning ? "text-emerald-700" : "text-stone-600",
+          ].join(" ")}
+          aria-hidden="true"
+      >
+        <span className="tabular-nums">{hms}</span>
+        <span className="text-[1.05rem] font-semibold tabular-nums opacity-90">.{ms}</span>
+      </span>
+    </button>
+  );
+}
+
+/** 접힌 행 전용: 실행 중이면 초침만 천천히 회전(예전 종료시간 옆 타이머 토글과 동일 60초/회전) */
+function ScheduleRowCollapsedTimerIcon({ running, prefersReducedMotion }) {
+  const animateHand = Boolean(running) && !prefersReducedMotion;
+  return (
+    <svg
+        viewBox="0 0 24 24"
+        className={[
+          "block h-[18px] w-[18px]",
+          running ? "text-stone-600" : "text-stone-400",
+        ].join(" ")}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="8.25" />
+      <path d="M12 2.5v2.2" strokeLinecap="round" />
+      <g
+          className={animateHand ? "schedule-row-timer-second-hand" : ""}
+          style={{ transformOrigin: "12px 12px" }}
+      >
+        <line x1="12" y1="12" x2="12" y2="7" strokeLinecap="round" />
+      </g>
+      <circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 /**
  * 입력이 전혀 없는 날짜 — 잠금화면 스타일로 날짜만 강조 (2026 스톤·소프트 글래스 톤)
  */
@@ -2136,63 +2244,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
       [sortItemsByTimeAsc]
   );
 
-  /** 오늘 날짜 플랜만: 현재 시각이 계획 종료보다 늦을 때만 종료 시각을 지금으로 맞춤 (자정 넘김 제외) */
-  const extendItemEndTimeToNowIfPastPlannedEnd = useCallback(
-      (id) => {
-        if (!selectedIsToday) return;
-        setItems((prev) => {
-          const it = prev.find((x) => x.id === id);
-          if (!it) return prev;
-          const st = it.startTime || it.time || "09:00";
-          const etRaw = (it.endTime || "").trim();
-          const resolvedEnd = resolveEndTimeOrDefault(st, etRaw);
-          if (!resolvedEnd) return prev;
-          if (spansMidnight(st, resolvedEnd)) return prev;
-
-          const endSec = parseHHMMToSecondsFromMidnight(resolvedEnd);
-          if (endSec == null) return prev;
-          const now = new Date();
-          const nowSec = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-          if (nowSec <= endSec) return prev;
-
-          const newEnd = secondsToHHMM(nowSec);
-          return sortItemsByTimeAsc(
-              prev.map((x) => (x.id === id ? { ...x, endTime: newEnd } : x))
-          );
-        });
-      },
-      [selectedIsToday, sortItemsByTimeAsc]
-  );
-
-  /** 인라인 깃발: 타이머 종료 후, 지금이 계획 종료보다 늦으면 종료 시각 연장 */
-  const handleScheduleItemEndFromFlag = useCallback(
-      async (id) => {
-        if (!selectedIsToday) return;
-        const target = itemsRef.current.find((x) => x.id === id);
-        if (!target) return;
-        const st = target.startTime || target.time || "09:00";
-        const resolvedEnd = resolveEndTimeOrDefault(st, (target.endTime || "").trim());
-        if (resolvedEnd && spansMidnight(st, resolvedEnd)) {
-          const running =
-              Boolean(target.executionStartedAt) || Boolean(target.done);
-          if (running) {
-            await toggleExecutionForItem(id);
-          }
-          return;
-        }
-
-        const running =
-            Boolean(target.executionStartedAt) || Boolean(target.done);
-
-        if (running) {
-          await toggleExecutionForItem(id);
-        }
-
-        extendItemEndTimeToNowIfPastPlannedEnd(id);
-      },
-      [selectedIsToday, toggleExecutionForItem, extendItemEndTimeToNowIfPastPlannedEnd]
-  );
-
   /** 일정 추가 모달: 항목 추가 직후 실행(타이머) 시작 — `+`와 동일 데이터, 모달만 닫고 실행 */
   const addItemAndStartExecution = useCallback(() => {
     if (!canAdd) return;
@@ -2250,15 +2301,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     const mm = Math.floor(s / 60);
     const ss = s % 60;
     return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
-  }, []);
-
-  /** 인라인 스톱워치 표시: 항상 시:분:초 두 자리 */
-  const formatSecondsToStopwatchHms = useCallback((totalSeconds) => {
-    const s = Math.max(0, Math.floor(totalSeconds));
-    const hh = Math.floor(s / 3600);
-    const mm = Math.floor((s % 3600) / 60);
-    const ss = s % 60;
-    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
   }, []);
 
   useEffect(() => {
@@ -4587,9 +4629,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                   {displayItemsMerged.map((it) => {
                                     const isCarry = Boolean(it._isCarryover);
                                     const rowKey = isCarry ? `carry_${it._carryFromYmd}_${it.id}` : it.id;
-                                    const execSec = isCarry
-                                      ? Math.max(0, Math.floor(it._executedMorningSeconds ?? 0))
-                                      : getDisplayedExecutionSeconds(it);
                                     const isExecutionSyncing =
                                         !isCarry && executionSync?.itemId === it.id;
                                     const isExecutionRunning =
@@ -4597,23 +4636,13 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                         (Boolean(it.executionStartedAt) ||
                                             (activeExecutionItemId === it.id &&
                                                 activeExecutionStartedAtMs != null));
+                                    const rowCollapsedTimerSpinning =
+                                        isExecutionRunning ||
+                                        (Boolean(isExecutionSyncing) &&
+                                            executionSync?.itemId === it.id &&
+                                            executionSync.action === "start");
                                     const isExpanded =
                                       !isCarry && expandedScheduleItemId === it.id;
-                                    const rowSt = it.startTime || it.time || "09:00";
-                                    const rowEtResolved = resolveEndTimeOrDefault(
-                                        rowSt,
-                                        (it.endTime || "").trim()
-                                    );
-                                    const rowSpans = Boolean(
-                                        rowEtResolved && spansMidnight(rowSt, rowEtResolved)
-                                    );
-                                    const scheduleEndFlagDisabled =
-                                        isExecutionSyncing || !selectedIsToday || rowSpans;
-                                    const scheduleEndFlagTitle = !selectedIsToday
-                                      ? "오늘 날짜에서만 사용할 수 있습니다"
-                                      : rowSpans
-                                        ? "자정 넘김 일정은 이 버튼으로 연장할 수 없습니다"
-                                        : "타이머를 종료하고, 지금이 계획 종료보다 늦으면 종료 시각을 지금으로 맞춥니다";
                                     return (
                                         <div
                                             key={rowKey}
@@ -4680,45 +4709,75 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                 {it.content}
                                               </div>
                                             </div>
-                                            {(isCarry ? execSec > 0 : it.done || execSec > 0) ? (
-                                                <span
-                                                    className={[
-                                                      "inline-flex h-5 min-w-[5.25rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-semibold tabular-nums",
-                                                      isExecutionRunning
-                                                        ? "bg-emerald-100 text-emerald-700"
-                                                        : "bg-slate-100 text-slate-600",
-                                                    ].join(" ")}
-                                                >
-                                                  실행 {formatSecondsToMMSS(execSec)}
-                                                </span>
-                                            ) : null}
+                                            <div className="flex shrink-0 items-start gap-1">
+                                              {!isCarry && !isExpanded ? (
+                                                  <span
+                                                      className="inline-flex h-5 w-5 shrink-0 items-center justify-center"
+                                                      aria-label={
+                                                        rowCollapsedTimerSpinning
+                                                          ? "타이머 실행 중"
+                                                          : "타이머 대기"
+                                                      }
+                                                      title={
+                                                        rowCollapsedTimerSpinning
+                                                          ? "실행 중"
+                                                          : "실행 안 함"
+                                                      }
+                                                  >
+                                                    <ScheduleRowCollapsedTimerIcon
+                                                        running={rowCollapsedTimerSpinning}
+                                                        prefersReducedMotion={prefersReducedMotion}
+                                                    />
+                                                  </span>
+                                              ) : null}
+                                              {!isCarry && isExpanded ? (
+                                                  <button
+                                                      type="button"
+                                                      disabled={isExecutionSyncing}
+                                                      onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        deleteItemById(it.id);
+                                                      }}
+                                                      className={[
+                                                        "inline-flex h-5 shrink-0 items-center rounded-md border px-2 text-[11px] font-semibold",
+                                                        "border-rose-200 bg-rose-50/90 text-rose-700 hover:bg-rose-100",
+                                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/25",
+                                                        isExecutionSyncing ? "cursor-not-allowed opacity-50" : "",
+                                                      ].join(" ")}
+                                                  >
+                                                    삭제
+                                                  </button>
+                                              ) : null}
+                                            </div>
                                           </div>
                                           {!isCarry && isExpanded ? (
                                             <div
                                               data-day-swipe-ignore
                                               className="mt-2 min-w-0 border-t border-stone-200/70 pt-2"
                                             >
-                                              {isExecutionRunning || execSec > 0 ? (
-                                                  <div
-                                                      className="mb-3 flex min-w-0 items-center justify-between gap-3 rounded-xl border border-stone-200/85 bg-stone-100/60 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
-                                                      aria-live={isExecutionRunning ? "polite" : "off"}
-                                                  >
-                                                    <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">
-                                                      {isExecutionRunning ? "실행 시간" : "누적 실행"}
-                                                    </span>
-                                                    <span
-                                                        className={[
-                                                          "min-w-0 truncate text-right font-mono text-[1.35rem] font-semibold tabular-nums leading-none tracking-tight",
-                                                          isExecutionRunning
-                                                            ? "text-emerald-700"
-                                                            : "text-stone-600",
-                                                        ].join(" ")}
-                                                        aria-label={`실행된 시간 ${formatSecondsToStopwatchHms(execSec)}`}
-                                                    >
-                                                      {formatSecondsToStopwatchHms(execSec)}
-                                                    </span>
-                                                  </div>
-                                              ) : null}
+                                              <ScheduleItemInlineStopwatch
+                                                  baseExecutedSeconds={
+                                                    typeof it.executedSeconds === "number"
+                                                      ? it.executedSeconds
+                                                      : 0
+                                                  }
+                                                  startedAtMs={(() => {
+                                                    if (it.executionStartedAt) {
+                                                      const t = Date.parse(it.executionStartedAt);
+                                                      return Number.isFinite(t) ? t : null;
+                                                    }
+                                                    if (
+                                                      activeExecutionItemId === it.id &&
+                                                      activeExecutionStartedAtMs != null
+                                                    ) {
+                                                      return activeExecutionStartedAtMs;
+                                                    }
+                                                    return null;
+                                                  })()}
+                                                  isExecutionRunning={isExecutionRunning}
+                                                  disabled={isExecutionSyncing}
+                                                  onToggle={() => toggleExecutionForItem(it.id)}
+                                              />
                                               <div
                                                   role="group"
                                                   aria-label="일정 시간·내용 편집"
@@ -4732,13 +4791,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                       rowJustify="start"
                                                       showApplyNowButton={false}
                                                       showDurationSelect={false}
-                                                      showTimerToggle
-                                                      timerRunning={isExecutionRunning}
-                                                      timerSyncing={isExecutionSyncing}
-                                                      onTimerToggle={() => toggleExecutionForItem(it.id)}
-                                                      onScheduleEnd={() => void handleScheduleItemEndFromFlag(it.id)}
-                                                      scheduleEndDisabled={scheduleEndFlagDisabled}
-                                                      scheduleEndButtonTitle={scheduleEndFlagTitle}
                                                       startTime={it.startTime || it.time || "09:00"}
                                                       endTime={(it.endTime || "").trim()}
                                                       onChangeStartTime={(v) => {
@@ -4767,24 +4819,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                                       "disabled:!bg-stone-200/40 disabled:text-stone-400",
                                                     ].join(" ")}
                                                 />
-                                              </div>
-                                              <div className="flex min-w-0 flex-wrap items-stretch gap-2">
-                                                <button
-                                                  type="button"
-                                                  disabled={isExecutionSyncing}
-                                                  onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    deleteItemById(it.id);
-                                                  }}
-                                                  className={[
-                                                    "inline-flex h-8 shrink-0 items-center rounded-lg border px-3 text-[12px] font-semibold",
-                                                    "border-rose-200 bg-rose-50/90 text-rose-700 hover:bg-rose-100",
-                                                    "focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500/25",
-                                                    isExecutionSyncing ? "opacity-50" : "",
-                                                  ].join(" ")}
-                                                >
-                                                  삭제
-                                                </button>
                                               </div>
                                             </div>
                                           ) : null}

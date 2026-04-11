@@ -162,8 +162,8 @@ body {
     animation: day-digit-pop-down 0.48s cubic-bezier(0.36, 1, 0.66, 1) forwards;
   }
 
-  /** TimeRangeSelectors 스톱워치 — 초침 60초 한 바퀴 */
-  @keyframes timer-toggle-second-hand {
+  /** 접힌 일정 행 — 초침만 60초에 한 바퀴(과한 전체 회전 대신) */
+  @keyframes schedule-row-timer-second-hand {
     from {
       transform: rotate(0deg);
     }
@@ -172,9 +172,8 @@ body {
     }
   }
 
-  .timer-toggle-second-hand {
-    transform-origin: 12px 12px;
-    animation: timer-toggle-second-hand 60s linear infinite;
+  .schedule-row-timer-second-hand {
+    animation: schedule-row-timer-second-hand 60s linear infinite;
   }
 
   /** 타이머 API 동기화 — 전면 리퀴드글래스 오버레이 */
@@ -301,7 +300,7 @@ body {
       animation: none !important;
     }
 
-    .timer-toggle-second-hand {
+    .schedule-row-timer-second-hand {
       animation: none !important;
     }
 

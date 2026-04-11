@@ -47,7 +47,7 @@ describe("일정 추가 모달: 추가 후 실행", () => {
     fireEvent.click(screen.getByText("모달 추가 실행 테스트"));
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "타이머 중지" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^타이머 중지/ })).toBeInTheDocument();
     });
   });
 });

@@ -34,12 +34,12 @@ describe("일정 항목 인라인 확장", () => {
   it("항목 클릭 시 일정 수정 모달 대신 인라인 타이머 토글이 열린다", () => {
     render(<PageClient {...initialProps} />);
 
-    expect(screen.queryByRole("button", { name: "타이머 시작" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^타이머 시작/ })).not.toBeInTheDocument();
     expect(screen.queryByText("일정 수정")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText("테스트 일정"));
 
-    expect(screen.getByRole("button", { name: "타이머 시작" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^타이머 시작/ })).toBeInTheDocument();
     expect(screen.queryByText("일정 수정")).not.toBeInTheDocument();
   });
 
@@ -47,13 +47,13 @@ describe("일정 항목 인라인 확장", () => {
     render(<PageClient {...initialProps} />);
 
     fireEvent.click(screen.getByText("테스트 일정"));
-    const startBtn = screen.getByRole("button", { name: "타이머 시작" });
+    const startBtn = screen.getByRole("button", { name: /^타이머 시작/ });
 
     expect(startBtn).toBeEnabled();
 
     fireEvent.click(startBtn);
 
-    expect(screen.getByRole("button", { name: "타이머 중지" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /^타이머 중지/ })).toBeEnabled();
   });
 
   it("인라인 삭제 버튼 클릭 시 항목이 제거된다", () => {
