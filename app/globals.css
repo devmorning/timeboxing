@@ -176,6 +176,27 @@ body {
     animation: schedule-row-timer-second-hand 60s linear infinite;
   }
 
+  /** 실행 중: 아주 살짝 흔들리며 맥박 + 오렌지 글로우(과하지 않게 3s 루프) */
+  @keyframes schedule-row-timer-live {
+    0%,
+    100% {
+      transform: rotate(0deg) scale(1);
+      filter: drop-shadow(0 0 1px rgba(251, 146, 60, 0.28));
+    }
+    33% {
+      transform: rotate(-5deg) scale(1.1);
+      filter: drop-shadow(0 0 7px rgba(251, 146, 60, 0.38));
+    }
+    66% {
+      transform: rotate(4deg) scale(1.07);
+      filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.34));
+    }
+  }
+
+  .schedule-row-timer-live {
+    animation: schedule-row-timer-live 3s ease-in-out infinite;
+  }
+
   /** 타이머 API 동기화 — 전면 리퀴드글래스 오버레이 */
   @keyframes execution-sync-overlay-enter {
     from {
@@ -302,6 +323,12 @@ body {
 
     .schedule-row-timer-second-hand {
       animation: none !important;
+    }
+
+    .schedule-row-timer-live {
+      animation: none !important;
+      filter: none !important;
+      transform: none !important;
     }
 
     .execution-sync-overlay-enter,

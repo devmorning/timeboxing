@@ -564,7 +564,7 @@ function ScheduleItemInlineStopwatch({
   );
 }
 
-/** 접힌 행 전용: 실행 중이면 초침만 천천히 회전(예전 종료시간 옆 타이머 토글과 동일 60초/회전) */
+/** 접힌 행 전용: 실행 중이면 초침 60초 회전 + 부모에서 살짝 흔들·글로우( schedule-row-timer-live ) */
 function ScheduleRowCollapsedTimerIcon({ running, prefersReducedMotion }) {
   const animateHand = Boolean(running) && !prefersReducedMotion;
   return (
@@ -572,7 +572,7 @@ function ScheduleRowCollapsedTimerIcon({ running, prefersReducedMotion }) {
         viewBox="0 0 24 24"
         className={[
           "block h-[18px] w-[18px]",
-          running ? "text-stone-600" : "text-stone-400",
+          running ? "text-orange-600" : "text-stone-400",
         ].join(" ")}
         fill="none"
         stroke="currentColor"
@@ -4712,7 +4712,12 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                             <div className="flex shrink-0 items-start gap-1">
                                               {!isCarry && !isExpanded ? (
                                                   <span
-                                                      className="inline-flex h-5 w-5 shrink-0 items-center justify-center"
+                                                      className={[
+                                                        "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
+                                                        rowCollapsedTimerSpinning && !prefersReducedMotion
+                                                          ? "schedule-row-timer-live"
+                                                          : "",
+                                                      ].filter(Boolean).join(" ")}
                                                       aria-label={
                                                         rowCollapsedTimerSpinning
                                                           ? "타이머 실행 중"
