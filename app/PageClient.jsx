@@ -4792,10 +4792,38 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
               >
                 <div
                     className={[
-                      "grid w-full grid-cols-4 overflow-hidden rounded-3xl border border-stone-200/40 bg-white/60 px-0 pt-2 pb-2",
+                      "grid w-full grid-cols-5 overflow-hidden rounded-3xl border border-stone-200/40 bg-white/60 px-0 pt-2 pb-2",
                       "shadow-[0_14px_44px_-18px_rgba(15,23,42,0.14)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/45",
                     ].join(" ")}
                 >
+                  <button
+                      type="button"
+                      aria-label="오늘 날짜로 이동"
+                      disabled={isDateTransitionLoading}
+                      onClick={() => {
+                        handleGoToday();
+                      }}
+                      className={[
+                        "flex min-h-[48px] min-w-0 items-center justify-center rounded-xl px-1 py-2",
+                        selectedIsToday
+                          ? "text-orange-600 active:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25"
+                          : "text-stone-600 active:bg-stone-100/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20",
+                        isDateTransitionLoading ? "cursor-wait opacity-45" : "",
+                      ].join(" ")}
+                  >
+                    <svg
+                        aria-hidden="true"
+                        className="h-[22px] w-[22px] shrink-0"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.75"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                      <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+                    </svg>
+                  </button>
                   <button
                       type="button"
                       aria-label="일정 추가"
