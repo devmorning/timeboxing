@@ -2252,6 +2252,15 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
   }, []);
 
+  /** 인라인 스톱워치 표시: 항상 시:분:초 두 자리 */
+  const formatSecondsToStopwatchHms = useCallback((totalSeconds) => {
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const hh = Math.floor(s / 3600);
+    const mm = Math.floor((s % 3600) / 60);
+    const ss = s % 60;
+    return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`;
+  }, []);
+
   useEffect(() => {
     const serverRunning = items.some((it) => Boolean(it.executionStartedAt));
     if (!serverRunning && (!activeExecutionItemId || !activeExecutionStartedAtMs)) return;
@@ -4689,6 +4698,27 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                               data-day-swipe-ignore
                                               className="mt-2 min-w-0 border-t border-stone-200/70 pt-2"
                                             >
+                                              {isExecutionRunning || execSec > 0 ? (
+                                                  <div
+                                                      className="mb-3 flex min-w-0 items-center justify-between gap-3 rounded-xl border border-stone-200/85 bg-stone-100/60 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
+                                                      aria-live={isExecutionRunning ? "polite" : "off"}
+                                                  >
+                                                    <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">
+                                                      {isExecutionRunning ? "실행 시간" : "누적 실행"}
+                                                    </span>
+                                                    <span
+                                                        className={[
+                                                          "min-w-0 truncate text-right font-mono text-[1.35rem] font-semibold tabular-nums leading-none tracking-tight",
+                                                          isExecutionRunning
+                                                            ? "text-emerald-700"
+                                                            : "text-stone-600",
+                                                        ].join(" ")}
+                                                        aria-label={`실행된 시간 ${formatSecondsToStopwatchHms(execSec)}`}
+                                                    >
+                                                      {formatSecondsToStopwatchHms(execSec)}
+                                                    </span>
+                                                  </div>
+                                              ) : null}
                                               <div
                                                   role="group"
                                                   aria-label="일정 시간·내용 편집"
