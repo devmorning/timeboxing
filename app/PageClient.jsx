@@ -571,7 +571,7 @@ function ScheduleRowCollapsedTimerIcon({ running, prefersReducedMotion }) {
     <svg
         viewBox="0 0 24 24"
         className={[
-          "block h-[18px] w-[18px]",
+          "block h-[22px] w-[22px]",
           running ? "text-orange-600" : "text-stone-400",
         ].join(" ")}
         fill="none"
@@ -4713,7 +4713,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                               {!isCarry && !isExpanded && rowCollapsedTimerSpinning ? (
                                                   <span
                                                       className={[
-                                                        "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
+                                                        "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
                                                         !prefersReducedMotion ? "schedule-row-timer-live" : "",
                                                       ].filter(Boolean).join(" ")}
                                                       aria-label="타이머 실행 중"
