@@ -4710,27 +4710,17 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                                               </div>
                                             </div>
                                             <div className="flex shrink-0 items-start gap-1">
-                                              {!isCarry && !isExpanded ? (
+                                              {!isCarry && !isExpanded && rowCollapsedTimerSpinning ? (
                                                   <span
                                                       className={[
                                                         "inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full",
-                                                        rowCollapsedTimerSpinning && !prefersReducedMotion
-                                                          ? "schedule-row-timer-live"
-                                                          : "",
+                                                        !prefersReducedMotion ? "schedule-row-timer-live" : "",
                                                       ].filter(Boolean).join(" ")}
-                                                      aria-label={
-                                                        rowCollapsedTimerSpinning
-                                                          ? "타이머 실행 중"
-                                                          : "타이머 대기"
-                                                      }
-                                                      title={
-                                                        rowCollapsedTimerSpinning
-                                                          ? "실행 중"
-                                                          : "실행 안 함"
-                                                      }
+                                                      aria-label="타이머 실행 중"
+                                                      title="실행 중"
                                                   >
                                                     <ScheduleRowCollapsedTimerIcon
-                                                        running={rowCollapsedTimerSpinning}
+                                                        running
                                                         prefersReducedMotion={prefersReducedMotion}
                                                     />
                                                   </span>
