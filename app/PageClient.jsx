@@ -4806,7 +4806,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         setIsScheduleComposerModalOpen(true);
                       }}
                       className={[
-                        "flex min-h-[52px] min-w-0 flex-col items-center justify-end gap-0.5 rounded-xl px-1 py-1.5",
+                        "flex min-h-[48px] min-w-0 items-center justify-center rounded-xl px-1 py-2",
                         "text-orange-600 active:bg-orange-50/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/25",
                         isDateTransitionLoading ? "cursor-wait opacity-45" : "",
                       ].join(" ")}
@@ -4831,9 +4831,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         strokeLinecap="round"
                       />
                     </svg>
-                    <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-orange-600">
-                      일정
-                    </span>
                   </button>
                   <button
                       type="button"
@@ -4844,7 +4841,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         setIsStatsOpen(true);
                       }}
                       className={[
-                        "flex min-h-[52px] min-w-0 flex-col items-center justify-end gap-0.5 rounded-xl px-1 py-1.5",
+                        "flex min-h-[48px] min-w-0 items-center justify-center rounded-xl px-1 py-2",
                         "text-stone-600 active:bg-stone-100/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20",
                       ].join(" ")}
                   >
@@ -4854,9 +4851,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           d="M5 19V9h3v10zm5 0V5h3v14zm5 0v-7h3v7z"
                       />
                     </svg>
-                    <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-stone-500">
-                      통계
-                    </span>
                   </button>
                   <button
                       type="button"
@@ -4866,7 +4860,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         setIsReportOpen(true);
                       }}
                       className={[
-                        "flex min-h-[52px] min-w-0 flex-col items-center justify-end gap-0.5 rounded-xl px-1 py-1.5",
+                        "flex min-h-[48px] min-w-0 items-center justify-center rounded-xl px-1 py-2",
                         "text-stone-600 active:bg-stone-100/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20",
                       ].join(" ")}
                   >
@@ -4876,9 +4870,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           d="M9 3a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a2 2 0 0 0-2-2h-1a2 2 0 0 0-2-2zm0 2h6v2H9zm-1 6h8v2H8zm0 4h8v2H8z"
                       />
                     </svg>
-                    <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-stone-500">
-                      리포트
-                    </span>
                   </button>
                   <button
                       type="button"
@@ -4899,7 +4890,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         setIsTrendOpen(true);
                       }}
                       className={[
-                        "flex min-h-[52px] min-w-0 flex-col items-center justify-end gap-0.5 rounded-xl px-1 py-1.5",
+                        "flex min-h-[48px] min-w-0 items-center justify-center rounded-xl px-1 py-2",
                         "text-stone-600 active:bg-stone-100/85 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/20",
                       ].join(" ")}
                   >
@@ -4909,9 +4900,6 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                           d="M4 19h16v2H4zm2-4h2v2H6zm4 0h2v2h-2zm4 0h2v2h-2zm4 0h2v2h-2zM6 9h2v4H6zm4-2h2v6h-2zm4-3h2v9h-2zm4 1h2v8h-2z"
                       />
                     </svg>
-                    <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight tracking-wide text-stone-500">
-                      추이
-                    </span>
                   </button>
                 </div>
               </div>
