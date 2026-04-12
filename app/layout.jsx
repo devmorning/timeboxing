@@ -8,7 +8,7 @@ const notoSansKr = Noto_Sans_KR({
   display: "swap",
 });
 
-const ICON_VERSION = "20260410a";
+const ICON_VERSION = "20260410b";
 
 export const metadata = {
   title: {
