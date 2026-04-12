@@ -5008,7 +5008,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="1.75"
+                        strokeWidth="2.25"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                     >
