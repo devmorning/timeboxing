@@ -1295,6 +1295,8 @@ function AdjacentDayStaticColumn({
   );
 }
 
+const LAST_SELECTED_DATE_STORAGE_KEY = "timeboxing.lastSelectedDate";
+
 export default function PageClient({ initialAuthUser = null, initialSelectedDate = null, initialPlan = null }) {
   const dayPlanRepository = useMemo(() => getDayPlanRepository(), []);
   const saveTimerRef = useRef(null);
@@ -1312,8 +1314,31 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     return `${yy}-${mm}-${dd}`;
   };
 
+  const bootstrapSelectedDateRef = useRef(initialSelectedDate || "");
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const todayYmd = toLocalYmd(new Date());
+    let persistedYmd = "";
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LAST_SELECTED_DATE_STORAGE_KEY) || "";
+        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) persistedYmd = raw;
+      } catch (_error) {
+        // ignore storage failures
+      }
+    }
+    const initialYmd = persistedYmd || initialSelectedDate || todayYmd;
+    bootstrapSelectedDateRef.current = initialYmd;
+    return initialYmd;
+  });
 
-  const [selectedDate, setSelectedDate] = useState(() => initialSelectedDate || toLocalYmd(new Date()));
+  useEffect(() => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) return;
+    try {
+      localStorage.setItem(LAST_SELECTED_DATE_STORAGE_KEY, selectedDate);
+    } catch (_error) {
+      // ignore storage failures
+    }
+  }, [selectedDate]);
 
   const selectedDateLabel = useMemo(() => {
     const [y, m, d] = selectedDate.split("-").map(Number);
@@ -2842,7 +2867,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
     let cancelled = false;
 
     const loadBootstrap = async () => {
-      const bootstrapDate = initialSelectedDate || toLocalYmd(new Date());
+      const bootstrapDate = bootstrapSelectedDateRef.current || initialSelectedDate || toLocalYmd(new Date());
 
       try {
         const params = new URLSearchParams(window.location.search);
@@ -2870,7 +2895,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
           setBrainDump(plan.brainDump);
           setItems(sortItemsByTimeAsc(plan.items));
           setReadyDate(bootstrapDate);
-          skippedInitialLoadRef.current = initialSelectedDate === bootstrapDate;
+          skippedInitialLoadRef.current = bootstrapSelectedDateRef.current === bootstrapDate;
           return;
         }
         clearStoredAccessToken();
@@ -2907,7 +2932,7 @@ export default function PageClient({ initialAuthUser = null, initialSelectedDate
   useLayoutEffect(() => {
     if (!authReady || !authUser?.id) return;
 
-    if (skippedInitialLoadRef.current && initialSelectedDate === selectedDate) {
+    if (skippedInitialLoadRef.current && bootstrapSelectedDateRef.current === selectedDate) {
       skippedInitialLoadRef.current = false;
       setReadyDate(selectedDate);
       return;
